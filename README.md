@@ -1,3 +1,5 @@
+[![pypi](https://img.shields.io/pypi/v/fink-filters.svg)](https://pypi.python.org/pypi/fink-filters)
+
 # Fink filters
 
 This repository contains filters used to define which information will be sent to the community. 
