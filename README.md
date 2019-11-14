@@ -31,6 +31,7 @@ def rrlyr(cross_match_alerts_per_batch: Any) -> pd.Series:
         false for bad alert, and true for good alert.
 
     """
+    # Here goes your logic
     mask = cross_match_alerts_per_batch.values == "RRLyr"
 
     return pd.Series(mask)
@@ -38,7 +39,7 @@ def rrlyr(cross_match_alerts_per_batch: Any) -> pd.Series:
 
 Remarks:
 
-- Note the use of the decorator is mandotory. It is a Spark decorator, and specifies the output type, as well as the type of operation. Just copy and paste it.
+- Note the use of the decorator is mandatory. It is a decorator for Apache Spark, and it specifies the output type as well as the type of operation. Just copy and paste it for simplicity.
 - The name of the routine will be used as the name of the Kafka topic. So once the filter loaded, you would subscribe to the topic `rrlyr` to receive alerts from this filter. Hence choose a meaningful name!
 - The name of the input argument must match the name of an alert entry. Here `cross_match_alerts_per_batch` is one column added by the xmatch module.
 - You can have several input columns. Just add them one after the other:
