@@ -6,13 +6,13 @@ This repository contains filters used to define which information will be sent t
 
 ## Step 0: Fork this repository
 
-Fork and clone the repository, and create a new folder at the root of the repo. The name of the repo does not matter much, but try to make it meaningful as much as possible! Let's call it `filter_rrlyr` for the sake of this example.
+Fork and clone the repository, and create a new folder in `fink_filters`. The name of the new folder does not matter much, but try to make it meaningful as much as possible! Let's call it `filter_rrlyr` for the sake of this example.
 
 ## Step 1: Define your filter
 
 A filter is typically a Python routine that selects which alerts need to be sent based on user-defined criteria. Criteria are based on the alert entries: position, flux, properties, ... You can find what's in alert here [link to be added]. 
 
-In this example, let's imagine you want to receive all alerts flagged as RRLyr by the xmatch module. you would define a simple routine 
+In this example, let's imagine you want to receive all alerts flagged as RRLyr by the xmatch module. You would create a file called `filter.py` and define a simple routine (see full template in the repo):
 
 ```python
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR) # <- mandatory
