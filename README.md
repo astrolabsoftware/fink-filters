@@ -6,7 +6,7 @@ This repository contains filters used to define which information will be sent t
 
 ## Step 0: Fork this repository
 
-For the repository, and create a new folder at the root of the repo. The name of the repo does not matter much, but try to make it meaningful as much as possible! Let's call it `filter_rrlyr` for the sake of this example.
+Fork and clone the repository, and create a new folder at the root of the repo. The name of the repo does not matter much, but try to make it meaningful as much as possible! Let's call it `filter_rrlyr` for the sake of this example.
 
 ## Step 1: Define your filter
 
