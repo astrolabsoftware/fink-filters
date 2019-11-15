@@ -18,7 +18,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="finkfilters",
+    name="fink_filters",
     version="0.1.4",
     author="JulienPeloton",
     author_email="peloton@lal.in2p3.fr",
@@ -37,6 +37,6 @@ setuptools.setup(
     ],
     project_urls={
         'Documentation': "https://fink-broker.readthedocs.io/en/latest/",
-        'Source': 'https://github.com/astrolabsoftware/finkfilters'
+        'Source': 'https://github.com/astrolabsoftware/fink_filters'
     },
 )
