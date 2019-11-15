@@ -8,7 +8,7 @@ This repository contains filters used to define which information will be sent t
 
 ### Step 0: Fork this repository
 
-Fork and clone the repository, and create a new folder at the root of the repo. The name of the new folder does not matter much, but try to make it meaningful as much as possible! Let's call it `filter_rrlyr` for the sake of this example.
+Fork and clone the repository, and create a new folder in `fink_filters`. The name of the new folder does not matter much, but try to make it meaningful as much as possible! Let's call it `filter_rrlyr` for the sake of this example.
 
 ### Step 1: Define your filter
 
@@ -54,6 +54,8 @@ def filter_w_several_input(acol: Any, anothercol: Any) -> pd.Series:
     pass
 ```
 
+Do not forget to include the `__init__.py` file in your new folder to make it a package.
+
 ### Step 3: Open a pull request
 
 Once your filter is done, we will review it. The criteria for acceptance are:
@@ -63,7 +65,7 @@ Once your filter is done, we will review it. The criteria for acceptance are:
 
 ### Step 4: Play!
 
-If your filter is accepted, it will be plugged in the broker, and you will be able to receive your alerts in real-time using the [finkclient](https://github.com/astrolabsoftware/fink-client). Note that we do not keep alerts forever available in the broker. While the retention period is not yet defined, you can expect emitted alerts to be available no longer than one week.
+If your filter is accepted, it will be plugged in the broker, and you will be able to receive your alerts in real-time using the [fink-client](https://github.com/astrolabsoftware/fink-client). Note that we do not keep alerts forever available in the broker. While the retention period is not yet defined, you can expect emitted alerts to be available no longer than one week.
 
 ## Installation
 
