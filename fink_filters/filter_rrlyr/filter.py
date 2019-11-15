@@ -20,12 +20,12 @@ import pandas as pd
 from typing import Any
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def rrlyr(cross_match_alerts_per_batch: Any) -> pd.Series:
+def rrlyr(cdsxmatch: Any) -> pd.Series:
     """ Return alerts identified as RRLyr by the xmatch module.
 
     Parameters
     ----------
-    cross_match_alerts_per_batch: Spark DataFrame Column
+    cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
 
     Returns
@@ -35,6 +35,6 @@ def rrlyr(cross_match_alerts_per_batch: Any) -> pd.Series:
         false for bad alert, and true for good alert.
 
     """
-    mask = cross_match_alerts_per_batch.values == "RRLyr"
+    mask = cdsxmatch.values == "RRLyr"
 
     return pd.Series(mask)
