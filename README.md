@@ -16,12 +16,12 @@ In this example, let's imagine you want to receive all alerts flagged as RRLyr b
 
 ```python
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR) # <- mandatory
-def rrlyr(cross_match_alerts_per_batch: Any) -> pd.Series:
+def rrlyr(cdsxmatch: Any) -> pd.Series:
     """ Return alerts identified as RRLyr by the xmatch module.
 
     Parameters
     ----------
-    cross_match_alerts_per_batch: Spark DataFrame Column
+    cdsxmatch: Spark DataFrame Column
         Alert column containing the cross-match values
 
     Returns
@@ -32,7 +32,7 @@ def rrlyr(cross_match_alerts_per_batch: Any) -> pd.Series:
 
     """
     # Here goes your logic
-    mask = cross_match_alerts_per_batch.values == "RRLyr"
+    mask = cdsxmatch.values == "RRLyr"
 
     return pd.Series(mask)
 ```
@@ -41,7 +41,7 @@ Remarks:
 
 - Note the use of the decorator is mandatory. It is a decorator for Apache Spark, and it specifies the output type as well as the type of operation. Just copy and paste it for simplicity.
 - The name of the routine will be used as the name of the Kafka topic. So once the filter loaded, you would subscribe to the topic `rrlyr` to receive alerts from this filter. Hence choose a meaningful name!
-- The name of the input argument must match the name of an alert entry. Here `cross_match_alerts_per_batch` is one column added by the xmatch module.
+- The name of the input argument must match the name of an alert entry. Here `cdsxmatch` is one column added by the xmatch module.
 - You can have several input columns. Just add them one after the other:
 
 
