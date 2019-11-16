@@ -19,7 +19,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="fink-filters",
-    version="0.1.4",
+    version="0.1.5",
     author="JulienPeloton",
     author_email="peloton@lal.in2p3.fr",
     description="User-defined filters for the Fink broker.",
