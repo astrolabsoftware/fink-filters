@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import setuptools
+import fink_filters
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="fink-filters",
-    version="0.1.5",
+    version=fink_filters.__version__,
     author="JulienPeloton",
     author_email="peloton@lal.in2p3.fr",
     description="User-defined filters for the Fink broker.",
