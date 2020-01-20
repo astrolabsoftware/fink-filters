@@ -2,7 +2,10 @@
 
 # Fink filters
 
-This repository contains filters used to flag only particular parts of the full stream to be distributed to Fink users.
+This repository contains filters used to flag only particular parts of the full stream to be distributed to Fink users. Available filters (i.e. topics) are:
+
+- rrlyr: return alerts identified as RRLyr in the SIMBAD catalog
+- snialike: return alerts that would be likely SN Ia candidates
 
 ## How to contribute?
 
