@@ -4,8 +4,12 @@
 
 This repository contains filters used to flag only particular parts of the full stream to be distributed to Fink users. Available filters (i.e. topics) are:
 
-- rrlyr: return alerts identified as RRLyr in the SIMBAD catalog
-- snialike: return alerts that would be likely SN Ia candidates
+- sn_candidates: alerts identified as SN candidates
+- early_sn_candidates: alerts identified as Early SN candidates
+- microlensing_candidates: alerts identified as Microlensing event candidates
+- sso_ztf_candiates: alerts identified as Solar System Object candidates by ZTF
+- sso_fink_candidates: alerts identified as Solar System Object candidates by Fink
+- rrlyr: alerts identified as RRLyr in the SIMBAD catalog
 
 ## How to contribute?
 
