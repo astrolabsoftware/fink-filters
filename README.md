@@ -10,6 +10,7 @@ This repository contains filters used to flag only particular parts of the full 
 - sso_ztf_candiates: alerts identified as Solar System Object candidates by ZTF
 - sso_fink_candidates: alerts identified as Solar System Object candidates by Fink
 - rrlyr: alerts identified as RRLyr in the SIMBAD catalog
+- kn_candidates: alerts identified as kilonova candidates
 
 ## How to contribute?
 
