@@ -4,7 +4,7 @@ from pyspark.sql.types import BooleanType
 import pandas as pd
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(kn_score,drb, classtar, jd, ndethist, jdstarthist,cdsxmatch, ) -> pd.Series:
+def kn_candidates(kn_score, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
     """ Return alerts considered as KN candidates
     
     Parameters
@@ -19,10 +19,10 @@ def kn_candidates(kn_score,drb, classtar, jd, ndethist, jdstarthist,cdsxmatch, )
         Column containing the kilonovae score
     jd: Spark DataFrame Column
         Column containing observation Julian dates at start of exposure [days]
-    ndethist: Spark DataFrame Column
-        Column containing the number of prior detections (with a theshold of 3 sigma)
     jdstarthist: Spark DataFrame Column
         Column containing earliest Julian dates of epoch corresponding to ndethist [days]
+    ndethist: Spark DataFrame Column
+        Column containing the number of prior detections (with a theshold of 3 sigma)
     Returns
     ----------
     out: pandas.Series of bool
