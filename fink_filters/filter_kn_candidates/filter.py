@@ -4,7 +4,7 @@ from pyspark.sql.types import BooleanType
 import pandas as pd
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(kn_score, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
+def kn_candidates(knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
     """ Return alerts considered as KN candidates
     
     Parameters
@@ -15,7 +15,7 @@ def kn_candidates(kn_score, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch)
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
-    kn_score: Spark DataFrame Column
+    knscore: Spark DataFrame Column
         Column containing the kilonovae score
     jd: Spark DataFrame Column
         Column containing observation Julian dates at start of exposure [days]
@@ -30,7 +30,7 @@ def kn_candidates(kn_score, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch)
         false for bad alert, and true for good alert.
     """
     
-    high_kn_score = kn_score.astype(float) > 0.5
+    high_knscore = knscore.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
@@ -60,7 +60,7 @@ def kn_candidates(kn_score, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch)
     keep_cds = \
         ["Unknown", "Transient","Fail"] + list_simbad_galaxies
 
-    f_kn = high_kn_score & high_drb & high_classtar & new_detection
+    f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
 
     return f_kn
