@@ -2,7 +2,6 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import pandas as pd
-import numpy as np
 import requests
 import os
 
