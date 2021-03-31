@@ -68,7 +68,7 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, c
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
     
-    for alertID in np.argwhere(f_kn.to_numpy()):
+    for alertID in objectId[f_kn]:
         slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
         requests.post(
             os.environ['KNWEBHOOK'],
