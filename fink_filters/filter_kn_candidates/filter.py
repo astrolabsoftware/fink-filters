@@ -2,13 +2,18 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import pandas as pd
+import numpy as np
+import requests
+import os
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
+def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
     """ Return alerts considered as KN candidates
     
     Parameters
     ----------
+    objectId: Spark DataFrame Column
+        Column containing the alert IDs
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
     drb: Spark DataFrame Column
@@ -62,5 +67,13 @@ def kn_candidates(knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) 
 
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
+    
+    for alertID in np.argwhere(f_kn.to_numpy()):
+        slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
+        requests.post(
+            os.environ['KNWEBHOOK'],
+            json={'text':slacktext, 'username':'kilonova_bot'},
+            headers={'Content-Type': 'application/json'},
+        )   
 
     return f_kn
