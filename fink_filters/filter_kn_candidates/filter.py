@@ -2,13 +2,20 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import pandas as pd
+import requests
+import os
+import logging
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
-    """ Return alerts considered as KN candidates
+def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
+    """ Return alerts considered as KN candidates.
+    If the environment variable KNWEBHOOK is defined and match a webhook url,
+    the alerts that pass the filter will be sent to the matching Slack channel.
     
     Parameters
     ----------
+    objectId: Spark DataFrame Column
+        Column containing the alert IDs
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
     drb: Spark DataFrame Column
@@ -62,5 +69,17 @@ def kn_candidates(knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) 
 
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
+    
+    if 'KNWEBHOOK' in os.environ:
+        for alertID in objectId[f_kn]:
+            slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
+            requests.post(
+                os.environ['KNWEBHOOK'],
+                json={'text':slacktext, 'username':'kilonova_bot'},
+                headers={'Content-Type': 'application/json'},
+            )
+    else:
+        log = logging.Logger('Kilonova filter')
+        log.warning('KNWEBHOOK is not defined as env variable -- if an alert has passed the filter, the message has not been sent to Slack')
 
     return f_kn
