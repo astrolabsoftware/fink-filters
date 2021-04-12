@@ -28,8 +28,9 @@ from fink_science.conversion import dc_mag
 def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist, 
                 cdsxmatch, fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
                 isdiffpos, ra, dec, mangrove_path=None) -> pd.Series:
-    """ Return alerts considered as KN candidates.
-    If the environment variable KNWEBHOOK is defined and match a webhook url,
+    """ Return alerts considered as KN candidates and suitable for amateur observation.
+    This filter is similar to early_kn_candidate, with additional cuts.
+    If the environment variable KNWEBHOOK_AMA is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
     
     Parameters
@@ -104,20 +105,9 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
     
     keep_cds = \
         ["Unknown", "Transient","Fail"] + list_simbad_galaxies
-
-    f_kn = high_drb & high_classtar & new_detection & small_detection_history
-    f_kn = f_kn & cdsxmatch.isin(keep_cds)
     
-    # cross match with Mangrove catalog. Distances are in Mpc
-    if f_kn.any():
-        if mangrove_path is not None:
-            pdf_mangrove = pd.read_csv(mangrove_path.values[0])
-        else:
-            curdir = os.path.dirname(os.path.abspath(__file__))
-            mangrove_path = curdir + '/data/mangrove_filtered.csv'
-            pdf_mangrove = pd.read_csv(mangrove_path)
-        
-        mag, _ = np.array([
+    # apparent magnitude
+    mag, _ = np.array([
             dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
             for i in zip(
                 np.array(fid),
@@ -128,6 +118,28 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
                 np.array(magzpsci),
                 np.array(isdiffpos))
         ]).T
+    low_app_magnitude = mag.astype(float) < 20
+    
+    # galactic plane
+    dec_NGP = 3.36 # 12h51m: (0.5+51/1440)*2*np.pi 
+    ra_NGP = 0.478 # 27.4/180*np.pi
+    sin_b = np.sin(dec_NGP)*np.sin(dec)+np.cos(dec_NGP)*np.cos(dec)*np.cos(ra-ra_NGP) # sinus of galactic latitude
+    outside_galactic_plane = abs(sin_b) > 0.34 # sin(20 degrees)
+    
+    
+    # apply preliminary cuts to reduce the computations needed for cross-match
+    f_kn = high_drb & high_classtar & new_detection & small_detection_history
+    f_kn = f_kn & cdsxmatch.isin(keep_cds) & low_app_magnitude & outside_galactic_plane
+    
+    
+    # cross match with Mangrove catalog. Distances are in Mpc
+    if f_kn.any():
+        if mangrove_path is not None:
+            pdf_mangrove = pd.read_csv(mangrove_path.values[0])
+        else:
+            curdir = os.path.dirname(os.path.abspath(__file__))
+            mangrove_path = curdir + '/data/mangrove_filtered.csv'
+            pdf_mangrove = pd.read_csv(mangrove_path)
             
         pdf = pd.DataFrame.from_dict({'fid':fid,'ra':ra,'dec':dec,'mag':mag})
         galaxy_matching = pdf[f_kn].apply(
@@ -150,19 +162,20 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
             axis=1
         )
         f_kn[f_kn] = galaxy_matching
+
         
     # send alerts to slack
-    if 'KNWEBHOOK' in os.environ:
+    if 'KNWEBHOOK_AMA' in os.environ:
         for alertID in objectId[f_kn]:
             slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
             requests.post(
-                os.environ['KNWEBHOOK'],
-                json={'text':slacktext, 'username':'mangrove_kilonova_bot'},
+                os.environ['KNWEBHOOK_AMA'],
+                json={'text':slacktext, 'username':'kilonova_candidates_bot'},
                 headers={'Content-Type': 'application/json'},
             )
     else:
         log = logging.Logger('Kilonova filter')
-        log.warning('KNWEBHOOK is not defined as env variable\
+        log.warning('KNWEBHOOK_AMA is not defined as env variable\
         - if an alert passed the filter, message has not been sent to Slack')
     
     return f_kn
