@@ -1,3 +1,19 @@
+# Copyright 2019-2020 AstroLab Software
+# Author: Juliette Vlieghe
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
@@ -5,11 +21,13 @@ import numpy as np
 import pandas as pd
 import requests, logging
 import os
-import h5py
+
+from fink_science.conversion import dc_mag
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist, 
-                  cdsxmatch, ra, dec, magpsf, mangrove_path=None) -> pd.Series:
+                cdsxmatch, fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
+                isdiffpos, ra, dec, mangrove_path=None) -> pd.Series:
     """ Return alerts considered as KN candidates.
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
@@ -30,6 +48,19 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
         Column containing the number of prior detections (with a theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
+    fid: Spark DataFrame Column
+        Column containing filter, 1 for green and 2 for red
+    magpsf,sigmapsf: Spark DataFrame Columns
+        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
+    magnr,sigmagnr: Spark DataFrame Columns
+        Columns containing magnitude of nearest source in reference image PSF-catalog
+        within 30 arcsec and 1-sigma error
+    magzpsci: Spark DataFrame Column
+        Column containing magnitude zero point for photometry estimates
+    isdiffpos: Spark DataFrame Column
+        Column containing:
+        t or 1 => candidate is from positive (sci minus ref) subtraction;
+        f or 0 => candidate is from negative (ref minus sci) subtraction
     ra: Spark DataFrame Column
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
@@ -77,7 +108,7 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
     f_kn = high_drb & high_classtar & new_detection & small_detection_history
     f_kn = f_kn & cdsxmatch.isin(keep_cds)
     
-    # cross match with Mangrove catalog
+    # cross match with Mangrove catalog. Distances are in Mpc
     if f_kn.any():
         if mangrove_path is not None:
             pdf_mangrove = pd.read_csv(mangrove_path.values[0])
@@ -85,20 +116,43 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
             curdir = os.path.dirname(os.path.abspath(__file__))
             mangrove_path = curdir + '/data/mangrove_filtered.csv'
             pdf_mangrove = pd.read_csv(mangrove_path)
-        pdf = pd.DataFrame.from_dict({'ra':ra,'dec':dec,'magpsf':magpsf})
+        
+        mag, _ = np.array([
+            dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
+            for i in zip(
+                np.array(fid),
+                np.array(magpsf),
+                np.array(sigmapsf),
+                np.array(magnr),
+                np.array(sigmagnr),
+                np.array(magzpsci),
+                np.array(isdiffpos))
+        ]).T
+            
+        pdf = pd.DataFrame.from_dict({'fid':fid,'ra':ra,'dec':dec,'mag':mag})
         galaxy_matching = pdf[f_kn].apply(
             lambda row:
-                ((np.sqrt(np.square(row.dec-pdf_mangrove.dec)+np.square(row.ra-pdf_mangrove.ra)
-                    )<0.1/pdf_mangrove.dist)
-                 & (row.magpsf+5-5*np.log10(pdf_mangrove.dist)>16-1)
-                 & (row.magpsf+5-5*np.log10(pdf_mangrove.dist)<16+1)
+                (
+                    # cross-match on position.
+                    (np.sqrt(
+                        np.square(row.dec-pdf_mangrove.dec)+np.square(row.ra-pdf_mangrove.ra)
+                    )<0.1/pdf_mangrove.ang_dist)
+                    # if filter is r the cuts on the absolute magnitude do not apply.
+                    # this would leave too much alerts, but we most alerts come in pair 
+                    # (one band g, one band r), so we can consider that we will get the alert if 
+                    # the condition is verified in g band.
+                    & (
+                        #(row.fid==2) |
+                          (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)>16-1)
+                        & (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)<16+1)
+                    )
                 ).any(),
             axis=1
         )
         f_kn[f_kn] = galaxy_matching
         
-    
-    if 'KNWEBHOOK' in os.environ:
+    # send alerts to slack
+    if 'KNWEBHOOK3' in os.environ:
         for alertID in objectId[f_kn]:
             slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
             requests.post(
@@ -108,38 +162,7 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
             )
     else:
         log = logging.Logger('Kilonova filter')
-        log.warning('KNWEBHOOK is not defined as env variable -- if an alert passed the filter, message has not been sent to Slack')
+        log.warning('KNWEBHOOK is not defined as env variable\
+        -- if an alert passed the filter, message has not been sent to Slack')
     
     return f_kn
-
-
-
-
-def get_mangrove_pdf(path):
-    """
-    create a pandas dataframe needed in early_kn_candidates from the hdf5 
-    Mangrove catalog.
-    
-    early_kn_candidate loads the pre-filtered csv file, the aim of this 
-    function is to create a new csv file if the catalog is updated or the range change.
-
-    Parameters
-    ----------
-    path : string
-        path to Mangrove hdf5 catalog.
-
-    Returns
-    -------
-    pdf_mangrove : pandas DataFrame
-        Dataframe containing the galaxy indexes, their right ascension, 
-        declination and distance to earth.
-
-    """
-    pdf_mangrove = pd.DataFrame(np.array(
-        h5py.File(path,'r')['__astropy_table__']
-    ))
-    pdf_mangrove = pdf_mangrove.loc[:,['idx','RA','dec','dist']]
-    pdf_mangrove = pdf_mangrove[pdf_mangrove.dist<230]
-    pdf_mangrove.rename(columns={'idx':'galaxy_idx','RA':'ra'}, inplace=True)
-    pdf_mangrove.reset_index(inplace=True, drop=True)
-    return pdf_mangrove
