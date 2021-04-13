@@ -22,6 +22,9 @@ import pandas as pd
 import requests, logging
 import os
 
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+
 from fink_science.conversion import dc_mag
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
@@ -107,16 +110,9 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
 
     f_kn = high_drb & high_classtar & new_detection & small_detection_history
     f_kn = f_kn & cdsxmatch.isin(keep_cds)
-    
-    # cross match with Mangrove catalog. Distances are in Mpc
-    if f_kn.any():
-        if mangrove_path is not None:
-            pdf_mangrove = pd.read_csv(mangrove_path.values[0])
-        else:
-            curdir = os.path.dirname(os.path.abspath(__file__))
-            mangrove_path = curdir + '/data/mangrove_filtered.csv'
-            pdf_mangrove = pd.read_csv(mangrove_path)
         
+    #cross match with Mangrove catalog. Distances are in Mpc
+    if f_kn.any():
         mag, _ = np.array([
             dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
             for i in zip(
@@ -128,26 +124,38 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
                 np.array(magzpsci),
                 np.array(isdiffpos))
         ]).T
-            
+        # mangrove catalog
+        if mangrove_path is not None:
+            pdf_mangrove = pd.read_csv(mangrove_path.values[0])
+        else:
+            curdir = os.path.dirname(os.path.abspath(__file__))
+            mangrove_path = curdir + '/data/mangrove_filtered.csv'
+            pdf_mangrove = pd.read_csv(mangrove_path)
+        catalog_mangrove = SkyCoord(
+            ra =np.array(pdf_mangrove.ra, dtype=np.float) * u.degree,
+            dec=np.array(pdf_mangrove.dec, dtype=np.float) * u.degree
+        )
+        # cross-match   
         pdf = pd.DataFrame.from_dict({'fid':fid,'ra':ra,'dec':dec,'mag':mag})
         galaxy_matching = pdf[f_kn].apply(
             lambda row:
                 (
                     # cross-match on position.
-                    (np.sqrt(
-                        np.square(row.dec-pdf_mangrove.dec)+np.square(row.ra-pdf_mangrove.ra)
-                    )<0.1/pdf_mangrove.ang_dist)
+                    (SkyCoord(
+                        ra = row.ra*u.degree, 
+                        dec = row.dec*u.degree
+                    ).separation(catalog_mangrove).radian<0.1/pdf_mangrove.ang_dist)
                     # if filter is r the cuts on the absolute magnitude do not apply.
                     # this would leave too much alerts, but we most alerts come in pair 
                     # (one band g, one band r), so we can consider that we will get the alert if 
                     # the condition is verified in g band.
                     & (
                         #(row.fid==2) |
-                          (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)>16-1)
-                        & (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)<16+1)
+                          (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)>16-0.5)
+                        & (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)<16+0.5)
                     )
                 ).any(),
-            axis=1
+        axis=1
         )
         f_kn[f_kn] = galaxy_matching
         
