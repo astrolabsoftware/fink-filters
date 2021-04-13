@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import requests, logging
 import os
+from astropy.coordinates import SkyCoord
 
 from fink_science.conversion import dc_mag
 
@@ -84,6 +85,9 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
     small_detection_history = ndethist.astype(float) < 20
     
+    gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
+    outside_galactic_plane = np.abs(gal.b.degree)>20
+    
     list_simbad_galaxies = [
         "galaxy",
         "Galaxy",
@@ -119,13 +123,6 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
                 np.array(isdiffpos))
         ]).T
     low_app_magnitude = mag.astype(float) < 20
-    
-    # galactic plane
-    dec_NGP = 3.36 # 12h51m: (0.5+51/1440)*2*np.pi 
-    ra_NGP = 0.478 # 27.4/180*np.pi
-    sin_b = np.sin(dec_NGP)*np.sin(dec)+np.cos(dec_NGP)*np.cos(dec)*np.cos(ra-ra_NGP) # sinus of galactic latitude
-    outside_galactic_plane = abs(sin_b) > 0.34 # sin(20 degrees)
-    
     
     # apply preliminary cuts to reduce the computations needed for cross-match
     f_kn = high_drb & high_classtar & new_detection & small_detection_history
