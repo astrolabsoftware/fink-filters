@@ -26,6 +26,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 from fink_science.conversion import dc_mag
+    
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist, 
@@ -83,8 +84,7 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
     
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
-    new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
-    small_detection_history = ndethist.astype(float) < 20
+    new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
     
     list_simbad_galaxies = [
         "galaxy",
@@ -108,21 +108,22 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
     keep_cds = \
         ["Unknown", "Transient","Fail"] + list_simbad_galaxies
 
-    f_kn = high_drb & high_classtar & new_detection & small_detection_history
+    f_kn = high_drb & high_classtar & new_detection
     f_kn = f_kn & cdsxmatch.isin(keep_cds)
         
     #cross match with Mangrove catalog. Distances are in Mpc
     if f_kn.any():
-        mag, _ = np.array([
+        # dc magnitude (apparent)
+        mag, err_mag = np.array([
             dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
             for i in zip(
-                np.array(fid),
-                np.array(magpsf),
-                np.array(sigmapsf),
-                np.array(magnr),
-                np.array(sigmagnr),
-                np.array(magzpsci),
-                np.array(isdiffpos))
+                np.array(fid[f_kn]),
+                np.array(magpsf[f_kn]),
+                np.array(sigmapsf[f_kn]),
+                np.array(magnr[f_kn]),
+                np.array(sigmagnr[f_kn]),
+                np.array(magzpsci[f_kn]),
+                np.array(isdiffpos[f_kn]))
         ]).T
         # mangrove catalog
         if mangrove_path is not None:
@@ -135,42 +136,40 @@ def early_kn_candidates(objectId, drb, classtar, jd, jdstarthist, ndethist,
             ra =np.array(pdf_mangrove.ra, dtype=np.float) * u.degree,
             dec=np.array(pdf_mangrove.dec, dtype=np.float) * u.degree
         )
-        # cross-match   
-        pdf = pd.DataFrame.from_dict({'fid':fid,'ra':ra,'dec':dec,'mag':mag})
-        galaxy_matching = pdf[f_kn].apply(
-            lambda row:
-                (
-                    # cross-match on position.
-                    (SkyCoord(
-                        ra = row.ra*u.degree, 
-                        dec = row.dec*u.degree
-                    ).separation(catalog_mangrove).radian<0.1/pdf_mangrove.ang_dist)
-                    # if filter is r the cuts on the absolute magnitude do not apply.
-                    # this would leave too much alerts, but we most alerts come in pair 
-                    # (one band g, one band r), so we can consider that we will get the alert if 
-                    # the condition is verified in g band.
-                    & (
-                        #(row.fid==2) |
-                          (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)>16-0.5)
-                        & (row.mag-1-5*np.log10(pdf_mangrove.lum_dist)<16+0.5)
-                    )
-                ).any(),
-        axis=1
-        )
+        
+        pdf = pd.DataFrame.from_dict({'fid':fid[f_kn],'ra':ra[f_kn],'dec':dec[f_kn],
+                                      'mag':mag,'err_mag':err_mag})
+        # identify galaxy somehow close to each alert
+        idx_mangrove,idxself,_,_=SkyCoord(ra = pdf.ra*u.degree, dec = pdf.dec*u.degree)\
+            .search_around_sky(catalog_mangrove, 2*u.degree)
+        
+        # cross match
+        galaxy_matching=[]
+        for i,row in enumerate(pdf.itertuples()):
+            idx_reduced = idx_mangrove[idxself==i]
+            abs_mag = row.mag-1-5*np.log10(pdf_mangrove.loc[idx_reduced,:].lum_dist)
+            # cross-match on position. We take a radius of 50 kpc
+            galaxy_matching.append(((SkyCoord(
+                ra = row.ra*u.degree, 
+                dec = row.dec*u.degree
+            ).separation(catalog_mangrove[idx_reduced]).radian<0.05/pdf_mangrove.loc[idx_reduced,:].ang_dist)
+            # absolute magnitude
+            & (abs_mag>15) & (abs_mag<17)
+            ).any())
+        
         f_kn[f_kn] = galaxy_matching
         
-    # send alerts to slack
-    if 'KNWEBHOOK' in os.environ:
+    if 'KNWEBHOOK_MANGROVE' in os.environ:
         for alertID in objectId[f_kn]:
             slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
             requests.post(
-                os.environ['KNWEBHOOK'],
-                json={'text':slacktext, 'username':'mangrove_kilonova_bot'},
+                os.environ['KNWEBHOOK_MANGROVE'],
+                json={'text':slacktext, 'username':'kilonova_candidates_bot'},
                 headers={'Content-Type': 'application/json'},
             )
     else:
         log = logging.Logger('Kilonova filter')
-        log.warning('KNWEBHOOK is not defined as env variable\
+        log.warning('KNWEBHOOK_MANGROVE is not defined as env variable\
         - if an alert passed the filter, message has not been sent to Slack')
     
     return f_kn
