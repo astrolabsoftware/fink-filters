@@ -147,6 +147,7 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
         for i, alertID in enumerate(objectId[f_kn]):
             # Get rates
             maskNotNone = np.array(np.array(cmagpsf[f_kn])[i]) != None
+            rate = {1:float('nan'),2:float('nan')}
             for filt in [1, 2]:
                 maskFilter = np.array(np.array(cfid[f_kn])[i]) == filt
                 m = maskNotNone * maskFilter
@@ -162,12 +163,11 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
                         np.array(np.array(cmagzpsci[f_kn])[i])[m],
                         np.array(np.array(cisdiffpos[f_kn])[i])[m])
                     ]).T
-                rate = {1:float('nan'),2:float('nan')}
                 jd_hist = np.array(np.array(cjd[f_kn])[i])[m]
                 if filt == fid[i]: 
-                    if len(m)>0:
+                    if sum(m)>0:
                         rate[filt] = (mag[i]-mag_hist[-1])/(jd[i]-jd_hist[-1])
-                elif len(m)>1:
+                elif sum(m)>1:
                         rate[filt] = (mag_hist[-1]-mag_hist[-2])/(jd_hist[-1]-jd_hist[-2])
             
             # message
@@ -219,7 +219,6 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
             )
     else:
         log = logging.Logger('Kilonova filter')
-        log.warning('KNWEBHOOK is not defined as env variable -- if an alert \
-                    has passed the filter, the message has not been sent to Slack')
+        log.warning('KNWEBHOOK is not defined as env variable -- if an alert has passed the filter, the message has not been sent to Slack')
 
     return f_kn
