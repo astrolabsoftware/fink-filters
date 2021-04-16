@@ -142,6 +142,7 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
             delta_jd = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
             knscore = np.array(knscore.astype(float)[f_kn])
             fid = np.array(fid.astype(int)[f_kn])
+            jd = np.array(jd)[f_kn]
         
         dict_filt={1:'g',2:'r'}
         for i, alertID in enumerate(objectId[f_kn]):
@@ -201,7 +202,7 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "*Rate:*\n- Band g: {:.2f} mag/day\n- Band r: {:.2f} mag/day"\
+                            "text": "*Rate:*\n- Rate g: {:.2f} mag/day\n- Rate r: {:.2f} mag/day"\
                             .format(rate[1],rate[2])
                         },
                         {
