@@ -1,13 +1,37 @@
+# Copyright 2019-2020 AstroLab Software
+# Author: Juliette Vlieghe
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+import numpy as np
 import pandas as pd
 import requests
 import os
 import logging
 
+from astropy.coordinates import SkyCoord
+from astropy.coordinates import Angle
+from astropy import units as u
+
+from fink_science.conversion import dc_mag
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
+def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, 
+                  cdsxmatch, fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
+                  isdiffpos, ra, dec,) -> pd.Series:
     """ Return alerts considered as KN candidates.
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
@@ -16,20 +40,37 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, c
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    cdsxmatch: Spark DataFrame Column
-        Column containing the cross-match values
+    knscore: Spark DataFrame Column
+        Column containing the kilonovae scores given by the classifier
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
-    knscore: Spark DataFrame Column
-        Column containing the kilonovae score
     jd: Spark DataFrame Column
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Spark DataFrame Column
         Column containing earliest Julian dates of epoch corresponding to ndethist [days]
     ndethist: Spark DataFrame Column
         Column containing the number of prior detections (with a theshold of 3 sigma)
+    cdsxmatch: Spark DataFrame Column
+        Column containing the cross-match values
+    fid: Spark DataFrame Column
+        Column containing filter, 1 for green and 2 for red
+    magpsf,sigmapsf: Spark DataFrame Columns
+        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
+    magnr,sigmagnr: Spark DataFrame Columns
+        Columns containing magnitude of nearest source in reference image PSF-catalog
+        within 30 arcsec and 1-sigma error
+    magzpsci: Spark DataFrame Column
+        Column containing magnitude zero point for photometry estimates
+    isdiffpos: Spark DataFrame Column
+        Column containing:
+        t or 1 => candidate is from positive (sci minus ref) subtraction;
+        f or 0 => candidate is from negative (ref minus sci) subtraction
+    ra: Spark DataFrame Column
+        Column containing the right Ascension of candidate; J2000 [deg]
+    dec: Spark DataFrame Column
+        Column containing the declination of candidate; J2000 [deg]
     Returns
     ----------
     out: pandas.Series of bool
@@ -71,11 +112,66 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, c
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
     
     if 'KNWEBHOOK' in os.environ:
-        for alertID in objectId[f_kn]:
-            slacktext = f'new kilonova candidate alert: \n<http://134.158.75.151:24000/{alertID}>'
+        if f_kn.any():
+            # galactic latitude
+            b = SkyCoord(
+                np.array(ra[f_kn], dtype=float), 
+                np.array(dec[f_kn],dtype=float), 
+                unit='deg').galactic.b.to_string(unit=u.degree,precision=1)
+            # simplify notations
+            ra = Angle(np.array(ra.astype(float)[f_kn])*u.degree).to_string(unit=u.hour,precision=1)
+            dec = Angle(np.array(dec.astype(float)[f_kn])*u.degree).to_string(precision=1)
+            delta_jd = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
+            # apparent magnitude
+            mag, err_mag = np.array([
+                dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
+                for i in zip(
+                    np.array(fid[f_kn]),
+                    np.array(magpsf[f_kn]),
+                    np.array(sigmapsf[f_kn]),
+                    np.array(magnr[f_kn]),
+                    np.array(sigmagnr[f_kn]),
+                    np.array(magzpsci[f_kn]),
+                    np.array(isdiffpos[f_kn]))
+                ]).T
+        # send
+        for i, alertID in enumerate(objectId[f_kn]):
+            position_text="*Position:*\
+                \n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n"\
+                .format(ra[i], dec[i], b[i])
+            blocks = [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*New kilonova candidate:* <http://134.158.75.151:24000/{alertID}|{alertID}>"
+                    }
+                 },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": position_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Rate:*\n- Band g: \n- Band r:"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": "*Apparent magnitude:* {:.2f}\n".format(mag[i])
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": "*Time since first detection:* {:.1f} days".format(delta_jd[i])
+                        },
+                    ]
+                },
+            ]
             requests.post(
                 os.environ['KNWEBHOOK'],
-                json={'text':slacktext, 'username':'kilonova_bot'},
+                json={'blocks':blocks, 'username':'Classifier-based kilonova bot'},
                 headers={'Content-Type': 'application/json'},
             )
     else:
