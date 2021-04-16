@@ -31,7 +31,8 @@ from fink_science.conversion import dc_mag
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, 
                   cdsxmatch, fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
-                  isdiffpos, ra, dec,) -> pd.Series:
+                  isdiffpos, ra, dec, cjd, cfid, cmagpsf, csigmapsf, cmagnr, 
+                  csigmagnr, cmagzpsci, cisdiffpos,) -> pd.Series:
     """ Return alerts considered as KN candidates.
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
@@ -71,6 +72,9 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
+    cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
+        isdiffpos as arrays
     Returns
     ----------
     out: pandas.Series of bool
@@ -118,12 +122,9 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
                 np.array(ra[f_kn], dtype=float), 
                 np.array(dec[f_kn],dtype=float), 
                 unit='deg').galactic.b.to_string(unit=u.degree,precision=1)
-            # simplify notations
-            ra = Angle(np.array(ra.astype(float)[f_kn])*u.degree).to_string(unit=u.hour,precision=1)
-            dec = Angle(np.array(dec.astype(float)[f_kn])*u.degree).to_string(precision=1)
-            delta_jd = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
+            
             # apparent magnitude
-            mag, err_mag = np.array([
+            mag, _ = np.array([
                 dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
                 for i in zip(
                     np.array(fid[f_kn]),
@@ -134,11 +135,46 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
                     np.array(magzpsci[f_kn]),
                     np.array(isdiffpos[f_kn]))
                 ]).T
-        # send
+            
+            # simplify notations
+            ra = Angle(np.array(ra.astype(float)[f_kn])*u.degree).to_string(precision=1)
+            dec = Angle(np.array(dec.astype(float)[f_kn])*u.degree).to_string(precision=1)
+            delta_jd = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
+            knscore = np.array(knscore.astype(float)[f_kn])
+            fid = np.array(fid.astype(int)[f_kn])
+        
+        dict_filt={1:'g',2:'r'}
         for i, alertID in enumerate(objectId[f_kn]):
+            # Get rates
+            maskNotNone = np.array(np.array(cmagpsf[f_kn])[i]) != None
+            for filt in [1, 2]:
+                maskFilter = np.array(np.array(cfid[f_kn])[i]) == filt
+                m = maskNotNone * maskFilter
+                # DC mag history
+                mag_hist, _ = np.array([
+                    dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
+                    for i in zip(
+                        np.array(np.array(cfid[f_kn])[i])[m],
+                        np.array(np.array(cmagpsf[f_kn])[i])[m],
+                        np.array(np.array(csigmapsf[f_kn])[i])[m],
+                        np.array(np.array(cmagnr[f_kn])[i])[m],
+                        np.array(np.array(csigmagnr[f_kn])[i])[m],
+                        np.array(np.array(cmagzpsci[f_kn])[i])[m],
+                        np.array(np.array(cisdiffpos[f_kn])[i])[m])
+                    ]).T
+                rate = {1:float('nan'),2:float('nan')}
+                jd_hist = np.array(np.array(cjd[f_kn])[i])[m]
+                if filt == fid[i]: 
+                    if len(m)>0:
+                        rate[filt] = (mag[i]-mag_hist[-1])/(jd[i]-jd_hist[-1])
+                elif len(m)>1:
+                        rate[filt] = (mag_hist[-1]-mag_hist[-2])/(jd_hist[-1]-jd_hist[-2])
+            
+            # message
             position_text="*Position:*\
                 \n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n"\
                 .format(ra[i], dec[i], b[i])
+            
             blocks = [
                 {
                     "type": "section",
@@ -152,19 +188,26 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
                     "fields": [
                         {
                             "type": "mrkdwn",
+                            "text": "*Kilonova score:* {:.2f}".format(knscore[i])
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": "*Apparent magnitude (band {}):* {:.2f}\n"\
+                            .format(dict_filt[fid[i]], mag[i])
+                        },
+                        {
+                            "type": "mrkdwn",
                             "text": position_text
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Rate:*\n- Band g: \n- Band r:"
+                            "text": "*Rate:*\n- Band g: {:.2f} mag/day\n- Band r: {:.2f} mag/day"\
+                            .format(rate[1],rate[2])
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "*Apparent magnitude:* {:.2f}\n".format(mag[i])
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Time since first detection:* {:.1f} days".format(delta_jd[i])
+                            "text": "*Time since first detection:* {:.1f} days"\
+                            .format(delta_jd[i])
                         },
                     ]
                 },
@@ -176,6 +219,7 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
             )
     else:
         log = logging.Logger('Kilonova filter')
-        log.warning('KNWEBHOOK is not defined as env variable -- if an alert has passed the filter, the message has not been sent to Slack')
+        log.warning('KNWEBHOOK is not defined as env variable -- if an alert \
+                    has passed the filter, the message has not been sent to Slack')
 
     return f_kn
