@@ -1,4 +1,4 @@
-# Copyright 2019-2020 AstroLab Software
+# Copyright 2019-2021 AstroLab Software
 # Author: Juliette Vlieghe
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,14 +29,14 @@ from astropy import units as u
 from fink_science.conversion import dc_mag
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist, 
-                  cdsxmatch, fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
-                  isdiffpos, ra, dec, cjd, cfid, cmagpsf, csigmapsf, cmagnr, 
-                  csigmagnr, cmagzpsci, cisdiffpos,) -> pd.Series:
+def kn_candidates(
+        objectId, knscore, drb, classtar, jdstarthist, ndethist,
+        cdsxmatch, ra, dec, cjd, cfid, cmagpsf, csigmapsf, cmagnr,
+        csigmagnr, cmagzpsci, cisdiffpos) -> pd.Series:
     """ Return alerts considered as KN candidates.
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
-    
+
     Parameters
     ----------
     objectId: Spark DataFrame Column
@@ -47,33 +47,18 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
-    jd: Spark DataFrame Column
-        Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Spark DataFrame Column
         Column containing earliest Julian dates of epoch corresponding to ndethist [days]
     ndethist: Spark DataFrame Column
         Column containing the number of prior detections (with a theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
-    fid: Spark DataFrame Column
-        Column containing filter, 1 for green and 2 for red
-    magpsf,sigmapsf: Spark DataFrame Columns
-        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
-    magnr,sigmagnr: Spark DataFrame Columns
-        Columns containing magnitude of nearest source in reference image PSF-catalog
-        within 30 arcsec and 1-sigma error
-    magzpsci: Spark DataFrame Column
-        Column containing magnitude zero point for photometry estimates
-    isdiffpos: Spark DataFrame Column
-        Column containing:
-        t or 1 => candidate is from positive (sci minus ref) subtraction;
-        f or 0 => candidate is from negative (ref minus sci) subtraction
     ra: Spark DataFrame Column
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
     cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci, 
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci,
         isdiffpos as arrays
     Returns
     ----------
@@ -81,14 +66,16 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
     """
-    
+    # Extract last (new) measurement from the concatenated column
+    jd = cjd.apply(lambda x: x[-1])
+    fid = cfid.apply(lambda x: x[-1])
+
     high_knscore = knscore.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
     small_detection_history = ndethist.astype(float) < 20
-    
-    
+
     list_simbad_galaxies = [
         "galaxy",
         "Galaxy",
@@ -107,108 +94,114 @@ def kn_candidates(objectId, knscore, drb, classtar, jd, jdstarthist, ndethist,
         "GinCl",
         "PartofG",
     ]
-    
-    
+
     keep_cds = \
         ["Unknown", "Transient","Fail"] + list_simbad_galaxies
 
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
-    
+
     if 'KNWEBHOOK' in os.environ:
         if f_kn.any():
-            # galactic latitude
+            # Galactic latitude transformation
             b = SkyCoord(
-                np.array(ra[f_kn], dtype=float), 
-                np.array(dec[f_kn],dtype=float), 
+                np.array(ra[f_kn], dtype=float),
+                np.array(dec[f_kn],dtype=float),
                 unit='deg').galactic.b.to_string(unit=u.degree,precision=1)
-            
-            # apparent magnitude
-            mag, _ = np.array([
-                dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
-                for i in zip(
-                    np.array(fid[f_kn]),
-                    np.array(magpsf[f_kn]),
-                    np.array(sigmapsf[f_kn]),
-                    np.array(magnr[f_kn]),
-                    np.array(sigmagnr[f_kn]),
-                    np.array(magzpsci[f_kn]),
-                    np.array(isdiffpos[f_kn]))
-                ]).T
-            
-            # simplify notations
+
+            # Simplify notations
             ra = Angle(np.array(ra.astype(float)[f_kn])*u.degree).to_string(precision=1)
             dec = Angle(np.array(dec.astype(float)[f_kn])*u.degree).to_string(precision=1)
-            delta_jd = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
+            delta_jd_first = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
             knscore = np.array(knscore.astype(float)[f_kn])
+
+            # Redefine jd & fid relative to candidates
             fid = np.array(fid.astype(int)[f_kn])
             jd = np.array(jd)[f_kn]
-        
+
         dict_filt={1:'g',2:'r'}
         for i, alertID in enumerate(objectId[f_kn]):
-            # Get rates
-            maskNotNone = np.array(np.array(cmagpsf[f_kn])[i]) != None
+            # Careful - Spark casts None as NaN!
+            maskNotNone = ~np.isnan(np.array(cmagpsf[f_kn].values[i]))
+
+            # Initialise containers
             rate = {1:float('nan'),2:float('nan')}
+            mag = {1:float('nan'),2:float('nan')}
+            err_mag = {1:float('nan'),2:float('nan')}
+
+            # Time since last detection (independently of the band)
+            jd_hist_allbands = np.array(np.array(cjd[f_kn])[i])[maskNotNone]
+            delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
+
+            # This could be further simplified as we only care
+            # about the filter of the last measurement.
+            # But the loop is fast enough to keep it for the moment
+            # (and it could be  useful later to have a general way to extract rates etc.)
             for filt in [1, 2]:
-                maskFilter = np.array(np.array(cfid[f_kn])[i]) == filt
+                maskFilter = np.array(cfid[f_kn].values[i]) == filt
                 m = maskNotNone * maskFilter
-                # DC mag history
-                mag_hist, _ = np.array([
-                    dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
-                    for i in zip(
-                        np.array(np.array(cfid[f_kn])[i])[m],
-                        np.array(np.array(cmagpsf[f_kn])[i])[m],
-                        np.array(np.array(csigmapsf[f_kn])[i])[m],
-                        np.array(np.array(cmagnr[f_kn])[i])[m],
-                        np.array(np.array(csigmagnr[f_kn])[i])[m],
-                        np.array(np.array(cmagzpsci[f_kn])[i])[m],
-                        np.array(np.array(cisdiffpos[f_kn])[i])[m])
-                    ]).T
-                jd_hist = np.array(np.array(cjd[f_kn])[i])[m]
-                if filt == fid[i]: 
-                    if sum(m)>0:
-                        rate[filt] = (mag[i]-mag_hist[-1])/(jd[i]-jd_hist[-1])
-                elif sum(m)>1:
-                        rate[filt] = (mag_hist[-1]-mag_hist[-2])/(jd_hist[-1]-jd_hist[-2])
-            
+
+                # DC mag (history + last measurement)
+                mag_hist, err_hist = np.array([
+                    dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+                    for k in zip(
+                        cfid[f_kn].values[i][m],
+                        cmagpsf[f_kn].values[i][m],
+                        csigmapsf[f_kn].values[i][m],
+                        cmagnr[f_kn].values[i][m],
+                        csigmagnr[f_kn].values[i][m],
+                        cmagzpsci[f_kn].values[i][m],
+                        cisdiffpos[f_kn].values[i][m]
+                    )
+                ]).T
+
+                # Grab the last measurement and its error estimate
+                mag[filt] = mag_hist[-1]
+                err_mag[filt] = err_hist[-1]
+
+                # Compute rate only if more than 1 measurement available
+                if len(mag_hist) > 1:
+                    jd_hist = cjd[f_kn].values[i][m]
+
+                    # rate is between `last` and `last-1` measurements only
+                    rate[filt] = (mag_hist[-1]-mag_hist[-2])/(jd_hist[-1]-jd_hist[-2])
+
             # message
             position_text="*Position:*\
                 \n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n"\
                 .format(ra[i], dec[i], b[i])
-            
+
             blocks = [
                 {
                     "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*New kilonova candidate:* <http://134.158.75.151:24000/{alertID}|{alertID}>"
-                    }
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "*New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>"\
+                            .format(alertID, alertID)
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": "*Kilonova score:* {:.2f}".format(knscore[i])
+                        }
+                    ]
                  },
                 {
                     "type": "section",
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": "*Kilonova score:* {:.2f}".format(knscore[i])
+                            "text": "*Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days"\
+                            .format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "*Apparent magnitude (band {}):* {:.2f}\n"\
-                            .format(dict_filt[fid[i]], mag[i])
+                            "text": "*Measurement (band {}):*\n - Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n"\
+                            .format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
                         },
                         {
                             "type": "mrkdwn",
                             "text": position_text
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Rate:*\n- Rate g: {:.2f} mag/day\n- Rate r: {:.2f} mag/day"\
-                            .format(rate[1],rate[2])
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Time since first detection:* {:.1f} days"\
-                            .format(delta_jd[i])
                         },
                     ]
                 },
