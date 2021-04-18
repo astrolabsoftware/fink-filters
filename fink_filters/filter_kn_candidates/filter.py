@@ -25,6 +25,7 @@ import logging
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle
 from astropy import units as u
+from astropy.time import Time
 
 from fink_science.conversion import dc_mag
 
@@ -96,7 +97,7 @@ def kn_candidates(
     ]
 
     keep_cds = \
-        ["Unknown", "Transient","Fail"] + list_simbad_galaxies
+        ["Unknown", "Transient", "Fail"] + list_simbad_galaxies
 
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
@@ -106,28 +107,35 @@ def kn_candidates(
             # Galactic latitude transformation
             b = SkyCoord(
                 np.array(ra[f_kn], dtype=float),
-                np.array(dec[f_kn],dtype=float),
-                unit='deg').galactic.b.to_string(unit=u.degree,precision=1)
+                np.array(dec[f_kn], dtype=float),
+                unit='deg'
+            ).galactic.b.to_string(unit=u.degree, precision=1)
 
             # Simplify notations
-            ra = Angle(np.array(ra.astype(float)[f_kn])*u.degree).to_string(precision=1)
-            dec = Angle(np.array(dec.astype(float)[f_kn])*u.degree).to_string(precision=1)
-            delta_jd_first = np.array(jd.astype(float)[f_kn]-jdstarthist.astype(float)[f_kn])
+            ra = Angle(
+                np.array(ra.astype(float)[f_kn]) * u.degree
+            ).to_string(precision=1)
+            dec = Angle(
+                np.array(dec.astype(float)[f_kn]) * u.degree
+            ).to_string(precision=1)
+            delta_jd_first = np.array(
+                jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
+            )
             knscore = np.array(knscore.astype(float)[f_kn])
 
             # Redefine jd & fid relative to candidates
             fid = np.array(fid.astype(int)[f_kn])
             jd = np.array(jd)[f_kn]
 
-        dict_filt={1:'g',2:'r'}
+        dict_filt = {1: 'g', 2: 'r'}
         for i, alertID in enumerate(objectId[f_kn]):
             # Careful - Spark casts None as NaN!
             maskNotNone = ~np.isnan(np.array(cmagpsf[f_kn].values[i]))
 
             # Initialise containers
-            rate = {1:float('nan'),2:float('nan')}
-            mag = {1:float('nan'),2:float('nan')}
-            err_mag = {1:float('nan'),2:float('nan')}
+            rate = {1: float('nan'), 2: float('nan')}
+            mag = {1: float('nan'), 2: float('nan')}
+            err_mag = {1: float('nan'), 2: float('nan')}
 
             # Time since last detection (independently of the band)
             jd_hist_allbands = np.array(np.array(cjd[f_kn])[i])[maskNotNone]
@@ -136,7 +144,8 @@ def kn_candidates(
             # This could be further simplified as we only care
             # about the filter of the last measurement.
             # But the loop is fast enough to keep it for the moment
-            # (and it could be  useful later to have a general way to extract rates etc.)
+            # (and it could be  useful later to have a
+            # general way to extract rates etc.)
             for filt in [1, 2]:
                 maskFilter = np.array(cfid[f_kn].values[i]) == filt
                 m = maskNotNone * maskFilter
@@ -164,7 +173,9 @@ def kn_candidates(
                     jd_hist = cjd[f_kn].values[i][m]
 
                     # rate is between `last` and `last-1` measurements only
-                    rate[filt] = (mag_hist[-1]-mag_hist[-2])/(jd_hist[-1]-jd_hist[-2])
+                    dmag = mag_hist[-1] - mag_hist[-2]
+                    dt = jd_hist[-1] - jd_hist[-2]
+                    rate[filt] = dmag / dt
 
             # message
             position_text="*Position:*\
@@ -192,12 +203,21 @@ def kn_candidates(
                         {
                             "type": "mrkdwn",
                             "text": "*Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days"\
-                            .format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
+                            .format(
+                                Time(jd[i], format='jd').iso,
+                                delta_jd_last,
+                                delta_jd_first[i]
+                            )
                         },
                         {
                             "type": "mrkdwn",
                             "text": "*Measurement (band {}):*\n - Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n"\
-                            .format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
+                            .format(
+                                dict_filt[fid[i]],
+                                mag[fid[i]],
+                                err_mag[fid[i]],
+                                rate[fid[i]]
+                            )
                         },
                         {
                             "type": "mrkdwn",
@@ -208,11 +228,19 @@ def kn_candidates(
             ]
             requests.post(
                 os.environ['KNWEBHOOK'],
-                json={'blocks':blocks, 'username':'Classifier-based kilonova bot'},
+                json={
+                    'blocks': blocks,
+                    'username': 'Classifier-based kilonova bot'
+                },
                 headers={'Content-Type': 'application/json'},
             )
     else:
         log = logging.Logger('Kilonova filter')
-        log.warning('KNWEBHOOK is not defined as env variable -- if an alert has passed the filter, the message has not been sent to Slack')
+        msg = """
+        KNWEBHOOK is not defined as env variable
+        if an alert has passed the filter,
+        the message has not been sent to Slack
+        """
+        log.warning(msg)
 
     return f_kn
