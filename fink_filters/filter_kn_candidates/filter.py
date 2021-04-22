@@ -29,11 +29,13 @@ from astropy.time import Time
 
 from fink_science.conversion import dc_mag
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(
-        objectId, knscore, drb, classtar, jdstarthist, ndethist,
-        cdsxmatch, ra, dec, cjd, cfid, cmagpsf, csigmapsf, cmagnr,
-        csigmagnr, cmagzpsci, cisdiffpos) -> pd.Series:
+        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjd, cfid,
+        cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci, cisdiffpos
+        ) -> pd.Series:
     """ Return alerts considered as KN candidates.
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
@@ -42,16 +44,17 @@ def kn_candidates(
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    knscore: Spark DataFrame Column
-        Column containing the kilonovae scores given by the classifier
+    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Kilonova', 'Early SN Ia',
+        'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
     jdstarthist: Spark DataFrame Column
-        Column containing earliest Julian dates of epoch corresponding to ndethist [days]
+        Column containing earliest Julian dates of epoch [days]
     ndethist: Spark DataFrame Column
-        Column containing the number of prior detections (with a theshold of 3 sigma)
+        Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
     ra: Spark DataFrame Column
@@ -59,8 +62,8 @@ def kn_candidates(
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
     cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, magzpsci,
-        isdiffpos as arrays
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, 
+        magzpsci, isdiffpos as arrays
     Returns
     ----------
     out: pandas.Series of bool
@@ -122,6 +125,9 @@ def kn_candidates(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
             knscore = np.array(knscore.astype(float)[f_kn])
+            rfscore = np.array(rfscore.astype(float)[f_kn])
+            snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
+            snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
 
             # Redefine jd & fid relative to candidates
             fid = np.array(fid.astype(int)[f_kn])
@@ -177,23 +183,35 @@ def kn_candidates(
                     dt = jd_hist[-1] - jd_hist[-2]
                     rate[filt] = dmag / dt
 
-            # message
-            position_text="*Position:*\
-                \n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n"\
-                .format(ra[i], dec[i], b[i])
-
+            # information to send
+            alert_text = """
+                *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+                """.format(alertID, alertID)
+            knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
+            score_text = """
+                *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
+                """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
+            time_text = """
+                *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
+                """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
+            measurements_text = """
+                *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
+                """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
+            position_text="""
+                *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n
+                """.format(ra[i], dec[i], b[i])
+            # message formatting
             blocks = [
                 {
                     "type": "section",
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": "*New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>"\
-                            .format(alertID, alertID)
+                            "text": alert_text
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "*Kilonova score:* {:.2f}".format(knscore[i])
+                            "text": knscore_text
                         }
                     ]
                  },
@@ -202,26 +220,19 @@ def kn_candidates(
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": "*Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days"\
-                            .format(
-                                Time(jd[i], format='jd').iso,
-                                delta_jd_last,
-                                delta_jd_first[i]
-                            )
+                            "text": time_text
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "*Measurement (band {}):*\n - Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n"\
-                            .format(
-                                dict_filt[fid[i]],
-                                mag[fid[i]],
-                                err_mag[fid[i]],
-                                rate[fid[i]]
-                            )
+                            "text": score_text
                         },
                         {
                             "type": "mrkdwn",
                             "text": position_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": measurements_text
                         },
                     ]
                 },
