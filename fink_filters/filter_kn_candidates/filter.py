@@ -200,9 +200,11 @@ def kn_candidates(
             measurements_text = """
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
                 """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
-            position_text = """
-                *Position [deg]:*\n-Equatorial coordinates [hours, deg]:\n{}\t{}\n- Right ascension:\t {:.7f}\n- Declination:\t\t\t{:.7f}\n- Galactic latitude:\t{:.7f}\n
-                """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i], b[i])
+            radec_text = """
+                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:.7f}
+                 """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+            galactic_position_text = """
+                *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
 
             tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
             # message formatting
@@ -233,11 +235,15 @@ def kn_candidates(
                         },
                         {
                             "type": "mrkdwn",
-                            "text": position_text
+                            "text": radec_text
                         },
                         {
                             "type": "mrkdwn",
                             "text": measurements_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": galactic_position_text
                         },
                         {
                             "type": "mrkdwn",
