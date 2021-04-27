@@ -1,5 +1,5 @@
-# Copyright 2019-2020 AstroLab Software
-# Author: Juliette Vlieghe
+# Copyright 2019-2021 AstroLab Software
+# Authors: Julien Peloton, Juliette Vlieghe
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import numpy as np
 import pandas as pd
 import requests
-import logging
 import os
+import logging
 
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle
@@ -32,64 +31,54 @@ from fink_science.conversion import dc_mag
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def early_kn_candidates(
-        objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec,
-        mangrove_path=None) -> pd.Series:
+def kn_candidates(
+        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjd, cfid,
+        cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci, cisdiffpos
+        ) -> pd.Series:
     """ Return alerts considered as KN candidates.
-    If the environment variable KNWEBHOOK_MANGROVE is defined and match a
-    webhook url, the alerts that pass the filter will be sent to the matching
-    Slack channel.
+    If the environment variable KNWEBHOOK is defined and match a webhook url,
+    the alerts that pass the filter will be sent to the matching Slack channel.
 
     Parameters
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
+    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Kilonova', 'Early SN Ia',
+        'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
-    jd: Spark DataFrame Column
-        Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Spark DataFrame Column
-        Column containing earliest Julian dates corresponding to ndethist
+        Column containing earliest Julian dates of epoch [days]
     ndethist: Spark DataFrame Column
         Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
-    fid: Spark DataFrame Column
-        Column containing filter, 1 for green and 2 for red
-    magpsf,sigmapsf: Spark DataFrame Columns
-        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
-    magnr,sigmagnr: Spark DataFrame Columns
-        Columns containing magnitude of nearest source in reference image
-        PSF-catalog within 30 arcsec and 1-sigma error
-    magzpsci: Spark DataFrame Column
-        Column containing magnitude zero point for photometry estimates
-    isdiffpos: Spark DataFrame Column
-        Column containing:
-        t or 1 => candidate is from positive (sci minus ref) subtraction;
-        f or 0 => candidate is from negative (ref minus sci) subtraction
     ra: Spark DataFrame Column
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
-    magpsf: Spark DataFrame Column
-        Column containing the magnitude from PSF-fit photometry [mag]
-    mangrove_path: Spark DataFrame Column, optional
-        Path to the Mangrove file. Default is None, in which case
-        `data/mangrove_filtered.csv` is loaded.
-
+    cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
+        magzpsci, isdiffpos as arrays
     Returns
     ----------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
     """
+    # Extract last (new) measurement from the concatenated column
+    jd = cjd.apply(lambda x: x[-1])
+    fid = cfid.apply(lambda x: x[-1])
 
+    high_knscore = knscore.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
-    new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
+    new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
+    small_detection_history = ndethist.astype(float) < 20
 
     list_simbad_galaxies = [
         "galaxy",
@@ -113,113 +102,111 @@ def early_kn_candidates(
     keep_cds = \
         ["Unknown", "Transient", "Fail"] + list_simbad_galaxies
 
-    f_kn = high_drb & high_classtar & new_detection
-    f_kn = f_kn & cdsxmatch.isin(keep_cds)
+    f_kn = high_knscore & high_drb & high_classtar & new_detection
+    f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
 
-    # Compute DC magnitude
-    mag, err_mag = np.array([
-        dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
-        for i in zip(
-            np.array(fid),
-            np.array(magpsf),
-            np.array(sigmapsf),
-            np.array(magnr),
-            np.array(sigmagnr),
-            np.array(magzpsci),
-            np.array(isdiffpos))
-        ]).T
-
-    if f_kn.any():
-        # load mangrove catalog
-        if mangrove_path is not None:
-            pdf_mangrove = pd.read_csv(mangrove_path.values[0])
-        else:
-            curdir = os.path.dirname(os.path.abspath(__file__))
-            mangrove_path = curdir + '/data/mangrove_filtered.csv'
-            pdf_mangrove = pd.read_csv(mangrove_path)
-        catalog_mangrove = SkyCoord(
-            ra=np.array(pdf_mangrove.ra, dtype=np.float) * u.degree,
-            dec=np.array(pdf_mangrove.dec, dtype=np.float) * u.degree
-        )
-
-        pdf = pd.DataFrame.from_dict({'fid': fid[f_kn], 'ra': ra[f_kn],
-                                      'dec': dec[f_kn], 'mag': mag[f_kn],
-                                      'err_mag': err_mag[f_kn]})
-
-        # identify galaxy somehow close to each alert. Distances are in Mpc
-        idx_mangrove, idxself, _, _ = SkyCoord(
-            ra=np.array(pdf.ra, dtype=np.float) * u.degree,
-            dec=np.array(pdf.dec, dtype=np.float) * u.degree
-            ).search_around_sky(catalog_mangrove, 2*u.degree)
-
-        # cross match
-        galaxy_matching = []
-        for i, row in enumerate(pdf.itertuples()):
-            # SkyCoord didn't keep the original indexes
-            idx_reduced = idx_mangrove[idxself == i]
-            abs_mag = row.mag-1-5*np.log10(
-                pdf_mangrove.loc[idx_reduced, :].lum_dist)
-
-            # cross-match on position. We take a radius of 50 kpc
-            galaxy_matching.append((
-                (SkyCoord(
-                    ra=row.ra*u.degree,
-                    dec=row.dec*u.degree
-                ).separation(catalog_mangrove[idx_reduced]).radian
-                    < 0.05/pdf_mangrove.loc[idx_reduced, :].ang_dist)
-
-                & (abs_mag > 15) & (abs_mag < 17)
-            ).any())
-
-        f_kn[f_kn] = galaxy_matching
-
-    if 'KNWEBHOOK_MANGROVE' in os.environ:
+    if 'KNWEBHOOK' in os.environ:
         if f_kn.any():
             # Galactic latitude transformation
             b = SkyCoord(
                 np.array(ra[f_kn], dtype=float),
                 np.array(dec[f_kn], dtype=float),
                 unit='deg'
-            ).galactic.b.to_string(unit=u.degree, precision=1)
+            ).galactic.b.deg
 
             # Simplify notations
             ra = Angle(
                 np.array(ra.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
+            ).deg
             dec = Angle(
                 np.array(dec.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
+            ).deg
+            ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
+                                                        unit=u.hour)
+            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ')
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
+            knscore = np.array(knscore.astype(float)[f_kn])
+            rfscore = np.array(rfscore.astype(float)[f_kn])
+            snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
+            snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
+
             # Redefine jd & fid relative to candidates
-            fid = np.array(fid)[f_kn]
+            fid = np.array(fid.astype(int)[f_kn])
             jd = np.array(jd)[f_kn]
-            mag = mag[f_kn]
-            err_mag = err_mag[f_kn]
 
         dict_filt = {1: 'g', 2: 'r'}
         for i, alertID in enumerate(objectId[f_kn]):
+            # Careful - Spark casts None as NaN!
+            maskNotNone = ~np.isnan(np.array(cmagpsf[f_kn].values[i]))
+
+            # Initialise containers
+            rate = {1: float('nan'), 2: float('nan')}
+            mag = {1: float('nan'), 2: float('nan')}
+            err_mag = {1: float('nan'), 2: float('nan')}
+
+            # Time since last detection (independently of the band)
+            jd_hist_allbands = np.array(np.array(cjd[f_kn])[i])[maskNotNone]
+            delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
+
+            # This could be further simplified as we only care
+            # about the filter of the last measurement.
+            # But the loop is fast enough to keep it for the moment
+            # (and it could be  useful later to have a
+            # general way to extract rates etc.)
+            for filt in [1, 2]:
+                maskFilter = np.array(cfid[f_kn].values[i]) == filt
+                m = maskNotNone * maskFilter
+
+                # DC mag (history + last measurement)
+                mag_hist, err_hist = np.array([
+                    dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+                    for k in zip(
+                        cfid[f_kn].values[i][m],
+                        cmagpsf[f_kn].values[i][m],
+                        csigmapsf[f_kn].values[i][m],
+                        cmagnr[f_kn].values[i][m],
+                        csigmagnr[f_kn].values[i][m],
+                        cmagzpsci[f_kn].values[i][m],
+                        cisdiffpos[f_kn].values[i][m]
+                    )
+                ]).T
+
+                # Grab the last measurement and its error estimate
+                mag[filt] = mag_hist[-1]
+                err_mag[filt] = err_hist[-1]
+
+                # Compute rate only if more than 1 measurement available
+                if len(mag_hist) > 1:
+                    jd_hist = cjd[f_kn].values[i][m]
+
+                    # rate is between `last` and `last-1` measurements only
+                    dmag = mag_hist[-1] - mag_hist[-2]
+                    dt = jd_hist[-1] - jd_hist[-2]
+                    rate[filt] = dmag / dt
+
             # information to send
             alert_text = """
                 *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
                 """.format(alertID, alertID)
+            knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
+            score_text = """
+                *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
+                """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
             time_text = """
-                *Time:*\n- {} UTC\n - Time since first detection: {:.1f} days
-                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
+                *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
+                """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
             measurements_text = """
-                *Measurement (band {}):*
-                \n- Apparent magnitude: {:.2f} ± {:.2f}
-                \n- Absolute magnitude: {}
-                """.format(dict_filt[fid[i]], mag[i], err_mag[i], ' ',)
-            host_text = """
-                *Presumed host galaxy (closest candidate):*\n- Name: {}
-                \n- Luminosity distance: {}\n- Galactic latitude:\t{}\n
-                """.format('', ' ', ' ')
-            position_text = """
-            *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}
-            \n- Galactic latitude:\t{}
-            """.format(ra[i], dec[i], b[i])
+                *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
+                """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
+            radec_text = """
+                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:.7f}
+                 """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+            galactic_position_text = """
+                *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+
+            tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
             # message formatting
             blocks = [
                 {
@@ -229,6 +216,10 @@ def early_kn_candidates(
                             "type": "mrkdwn",
                             "text": alert_text
                         },
+                        {
+                            "type": "mrkdwn",
+                            "text": knscore_text
+                        }
                     ]
                  },
                 {
@@ -240,31 +231,39 @@ def early_kn_candidates(
                         },
                         {
                             "type": "mrkdwn",
+                            "text": score_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": radec_text
+                        },
+                        {
+                            "type": "mrkdwn",
                             "text": measurements_text
                         },
                         {
                             "type": "mrkdwn",
-                            "text": position_text
+                            "text": galactic_position_text
                         },
                         {
                             "type": "mrkdwn",
-                            "text": host_text
+                            "text": tns_text
                         },
                     ]
                 },
             ]
             requests.post(
-                os.environ['KNWEBHOOK_MANGROVE'],
+                os.environ['KNWEBHOOK'],
                 json={
                     'blocks': blocks,
-                    'username': 'Cross-match-based kilonova bot'
+                    'username': 'Classifier-based kilonova bot'
                 },
                 headers={'Content-Type': 'application/json'},
             )
     else:
         log = logging.Logger('Kilonova filter')
         msg = """
-        KNWEBHOOK_MANGROVE is not defined as env variable
+        KNWEBHOOK is not defined as env variable
         if an alert has passed the filter,
         the message has not been sent to Slack
         """

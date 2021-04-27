@@ -175,12 +175,12 @@ def early_kn_candidates(
                     ra=row.ra*u.degree,
                     dec=row.dec*u.degree
                 ).separation(catalog_mangrove[idx_reduced]).radian
-                    < 0.05/pdf_mangrove.loc[idx_reduced, :].ang_dist)
+                    < 0.01/pdf_mangrove.loc[idx_reduced, :].ang_dist)
 
                 & (abs_mag > 15) & (abs_mag < 17)
             ).any())
 
-        f_kn[f_kn] = galaxy_matching
+        f_kn.loc[f_kn] = np.array(galaxy_matching, dtype=bool)
 
     # if 'KNWEBHOOK_AMA' in os.environ:
     #     if f_kn.any():
