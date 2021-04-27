@@ -121,8 +121,9 @@ def kn_candidates(
             dec = Angle(
                 np.array(dec.astype(float)[f_kn]) * u.degree
             ).deg
-            ra_formatted = Angle(ra*u.hour).to_string(precision=2)
-            dec_formatted = Angle(dec*u.degree).to_string(precision=1)
+            ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
+                                                        unit=u.hour)
+            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ')
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
@@ -200,8 +201,8 @@ def kn_candidates(
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
                 """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
             position_text = """
-                *Position [deg]:*\n-Equatorial coordinates:\n{} {}\n- Right ascension:\t {:.7f}\n- Declination:\t\t\t{:.7f}\n- Galactic latitude:\t{:.7f}\n
-                """.format(ra_formatted[i], dec_formatted[i], dec[i], ra[i], dec[i], b[i])
+                *Position [deg]:*\n-Equatorial coordinates [hours, deg]:\n{}\t{}\n- Right ascension:\t {:.7f}\n- Declination:\t\t\t{:.7f}\n- Galactic latitude:\t{:.7f}\n
+                """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i], b[i])
 
             tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
             # message formatting
