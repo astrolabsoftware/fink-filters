@@ -62,7 +62,7 @@ def kn_candidates(
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
     cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, 
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
     Returns
     ----------
@@ -112,15 +112,15 @@ def kn_candidates(
                 np.array(ra[f_kn], dtype=float),
                 np.array(dec[f_kn], dtype=float),
                 unit='deg'
-            ).galactic.b.to_string(unit=u.degree, precision=1)
+            ).galactic.b.deg
 
             # Simplify notations
             ra = Angle(
                 np.array(ra.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
+            ).deg
             dec = Angle(
                 np.array(dec.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
+            ).deg
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
@@ -197,9 +197,11 @@ def kn_candidates(
             measurements_text = """
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
                 """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
-            position_text="""
-                *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n
+            position_text = """
+                *Position [deg]:*\n- Right ascension:\t {:.7f}\n- Declination:\t\t\t{:.7f}\n- Galactic latitude:\t{:.7f}\n
                 """.format(ra[i], dec[i], b[i])
+
+            tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
             # message formatting
             blocks = [
                 {
@@ -233,6 +235,10 @@ def kn_candidates(
                         {
                             "type": "mrkdwn",
                             "text": measurements_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": tns_text
                         },
                     ]
                 },
