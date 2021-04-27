@@ -37,7 +37,7 @@ def early_kn_candidates(
         magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid,
         mangrove_path=None) -> pd.Series:
     """ Return alerts considered as KN candidates.
-    If the environment variable KNWEBHOOK_MANGROVE is defined and match a
+    If the environment variable KNWEBHOOK_AMA is defined and match a
     webhook url, the alerts that pass the filter will be sent to the matching
     Slack channel.
 
@@ -92,7 +92,7 @@ def early_kn_candidates(
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
-    not_sso_candidate = (roid.astype(int) != 2) & (roid.astype(int) != 3)
+    not_ztf_sso_candidate = roid.astype(int) != 3
 
     # galactic plane
     gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
@@ -135,7 +135,7 @@ def early_kn_candidates(
     low_app_magnitude = mag.astype(float) < 20
 
     f_kn = high_drb & high_classtar & new_detection
-    f_kn = f_kn & cdsxmatch.isin(keep_cds) & not_sso_candidate
+    f_kn = f_kn & cdsxmatch.isin(keep_cds) & not_ztf_sso_candidate
     f_kn = f_kn & low_app_magnitude & outside_galactic_plane
 
     if f_kn.any():
@@ -182,92 +182,92 @@ def early_kn_candidates(
 
         f_kn[f_kn] = galaxy_matching
 
-    if 'KNWEBHOOK_AMA' in os.environ:
-        if f_kn.any():
-            # Simplify notations
-            b = gal.b.degree[f_kn]
-            ra = Angle(
-                np.array(ra.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
-            dec = Angle(
-                np.array(dec.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
-            delta_jd_first = np.array(
-                jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
-            )
-            # Redefine jd & fid relative to candidates
-            fid = np.array(fid)[f_kn]
-            jd = np.array(jd)[f_kn]
-            mag = mag[f_kn]
-            err_mag = err_mag[f_kn]
+    # if 'KNWEBHOOK_AMA' in os.environ:
+    #     if f_kn.any():
+    #         # Simplify notations
+    #         b = gal.b.degree[f_kn]
+    #         ra = Angle(
+    #             np.array(ra.astype(float)[f_kn]) * u.degree
+    #         ).to_string(precision=1)
+    #         dec = Angle(
+    #             np.array(dec.astype(float)[f_kn]) * u.degree
+    #         ).to_string(precision=1)
+    #         delta_jd_first = np.array(
+    #             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
+    #         )
+    #         # Redefine jd & fid relative to candidates
+    #         fid = np.array(fid)[f_kn]
+    #         jd = np.array(jd)[f_kn]
+    #         mag = mag[f_kn]
+    #         err_mag = err_mag[f_kn]
 
-        dict_filt = {1: 'g', 2: 'r'}
-        for i, alertID in enumerate(objectId[f_kn]):
-            # information to send
-            alert_text = """
-                *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
-                """.format(alertID, alertID)
-            time_text = """
-                *Time:*\n- {} UTC\n - Time since first detection: {:.1f} days
-                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
-            measurements_text = """
-                *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}\n- Absolute magnitude: {}
-                """.format(dict_filt[fid[i]], mag[i], err_mag[i], ' ',)
-            host_text = """
-                *Presumed host galaxy (closest candidate):*\n- Name: {}\n- Luminosity distance: {}\n- Galactic latitude:\t{}\n
-                """.format('', ' ', ' ')
-            position_text = """
-            *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}
-            """.format(ra[i], dec[i], b[i])
-            # message formatting
-            blocks = [
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": alert_text
-                        },
-                    ]
-                 },
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": time_text
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": measurements_text
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": position_text
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": host_text
-                        },
-                    ]
-                },
-            ]
+    #     dict_filt = {1: 'g', 2: 'r'}
+    #     for i, alertID in enumerate(objectId[f_kn]):
+    #         # information to send
+    #         alert_text = """
+    #             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+    #             """.format(alertID, alertID)
+    #         time_text = """
+    #             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} days
+    #             """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
+    #         measurements_text = """
+    #             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}\n- Absolute magnitude: {}
+    #             """.format(dict_filt[fid[i]], mag[i], err_mag[i], ' ',)
+    #         host_text = """
+    #             *Presumed host galaxy (closest candidate):*\n- Name: {}\n- Luminosity distance: {}\n- Galactic latitude:\t{}\n
+    #             """.format('', ' ', ' ')
+    #         position_text = """
+    #         *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}
+    #         """.format(ra[i], dec[i], b[i])
+    #         # message formatting
+    #         blocks = [
+    #             {
+    #                 "type": "section",
+    #                 "fields": [
+    #                     {
+    #                         "type": "mrkdwn",
+    #                         "text": alert_text
+    #                     },
+    #                 ]
+    #              },
+    #             {
+    #                 "type": "section",
+    #                 "fields": [
+    #                     {
+    #                         "type": "mrkdwn",
+    #                         "text": time_text
+    #                     },
+    #                     {
+    #                         "type": "mrkdwn",
+    #                         "text": measurements_text
+    #                     },
+    #                     {
+    #                         "type": "mrkdwn",
+    #                         "text": position_text
+    #                     },
+    #                     {
+    #                         "type": "mrkdwn",
+    #                         "text": host_text
+    #                     },
+    #                 ]
+    #             },
+    #         ]
 
-            requests.post(
-                os.environ['KNWEBHOOK_AMA'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Cross-match-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
-            )
-    else:
-        log = logging.Logger('Kilonova filter')
-        msg = """
-        KNWEBHOOK_AMA is not defined as env variable
-        if an alert has passed the filter,
-        the message has not been sent to Slack
-        """
-        log.warning(msg)
+    #         requests.post(
+    #             os.environ['KNWEBHOOK_AMA'],
+    #             json={
+    #                 'blocks': blocks,
+    #                 'username': 'Cross-match-based kilonova bot'
+    #             },
+    #             headers={'Content-Type': 'application/json'},
+    #         )
+    # else:
+    #     log = logging.Logger('Kilonova filter')
+    #     msg = """
+    #     KNWEBHOOK_AMA is not defined as env variable
+    #     if an alert has passed the filter,
+    #     the message has not been sent to Slack
+    #     """
+    #     log.warning(msg)
 
     return f_kn
