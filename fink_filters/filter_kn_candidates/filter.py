@@ -1,5 +1,5 @@
 # Copyright 2019-2021 AstroLab Software
-# Author: Juliette Vlieghe
+# Authors: Julien Peloton, Juliette Vlieghe
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ def kn_candidates(
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
     cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, 
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
     Returns
     ----------
@@ -112,15 +112,18 @@ def kn_candidates(
                 np.array(ra[f_kn], dtype=float),
                 np.array(dec[f_kn], dtype=float),
                 unit='deg'
-            ).galactic.b.to_string(unit=u.degree, precision=1)
+            ).galactic.b.deg
 
             # Simplify notations
             ra = Angle(
                 np.array(ra.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
+            ).deg
             dec = Angle(
                 np.array(dec.astype(float)[f_kn]) * u.degree
-            ).to_string(precision=1)
+            ).deg
+            ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
+                                                        unit=u.hour)
+            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ')
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
@@ -197,9 +200,13 @@ def kn_candidates(
             measurements_text = """
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
                 """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
-            position_text="""
-                *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}\n
-                """.format(ra[i], dec[i], b[i])
+            radec_text = """
+                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:.7f}
+                 """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+            galactic_position_text = """
+                *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+
+            tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
             # message formatting
             blocks = [
                 {
@@ -228,11 +235,19 @@ def kn_candidates(
                         },
                         {
                             "type": "mrkdwn",
-                            "text": position_text
+                            "text": radec_text
                         },
                         {
                             "type": "mrkdwn",
                             "text": measurements_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": galactic_position_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": tns_text
                         },
                     ]
                 },
