@@ -95,7 +95,7 @@ def early_kn_candidates(
     not_ztf_sso_candidate = roid.astype(int) != 3
 
     # galactic plane
-    # gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
+    gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
 
     list_simbad_galaxies = [
         "galaxy",
@@ -160,111 +160,156 @@ def early_kn_candidates(
 
         # cross match
         galaxy_matching = []
+        host_galaxies = []
+        abs_mag_candidate = []
         for i, row in enumerate(pdf.itertuples()):
             # SkyCoord didn't keep the original indexes
             idx_reduced = idx_mangrove[idxself == i]
-            abs_mag = row.mag-1-5*np.log10(
-                pdf_mangrove.loc[idx_reduced, :].lum_dist)
+            abs_mag = np.array(row.mag-1-5*np.log10(
+                pdf_mangrove.loc[idx_reduced, :].lum_dist))
 
-            # cross-match on position. We take a radius of 50 kpc
-            galaxy_matching.append((
-                (SkyCoord(
-                    ra=row.ra*u.degree,
-                    dec=row.dec*u.degree
-                ).separation(catalog_mangrove[idx_reduced]).radian
-                    < 0.01/pdf_mangrove.loc[idx_reduced, :].ang_dist)
-
-                & (abs_mag > 15) & (abs_mag < 17)
-            ).any())
+            candidates_number = np.argwhere(np.array(
+                        (SkyCoord(
+                            ra=row.ra*u.degree,
+                            dec=row.dec*u.degree
+                        ).separation(catalog_mangrove[idx_reduced]).radian
+                            < 0.01/pdf_mangrove.loc[idx_reduced, :].ang_dist)
+                        & (abs_mag > 15) & (abs_mag < 17)
+            ))
+            galaxy_matching.append(len(candidates_number) > 0)
+            if len(candidates_number) > 0:
+                host_galaxies.append(idx_reduced[candidates_number[0][0]])
+                abs_mag_candidate.append(abs_mag[candidates_number[0][0]])
+                # I have not seen more than one, but [0][0] 
+                # instead of converting to int will avoid conflict if there are more.
+                # This is the index of catalog dataframe 
+                # and has nothing to do with galaxies idx.
 
         f_kn.loc[f_kn] = np.array(galaxy_matching, dtype=bool)
 
-    # if 'KNWEBHOOK_MANGROVE' in os.environ:
-    #     if f_kn.any():
-    #         # Simplify notations
-    #         b = gal.b.degree[f_kn]
-    #         ra = Angle(
-    #             np.array(ra.astype(float)[f_kn]) * u.degree
-    #         ).to_string(precision=1)
-    #         dec = Angle(
-    #             np.array(dec.astype(float)[f_kn]) * u.degree
-    #         ).to_string(precision=1)
-    #         delta_jd_first = np.array(
-    #             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
-    #         )
-    #         # Redefine jd & fid relative to candidates
-    #         fid = np.array(fid)[f_kn]
-    #         jd = np.array(jd)[f_kn]
-    #         mag = mag[f_kn]
-    #         err_mag = err_mag[f_kn]
+    if 'KNWEBHOOK' in os.environ:
+        if f_kn.any():
+            # Simplify notations
+            b = gal.b.degree[f_kn]
+            ra = Angle(
+                np.array(ra.astype(float)[f_kn]) * u.degree
+            ).deg
+            dec = Angle(
+                np.array(dec.astype(float)[f_kn]) * u.degree
+            ).deg
+            ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
+                                                        unit=u.hour)
+            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ',
+                                                         alwayssign=True)
+            delta_jd_first = np.array(
+                jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
+            )
+            catalog_mangrove = SkyCoord(
+                ra=ra*u.deg, dec=dec*u.deg
+            )
+            # Redefine notations relative to candidates
+            fid = np.array(fid)[f_kn]
+            jd = np.array(jd)[f_kn]
+            mag = mag[f_kn]
+            err_mag = err_mag[f_kn]
+            err_abs_mag_candidate = err_mag-1-5*np.log10(np.array(
+                pdf_mangrove.loc[host_galaxies,'lum_dist']))
 
-    #     dict_filt = {1: 'g', 2: 'r'}
-    #     for i, alertID in enumerate(objectId[f_kn]):
-    #         # information to send
-    #         alert_text = """
-    #             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
-    #             """.format(alertID, alertID)
-    #         time_text = """
-    #             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} days
-    #             """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
-    #         measurements_text = """
-    #             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}\n- Absolute magnitude: {}
-    #             """.format(dict_filt[fid[i]], mag[i], err_mag[i], ' ',)
-    #         host_text = """
-    #             *Presumed host galaxy (closest candidate):*\n- Name: {}\n- Luminosity distance: {}\n- Galactic latitude:\t{}\n
-    #             """.format('', ' ', ' ')
-    #         position_text = """
-    #         *Position:*\n- Right ascension:\t {}\n- Declination:\t\t\t{}\n- Galactic latitude:\t{}
-    #         """.format(ra[i], dec[i], b[i])
-    #         # message formatting
-    #         blocks = [
-    #             {
-    #                 "type": "section",
-    #                 "fields": [
-    #                     {
-    #                         "type": "mrkdwn",
-    #                         "text": alert_text
-    #                     },
-    #                 ]
-    #              },
-    #             {
-    #                 "type": "section",
-    #                 "fields": [
-    #                     {
-    #                         "type": "mrkdwn",
-    #                         "text": time_text
-    #                     },
-    #                     {
-    #                         "type": "mrkdwn",
-    #                         "text": measurements_text
-    #                     },
-    #                     {
-    #                         "type": "mrkdwn",
-    #                         "text": position_text
-    #                     },
-    #                     {
-    #                         "type": "mrkdwn",
-    #                         "text": host_text
-    #                     },
-    #                 ]
-    #             },
-    #         ]
+        dict_filt = {1: 'g', 2: 'r'}
+        for i, alertID in enumerate(objectId[f_kn]):
+            # information to send
+            alert_text = """
+                *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+                """.format(alertID, alertID)
+            time_text = """
+                *Time:*\n- {} UTC\n - Time since first detection: {:.1f} days
+                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
+            measurements_text = """
+                *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
+                """.format(dict_filt[fid[i]], mag[i], err_mag[i], ' ',)
+            host_text = """
+                *Presumed host galaxy:*\n- GWGC Name: {}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
+                """.format(
+                pdf_mangrove.loc[host_galaxies[i],'GWGC_name'],
+                pdf_mangrove.loc[host_galaxies[i],'lum_dist'],
+                pdf_mangrove.loc[host_galaxies[i],'dist_err'],
+                pdf_mangrove.loc[host_galaxies[i],'ra'],
+                pdf_mangrove.loc[host_galaxies[i],'dec'],
+                pdf_mangrove.loc[host_galaxies[i],'stellarmass'],
+            )
+            crossmatch_text = """
+                *Cross-match: *\n- Alert-host distance: {:.2f} Mpc\n- Absolute magnitude: {:.2f}
+                """.format(
+                    SkyCoord(
+                        ra=row.ra*u.degree,
+                        dec=row.dec*u.degree
+                    ).separation(catalog_mangrove[i]).radian
+                * pdf_mangrove.loc[host_galaxies[i],'ang_dist'],
+                    abs_mag_candidate[i],
+                    err_abs_mag_candidate[i],
+                )
+            radec_text = """
+                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
+                 """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+            galactic_position_text = """
+                *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+            # message formatting
+            blocks = [
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": alert_text
+                        },
+                    ]
+                 },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": time_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": host_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": radec_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": crossmatch_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": galactic_position_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": measurements_text
+                        }
+                    ]
+                },
+            ]
 
-    #         requests.post(
-    #             os.environ['KNWEBHOOK_MANGROVE'],
-    #             json={
-    #                 'blocks': blocks,
-    #                 'username': 'Cross-match-based kilonova bot'
-    #             },
-    #             headers={'Content-Type': 'application/json'},
-    #         )
-    # else:
-    #     log = logging.Logger('Kilonova filter')
-    #     msg = """
-    #     KNWEBHOOK_MANGROVE is not defined as env variable
-    #     if an alert has passed the filter,
-    #     the message has not been sent to Slack
-    #     """
-    #     log.warning(msg)
+            requests.post(
+                os.environ['KNWEBHOOK'],
+                json={
+                    'blocks': blocks,
+                    'username': 'Cross-match-based kilonova bot'
+                },
+                headers={'Content-Type': 'application/json'},
+            )
+    else:
+        log = logging.Logger('Kilonova filter')
+        msg = """
+        KNWEBHOOK is not defined as env variable
+        if an alert has passed the filter,
+        the message has not been sent to Slack
+        """
+        log.warning(msg)
 
     return f_kn

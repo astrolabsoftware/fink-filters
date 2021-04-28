@@ -169,7 +169,7 @@ def early_kn_candidates(
             abs_mag = row.mag-1-5*np.log10(
                 pdf_mangrove.loc[idx_reduced, :].lum_dist)
 
-            # cross-match on position. We take a radius of 50 kpc
+            # cross-match on position. We take a radius of 10 kpc
             galaxy_matching.append((
                 (SkyCoord(
                     ra=row.ra*u.degree,
