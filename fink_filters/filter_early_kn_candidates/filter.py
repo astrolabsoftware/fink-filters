@@ -162,6 +162,7 @@ def early_kn_candidates(
         galaxy_matching = []
         host_galaxies = []
         abs_mag_candidate = []
+        host_alert_separation = []
         for i, row in enumerate(pdf.itertuples()):
             # SkyCoord didn't keep the original indexes
             idx_reduced = idx_mangrove[idxself == i]
@@ -177,13 +178,23 @@ def early_kn_candidates(
                         & (abs_mag > 15) & (abs_mag < 17)
             ))
             galaxy_matching.append(len(candidates_number) > 0)
+
+            # save useful information on successful candidates
             if len(candidates_number) > 0:
                 host_galaxies.append(idx_reduced[candidates_number[0][0]])
                 abs_mag_candidate.append(abs_mag[candidates_number[0][0]])
-                # I have not seen more than one, but [0][0] 
-                # instead of converting to int will avoid conflict if there are more.
-                # This is the index of catalog dataframe 
-                # and has nothing to do with galaxies idx.
+                host_alert_separation.append(
+                    SkyCoord(
+                        ra=row.ra*u.degree,
+                        dec=row.dec*u.degree
+                    ).separation(
+                        catalog_mangrove[idx_reduced[candidates_number[0][0]]]
+                        ).radian
+                )
+                # I have not seen more than one, but [0][0] instead of
+                # converting to int will avoid conflict if there are more.
+                # This is the index of catalog dataframe and has nothing to do
+                # with galaxies idx.
 
         f_kn.loc[f_kn] = np.array(galaxy_matching, dtype=bool)
 
@@ -200,20 +211,15 @@ def early_kn_candidates(
             ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
                                                         unit=u.hour)
             dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ',
-                                                         alwayssign=True)
+                                                          alwayssign=True)
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
-            )
-            catalog_mangrove = SkyCoord(
-                ra=ra*u.deg, dec=dec*u.deg
             )
             # Redefine notations relative to candidates
             fid = np.array(fid)[f_kn]
             jd = np.array(jd)[f_kn]
             mag = mag[f_kn]
             err_mag = err_mag[f_kn]
-            err_abs_mag_candidate = err_mag-1-5*np.log10(np.array(
-                pdf_mangrove.loc[host_galaxies,'lum_dist']))
 
         dict_filt = {1: 'g', 2: 'r'}
         for i, alertID in enumerate(objectId[f_kn]):
@@ -226,27 +232,23 @@ def early_kn_candidates(
                 """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
             measurements_text = """
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
-                """.format(dict_filt[fid[i]], mag[i], err_mag[i], ' ',)
+                """.format(dict_filt[fid[i]], mag[i], err_mag[i])
             host_text = """
                 *Presumed host galaxy:*\n- GWGC Name: {}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
                 """.format(
-                pdf_mangrove.loc[host_galaxies[i],'GWGC_name'],
-                pdf_mangrove.loc[host_galaxies[i],'lum_dist'],
-                pdf_mangrove.loc[host_galaxies[i],'dist_err'],
-                pdf_mangrove.loc[host_galaxies[i],'ra'],
-                pdf_mangrove.loc[host_galaxies[i],'dec'],
-                pdf_mangrove.loc[host_galaxies[i],'stellarmass'],
+                pdf_mangrove.loc[host_galaxies[i], 'GWGC_name'],
+                pdf_mangrove.loc[host_galaxies[i], 'lum_dist'],
+                pdf_mangrove.loc[host_galaxies[i], 'dist_err'],
+                pdf_mangrove.loc[host_galaxies[i], 'ra'],
+                pdf_mangrove.loc[host_galaxies[i], 'dec'],
+                pdf_mangrove.loc[host_galaxies[i], 'stellarmass'],
             )
             crossmatch_text = """
-                *Cross-match: *\n- Alert-host distance: {:.2f} Mpc\n- Absolute magnitude: {:.2f}
+                *Cross-match: *\n- Alert-host distance: {:.2f} kpc\n- Absolute magnitude: {:.2f}
                 """.format(
-                    SkyCoord(
-                        ra=row.ra*u.degree,
-                        dec=row.dec*u.degree
-                    ).separation(catalog_mangrove[i]).radian
-                * pdf_mangrove.loc[host_galaxies[i],'ang_dist'],
+                    host_alert_separation[i]*pdf_mangrove.loc[
+                        host_galaxies[i], 'ang_dist']*1000,
                     abs_mag_candidate[i],
-                    err_abs_mag_candidate[i],
                 )
             radec_text = """
                  *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
