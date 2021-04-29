@@ -178,7 +178,7 @@ def early_kn_candidates(
                             dec=row.dec*u.degree
                         ).separation(catalog_mangrove[idx_reduced]).radian
                             < 0.01/pdf_mangrove.loc[idx_reduced, :].ang_dist)
-                        & (abs_mag > -15) & (abs_mag < -17)
+                        & (abs_mag > -17) & (abs_mag < -15)
             ))
             galaxy_matching.append(len(candidates_number) > 0)
 
