@@ -1,4 +1,4 @@
-# Copyright 2019-2020 AstroLab Software
+# Copyright 2021 AstroLab Software
 # Author: Juliette Vlieghe
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -166,7 +166,7 @@ def early_kn_candidates(
         for i, row in enumerate(pdf.itertuples()):
             # SkyCoord didn't keep the original indexes
             idx_reduced = idx_mangrove[idxself == i]
-            abs_mag = np.array(row.mag-1-5*np.log10(
+            abs_mag = np.array(row.mag-25-5*np.log10(
                 pdf_mangrove.loc[idx_reduced, :].lum_dist))
 
             candidates_number = np.argwhere(np.array(
@@ -175,7 +175,7 @@ def early_kn_candidates(
                             dec=row.dec*u.degree
                         ).separation(catalog_mangrove[idx_reduced]).radian
                             < 0.01/pdf_mangrove.loc[idx_reduced, :].ang_dist)
-                        & (abs_mag > 15) & (abs_mag < 17)
+                        & (abs_mag > -15) & (abs_mag < -17)
             ))
             galaxy_matching.append(len(candidates_number) > 0)
 

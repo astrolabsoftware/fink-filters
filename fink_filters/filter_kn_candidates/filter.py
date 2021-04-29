@@ -123,7 +123,8 @@ def kn_candidates(
             ).deg
             ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
                                                         unit=u.hour)
-            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ')
+            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ',
+                                                          alwayssign=True)
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
@@ -201,7 +202,7 @@ def kn_candidates(
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
                 """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
             radec_text = """
-                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:.7f}
+                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
                  """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
             galactic_position_text = """
                 *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
