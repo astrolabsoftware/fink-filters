@@ -36,7 +36,9 @@ def early_kn_candidates(
         objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid,
         mangrove_path=None) -> pd.Series:
-    """ Return alerts considered as KN candidates.
+    """
+    Return alerts considered as KN candidates.
+
     If the environment variable KNWEBHOOK_MANGROVE is defined and match a
     webhook url, the alerts that pass the filter will be sent to the matching
     Slack channel.
@@ -83,12 +85,11 @@ def early_kn_candidates(
         `data/mangrove_filtered.csv` is loaded.
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
     """
-
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
@@ -228,15 +229,16 @@ def early_kn_candidates(
                 *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
                 """.format(alertID, alertID)
             time_text = """
-                *Time:*\n- {} UTC\n - Time since first detection: {:.1f} days
-                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i])
+                *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
+                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i]*24)
             measurements_text = """
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
                 """.format(dict_filt[fid[i]], mag[i], err_mag[i])
             host_text = """
-                *Presumed host galaxy:*\n- GWGC Name: {}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
+                *Presumed host galaxy:*\n- Index in Mangrove catalog: {}\n- GWGC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
                 """.format(
-                pdf_mangrove.loc[host_galaxies[i], 'GWGC_name'],
+                pdf_mangrove.loc[host_galaxies[i], 'galaxy_idx'],
+                pdf_mangrove.loc[host_galaxies[i], 'GWGC_name'][2:-1],
                 pdf_mangrove.loc[host_galaxies[i], 'lum_dist'],
                 pdf_mangrove.loc[host_galaxies[i], 'dist_err'],
                 pdf_mangrove.loc[host_galaxies[i], 'ra'],
