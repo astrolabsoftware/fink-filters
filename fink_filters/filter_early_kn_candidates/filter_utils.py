@@ -21,7 +21,7 @@ import h5py
 def make_mangrove_pdf(path_in, path_out='mangrove_filtered.csv',
                       range_interferometers=230):
     """
-    create a pandas dataframe needed in early_kn_candidates from the hdf5
+    Create a pandas dataframe needed in early_kn_candidates from the hdf5
     Mangrove catalog and save it as csv.
 
     early_kn_candidate loads the pre-filtered csv file, the aim of this
@@ -37,7 +37,7 @@ def make_mangrove_pdf(path_in, path_out='mangrove_filtered.csv',
     path_in : string
         path to Mangrove hdf5 catalog.
     path_out : string, optional
-        path where the csv file will be saved. Default is 'mangrove_filtered.csv'
+        path where the csv file will be saved. Default: 'mangrove_filtered.csv'
     range_interferometers: float
         range of the interferometers in Mpc. Only the galaxies in this range
         will be considered
@@ -52,8 +52,8 @@ def make_mangrove_pdf(path_in, path_out='mangrove_filtered.csv',
     ))
     pdf_mangrove = pdf_mangrove.loc[:, [
         'GWGC_name',    # Name in the GWGC catalog
-        # 'idx', # Integer between 0 and N where N is the total number galaxies
-                 # in initial GLADE catalog used
+        'idx',  # Integer between 0 and N where N is the total number galaxies
+                # in initial GLADE catalog used
         'RA',           # Right ascention [deg] of the GLADE galaxy
         'dec',          # Declination [deg] of the GLADE galaxy
         'dist',         # Luminosity distance [Mpc] of the GLADE galaxy,

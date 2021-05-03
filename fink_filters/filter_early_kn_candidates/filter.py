@@ -192,8 +192,8 @@ def early_kn_candidates(
                         catalog_mangrove[idx_reduced[candidates_number[0][0]]]
                         ).radian
                 )
-                # I have not seen more than one, but [0][0] instead of
-                # converting to int will avoid conflict if there are more.
+                # There are sometimes 2 hosts, we currently take the closest
+                # to earth.
                 # This is the index of catalog dataframe and has nothing to do
                 # with galaxies idx.
 
