@@ -51,7 +51,7 @@ def make_mangrove_pdf(path_in, path_out='mangrove_filtered.csv',
         h5py.File(path_in, 'r')['__astropy_table__']
     ))
     pdf_mangrove = pdf_mangrove.loc[:, [
-        'GWGC_name',    # Name in the GWGC catalog
+        '2MASS_name',    # Name in the GWGC catalog
         'idx',  # Integer between 0 and N where N is the total number galaxies
                 # in initial GLADE catalog used
         'RA',           # Right ascention [deg] of the GLADE galaxy
