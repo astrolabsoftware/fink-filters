@@ -174,8 +174,8 @@ def early_kn_candidates(
                 np.array(
                     (
                         SkyCoord(
-                            ra=row.ra*u.degree,
-                            dec=row.dec*u.degree
+                            ra=row.ra * u.degree,
+                            dec=row.dec * u.degree
                         ).separation(catalog_mangrove[idx_reduced]).radian < 0.01 / pdf_mangrove.loc[idx_reduced, :].ang_dist
                     ) & (abs_mag > -17) & (abs_mag < -15)
                 )
@@ -192,7 +192,7 @@ def early_kn_candidates(
                         dec=row.dec * u.degree
                     ).separation(
                         catalog_mangrove[idx_reduced[candidates_number[0][0]]]
-                        ).radian
+                    ).radian
                 )
                 # There are sometimes 2 hosts, we currently take the closest
                 # to earth.
@@ -236,7 +236,7 @@ def early_kn_candidates(
                 """.format(alertID, alertID)
             time_text = """
                 *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
-                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i]*24)
+                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i] * 24)
             measurements_text = """
                 *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
                 """.format(dict_filt[fid[i]], mag[i], err_mag[i])
@@ -273,7 +273,7 @@ def early_kn_candidates(
                             "text": alert_text
                         },
                     ]
-                 },
+                },
                 {
                     "type": "section",
                     "fields": [
