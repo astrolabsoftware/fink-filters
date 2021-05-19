@@ -124,7 +124,7 @@ def kn_candidates(
             ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
                                                         unit=u.hour)
             dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ',
-                                                          alwayssign=True)
+                                                         alwayssign=True)
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
