@@ -120,16 +120,16 @@ def early_kn_candidates(
 
     # Compute DC magnitude
     mag, err_mag = np.array([
-            dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
-            for i in zip(
-                np.array(fid),
-                np.array(magpsf),
-                np.array(sigmapsf),
-                np.array(magnr),
-                np.array(sigmagnr),
-                np.array(magzpsci),
-                np.array(isdiffpos))
-        ]).T
+        dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
+        for i in zip(
+            np.array(fid),
+            np.array(magpsf),
+            np.array(sigmapsf),
+            np.array(magnr),
+            np.array(sigmagnr),
+            np.array(magzpsci),
+            np.array(isdiffpos))
+    ]).T
 
     f_kn = high_drb & high_classtar & new_detection
     f_kn = f_kn & cdsxmatch.isin(keep_cds) & not_ztf_sso_candidate
