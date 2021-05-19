@@ -12,8 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
@@ -33,15 +31,18 @@ from fink_science.conversion import dc_mag
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_kn_candidates(
-        objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid,
-        mangrove_path=None) -> pd.Series:
+        objectId, drb, classtar, jd,
+        jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr,
+        magzpsci, isdiffpos, ra, dec, roid) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
-    If the environment variable KNWEBHOOK_MANGROVE is defined and match a
+    If the environment variable KNWEBHOOK is defined and match a
     webhook url, the alerts that pass the filter will be sent to the matching
     Slack channel.
+
+    Note the default `data/mangrove_filtered.csv` catalog is loaded.
 
     Parameters
     ----------
@@ -80,9 +81,6 @@ def early_kn_candidates(
         Column containing the magnitude from PSF-fit photometry [mag]
     roid: Spark DataFrame Column
         Column containing the Solar System label
-    mangrove_path: Spark DataFrame Column, optional
-        Path to the Mangrove file. Default is None, in which case
-        `data/mangrove_filtered.csv` is loaded.
 
     Returns
     -------
@@ -138,12 +136,10 @@ def early_kn_candidates(
 
     if f_kn.any():
         # load mangrove catalog
-        if mangrove_path is not None:
-            pdf_mangrove = pd.read_csv(mangrove_path.values[0])
-        else:
-            curdir = os.path.dirname(os.path.abspath(__file__))
-            mangrove_path = curdir + '/data/mangrove_filtered.csv'
-            pdf_mangrove = pd.read_csv(mangrove_path)
+        curdir = os.path.dirname(os.path.abspath(__file__))
+        mangrove_path = curdir + '/data/mangrove_filtered.csv'
+        pdf_mangrove = pd.read_csv(mangrove_path)
+
         catalog_mangrove = SkyCoord(
             ra=np.array(pdf_mangrove.ra, dtype=np.float) * u.degree,
             dec=np.array(pdf_mangrove.dec, dtype=np.float) * u.degree
