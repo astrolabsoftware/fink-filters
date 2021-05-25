@@ -18,6 +18,7 @@ from pyspark.sql.types import BooleanType
 
 import numpy as np
 import pandas as pd
+import datetime
 import requests
 import os
 import logging
@@ -277,7 +278,14 @@ def kn_candidates(
                 log.warning(error_message.format(url_name))
 
         ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ)
-        if (np.abs(b[i]) > 20) & (mag[fid[i]] < 20) & ama_in_env:
+
+        # Send alerts to amateurs only on Friday
+        now = datetime.datetime.utcnow()
+
+        # Monday is 1 and Sunday is 7
+        is_friday = (now.isoweekday() == 5)
+
+        if (np.abs(b[i]) > 20) & (mag[fid[i]] < 20) & is_friday & ama_in_env:
             requests.post(
                 os.environ['KNWEBHOOK_AMA_CL'],
                 json={
