@@ -36,7 +36,9 @@ def kn_candidates(
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjd, cfid,
         cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci, cisdiffpos
         ) -> pd.Series:
-    """ Return alerts considered as KN candidates.
+    """
+    Return alerts considered as KN candidates.
+
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
 
@@ -105,7 +107,8 @@ def kn_candidates(
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
 
-    if 'KNWEBHOOK' in os.environ:
+    if ('KNWEBHOOK' in os.environ) or ('KNWEBHOOK_FINK' in os.environ)
+            or ('KNWEBHOOK_AMA_CL' in os.environ):
         if f_kn.any():
             # Galactic latitude transformation
             b = SkyCoord(
@@ -121,10 +124,12 @@ def kn_candidates(
             dec = Angle(
                 np.array(dec.astype(float)[f_kn]) * u.degree
             ).deg
-            ra_formatted = Angle(ra*u.degree).to_string(precision=2, sep=' ',
-                                                        unit=u.hour)
-            dec_formatted = Angle(dec*u.degree).to_string(precision=1, sep=' ',
-                                                         alwayssign=True)
+            ra_formatted = Angle(ra * u.degree).to_string(
+                precision=2, sep=' ', unit=u.hour
+                )
+            dec_formatted = Angle(dec * u.degree).to_string(
+                precision=1, sep=' ', alwayssign=True
+                )
             delta_jd_first = np.array(
                 jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
             )
@@ -253,14 +258,27 @@ def kn_candidates(
                     ]
                 },
             ]
-            requests.post(
-                os.environ['KNWEBHOOK'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Classifier-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
-            )
+
+            if 'KNWEBHOOK' in os.environ:
+                requests.post(
+                    os.environ['KNWEBHOOK'],
+                    json={
+                        'blocks': blocks,
+                        'username': 'Classifier-based kilonova bot'
+                    },
+                    headers={'Content-Type': 'application/json'},
+                )
+
+            if (np.abs(b[i]) > 20) & (mag[fid[i]] < 20)
+                    & ('KNWEBHOOK_AMA_CL' in os.environ):
+                requests.post(
+                    os.environ['KNWEBHOOK_AMA_CL'],
+                    json={
+                        'blocks': blocks,
+                        'username': 'kilonova bot'
+                    },
+                    headers={'Content-Type': 'application/json'},
+                )
     else:
         log = logging.Logger('Kilonova filter')
         msg = """

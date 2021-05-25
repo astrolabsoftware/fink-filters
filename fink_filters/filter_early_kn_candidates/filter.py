@@ -201,7 +201,8 @@ def early_kn_candidates(
 
         f_kn.loc[f_kn] = np.array(galaxy_matching, dtype=bool)
 
-    if 'KNWEBHOOK' in os.environ:
+    if ('KNWEBHOOK' in os.environ) or ('KNWEBHOOK_FINK' in os.environ)
+            or ('KNWEBHOOK_AMA_GALAXIES' in os.environ):
         if f_kn.any():
             # Simplify notations
             b = gal.b.degree[f_kn]
@@ -305,14 +306,36 @@ def early_kn_candidates(
                 },
             ]
 
-            requests.post(
-                os.environ['KNWEBHOOK'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Cross-match-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
-            )
+            if ('KNWEBHOOK' in os.environ):
+                requests.post(
+                    os.environ['KNWEBHOOK'],
+                    json={
+                        'blocks': blocks,
+                        'username': 'Cross-match-based kilonova bot'
+                    },
+                    headers={'Content-Type': 'application/json'},
+                )
+
+            if 'KNWEBHOOK_FINK' in os.environ:
+                requests.post(
+                    os.environ['KNWEBHOOK'],
+                    json={
+                        'blocks': blocks,
+                        'username': 'Cross-match-based kilonova bot'
+                    },
+                    headers={'Content-Type': 'application/json'},
+                )
+
+            if (np.abs(b[i]) > 20) & (mag[i] < 20)
+                    & ('KNWEBHOOK_AMA_GALAXIES' in os.environ):
+                requests.post(
+                    os.environ['KNWEBHOOK_AMA_GALAXIES'],
+                    json={
+                        'blocks': blocks,
+                        'username': 'kilonova bot'
+                    },
+                    headers={'Content-Type': 'application/json'},
+                )
     else:
         log = logging.Logger('Kilonova filter')
         msg = """
