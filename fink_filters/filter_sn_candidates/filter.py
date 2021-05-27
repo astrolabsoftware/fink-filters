@@ -48,7 +48,7 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5
-    sn_history = jd.astype(float) - jdstarthist.astype(float) <= 21
+    sn_history = jd.astype(float) - jdstarthist.astype(float) <= 90
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
 
