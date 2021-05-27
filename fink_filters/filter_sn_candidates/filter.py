@@ -19,7 +19,7 @@ import pandas as pd
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        ndethist, drb, classtar) -> pd.Series:
+        ndethist, drb, classtar, jd, jdstarthist) -> pd.Series:
     """ Return alerts considered as SN-Ia candidates
 
     Parameters
