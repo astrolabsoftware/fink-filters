@@ -1,4 +1,4 @@
-# Copyright 2019-2020 AstroLab Software
+# Copyright 2019-2021 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ import pandas as pd
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        ndethist, drb, classtar) -> pd.Series:
+        drb, classtar, jd, jdstarthist) -> pd.Series:
     """ Return alerts considered as SN-Ia candidates
 
     Parameters
@@ -30,12 +30,14 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Spark DataFrame Column
         Column containing the probability to be a SNe from SuperNNova.
-    ndethist: Spark DataFrame Column
-        Column containing the number of detection by ZTF
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
+    jd: Spark DataFrame Column
+        Column containing the JD of the _alert_
+    jdstarthist: Spark DataFrame Column
+        Column containing the starting JD of the _object_
 
     Returns
     ----------
@@ -46,7 +48,7 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5
-    low_ndethist = ndethist.astype(int) < 400
+    sn_history = jd.astype(float) - jdstarthist.astype(float) <= 21
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
 
@@ -71,6 +73,6 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
     keep_cds = \
         ["Unknown", "Candidate_SN*", "SN", "Transient", "Fail"] + list_simbad_galaxies
 
-    f_sn = (snn1 | snn2) & cdsxmatch.isin(keep_cds) & low_ndethist & high_drb & high_classtar
+    f_sn = (snn1 | snn2) & cdsxmatch.isin(keep_cds) & sn_history & high_drb & high_classtar
 
     return f_sn
