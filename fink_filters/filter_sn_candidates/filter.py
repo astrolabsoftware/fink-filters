@@ -19,7 +19,7 @@ import pandas as pd
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        ndethist, drb, classtar, jd, jdstarthist) -> pd.Series:
+        drb, classtar, jd, jdstarthist) -> pd.Series:
     """ Return alerts considered as SN-Ia candidates
 
     Parameters
@@ -30,12 +30,14 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Spark DataFrame Column
         Column containing the probability to be a SNe from SuperNNova.
-    ndethist: Spark DataFrame Column
-        Column containing the number of detection by ZTF
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
+    jd: Spark DataFrame Column
+        Column containing the JD of the _alert_
+    jdstarthist: Spark DataFrame Column
+        Column containing the starting JD of the _object_
 
     Returns
     ----------
