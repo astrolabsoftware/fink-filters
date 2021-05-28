@@ -34,8 +34,8 @@ from fink_science.conversion import dc_mag
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(
         objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjd, cfid,
-        cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci, cisdiffpos
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
+        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc
         ) -> pd.Series:
     """
     Return alerts considered as KN candidates.
@@ -64,7 +64,7 @@ def kn_candidates(
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
-    cjd, cfid, cmagpsf, csigmapsf, cmagnr, csigmagnr, cmagzpsci: Spark DataFrame Columns
+    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
         Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
     Returns
@@ -74,8 +74,8 @@ def kn_candidates(
         false for bad alert, and true for good alert.
     """
     # Extract last (new) measurement from the concatenated column
-    jd = cjd.apply(lambda x: x[-1])
-    fid = cfid.apply(lambda x: x[-1])
+    jd = cjdc.apply(lambda x: x[-1])
+    fid = cfidc.apply(lambda x: x[-1])
 
     high_knscore = knscore.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
@@ -144,7 +144,7 @@ def kn_candidates(
     dict_filt = {1: 'g', 2: 'r'}
     for i, alertID in enumerate(objectId[f_kn]):
         # Careful - Spark casts None as NaN!
-        maskNotNone = ~np.isnan(np.array(cmagpsf[f_kn].values[i]))
+        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
 
         # Initialise containers
         rate = {1: float('nan'), 2: float('nan')}
@@ -152,7 +152,7 @@ def kn_candidates(
         err_mag = {1: float('nan'), 2: float('nan')}
 
         # Time since last detection (independently of the band)
-        jd_hist_allbands = np.array(np.array(cjd[f_kn])[i])[maskNotNone]
+        jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
         # This could be further simplified as we only care
@@ -161,20 +161,20 @@ def kn_candidates(
         # (and it could be  useful later to have a
         # general way to extract rates etc.)
         for filt in [1, 2]:
-            maskFilter = np.array(cfid[f_kn].values[i]) == filt
+            maskFilter = np.array(cfidc[f_kn].values[i]) == filt
             m = maskNotNone * maskFilter
 
             # DC mag (history + last measurement)
             mag_hist, err_hist = np.array([
                 dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
                 for k in zip(
-                    cfid[f_kn].values[i][m],
-                    cmagpsf[f_kn].values[i][m],
-                    csigmapsf[f_kn].values[i][m],
-                    cmagnr[f_kn].values[i][m],
-                    csigmagnr[f_kn].values[i][m],
-                    cmagzpsci[f_kn].values[i][m],
-                    cisdiffpos[f_kn].values[i][m]
+                    cfidc[f_kn].values[i][m],
+                    cmagpsfc[f_kn].values[i][m],
+                    csigmapsfc[f_kn].values[i][m],
+                    cmagnrc[f_kn].values[i][m],
+                    csigmagnrc[f_kn].values[i][m],
+                    cmagzpscic[f_kn].values[i][m],
+                    cisdiffposc[f_kn].values[i][m]
                 )
             ]).T
 
@@ -184,7 +184,7 @@ def kn_candidates(
 
             # Compute rate only if more than 1 measurement available
             if len(mag_hist) > 1:
-                jd_hist = cjd[f_kn].values[i][m]
+                jd_hist = cjdc[f_kn].values[i][m]
 
                 # rate is between `last` and `last-1` measurements only
                 dmag = mag_hist[-1] - mag_hist[-2]
