@@ -19,7 +19,7 @@ import pandas as pd
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        drb, classtar, jd, jdstarthist) -> pd.Series:
+        drb, classtar, jd, jdstarthist, roid, ndethist) -> pd.Series:
     """ Return alerts considered as SN-Ia candidates
 
     Parameters
@@ -38,6 +38,11 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
         Column containing the JD of the _alert_
     jdstarthist: Spark DataFrame Column
         Column containing the starting JD of the _object_
+    roid: Spark DataFrame Column
+        Column containing the SSO label
+    ndethist: Spark DataFrame Column
+        Column containing the number of detection at 3 sigma since the
+        beginning of the survey
 
     Returns
     ----------
@@ -51,6 +56,8 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
     sn_history = jd.astype(float) - jdstarthist.astype(float) <= 90
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
+    no_mpc = roid.astype(int) != 3
+    no_first_det = ndethist.astype(int) > 1
 
     list_simbad_galaxies = [
         "galaxy",
@@ -73,6 +80,6 @@ def sn_candidates(cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
     keep_cds = \
         ["Unknown", "Candidate_SN*", "SN", "Transient", "Fail"] + list_simbad_galaxies
 
-    f_sn = (snn1 | snn2) & cdsxmatch.isin(keep_cds) & sn_history & high_drb & high_classtar
+    f_sn = (snn1 | snn2) & cdsxmatch.isin(keep_cds) & sn_history & high_drb & high_classtar & no_first_det & no_mpc
 
     return f_sn
