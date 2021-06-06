@@ -35,7 +35,7 @@ def early_kn_candidates(
         objectId, drb, classtar, jd,
         jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, magnr, sigmagnr,
-        magzpsci, isdiffpos, ra, dec, roid) -> pd.Series:
+        magzpsci, isdiffpos, ra, dec, roid, field) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
@@ -82,6 +82,8 @@ def early_kn_candidates(
         Column containing the magnitude from PSF-fit photometry [mag]
     roid: Spark DataFrame Column
         Column containing the Solar System label
+    field: Spark DataFrame Column
+        Column containing the ZTF field numbers (int)
 
     Returns
     -------
@@ -227,6 +229,7 @@ def early_kn_candidates(
         jd = np.array(jd)[f_kn]
         mag = mag[f_kn]
         err_mag = err_mag[f_kn]
+        field = field[f_kn]
 
     dict_filt = {1: 'g', 2: 'r'}
     for i, alertID in enumerate(objectId[f_kn]):
@@ -305,6 +308,7 @@ def early_kn_candidates(
             },
         ]
 
+        # Standard channels
         error_message = """
         {} is not defined as env variable
         if an alert has passed the filter,
@@ -324,6 +328,7 @@ def early_kn_candidates(
                 log = logging.Logger('Kilonova filter')
                 log.warning(error_message.format(url_name))
 
+        # Grandma amateur channel
         ama_in_env = ('KNWEBHOOK_AMA_GALAXIES' in os.environ)
 
         # Send alerts to amateurs only on Friday
@@ -343,6 +348,22 @@ def early_kn_candidates(
             )
         else:
             log = logging.Logger('Kilonova filter')
-            log.warning(error_message.format(url_name))
+            log.warning(error_message.format('KNWEBHOOK_AMA_GALAXIES'))
+
+        # DWF channel and requirements
+        dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
+        dwf_in_env = ('KNWEBHOOK_DWF' in os.environ)
+        if (int(field[i]) in dwf_ztf_fields) and dwf_in_env:
+            requests.post(
+                os.environ['KNWEBHOOK_DWF'],
+                json={
+                    'blocks': blocks,
+                    'username': 'kilonova bot'
+                },
+                headers={'Content-Type': 'application/json'},
+            )
+        else:
+            log = logging.Logger('Kilonova filter')
+            log.warning(error_message.format('KNWEBHOOK_DWF'))
 
     return f_kn
