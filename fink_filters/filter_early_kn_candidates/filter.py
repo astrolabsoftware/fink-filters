@@ -353,7 +353,7 @@ def early_kn_candidates(
         # DWF channel and requirements
         dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
         dwf_in_env = ('KNWEBHOOK_DWF' in os.environ)
-        if (int(field[i]) in dwf_ztf_fields) and dwf_in_env:
+        if (int(field.values[i]) in dwf_ztf_fields) and dwf_in_env:
             requests.post(
                 os.environ['KNWEBHOOK_DWF'],
                 json={
