@@ -266,6 +266,7 @@ def early_kn_candidates(
         """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
         galactic_position_text = """
             *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+        tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
         # message formatting
         blocks = [
             {
@@ -303,7 +304,12 @@ def early_kn_candidates(
                     {
                         "type": "mrkdwn",
                         "text": measurements_text
-                    }
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": tns_text
+                    },
+                    
                 ]
             },
         ]
