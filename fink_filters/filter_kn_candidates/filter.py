@@ -34,8 +34,9 @@ from fink_science.conversion import dc_mag
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(
         objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
-        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
+        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
+        cisdiffposc
         ) -> pd.Series:
     """
     Return alerts considered as KN candidates.
@@ -64,6 +65,8 @@ def kn_candidates(
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
+    ssdistnr: Spark DataFrame Column
+        distance to nearest known solar system object; -999.0 if none [arcsec]
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
         Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
@@ -76,12 +79,14 @@ def kn_candidates(
     # Extract last (new) measurement from the concatenated column
     jd = cjdc.apply(lambda x: x[-1])
     fid = cfidc.apply(lambda x: x[-1])
+    isdiffpos = cisdiffposc.apply(lambda x: x[-1])
 
-    high_knscore = knscore.astype(float) > 0.5
-    high_drb = drb.astype(float) > 0.5
+    high_drb = drb.astype(float) > 0.9
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
     small_detection_history = ndethist.astype(float) < 20
+    appeared = isdiffpos.astype(str) == 't'
+    far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
 
     list_simbad_galaxies = [
         "galaxy",
@@ -105,8 +110,8 @@ def kn_candidates(
     keep_cds = \
         ["Unknown", "Transient", "Fail"] + list_simbad_galaxies
 
-    f_kn = high_knscore & high_drb & high_classtar & new_detection
-    f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
+    f_kn = high_drb & high_classtar & new_detection & small_detection_history
+    f_kn = f_kn & cdsxmatch.isin(keep_cds) & appeared & far_from_mpc
 
     if f_kn.any():
         # Galactic latitude transformation
@@ -142,6 +147,7 @@ def kn_candidates(
         jd = np.array(jd)[f_kn]
 
     dict_filt = {1: 'g', 2: 'r'}
+    rate_all = []
     for i, alertID in enumerate(objectId[f_kn]):
         # Careful - Spark casts None as NaN!
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
@@ -153,6 +159,9 @@ def kn_candidates(
 
         # Time since last detection (independently of the band)
         jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
+        if len(jd_hist_allbands) < 2:
+            rate_all.append(0)
+            continue
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
         # This could be further simplified as we only care
@@ -163,7 +172,8 @@ def kn_candidates(
         for filt in [1, 2]:
             maskFilter = np.array(cfidc[f_kn].values[i]) == filt
             m = maskNotNone * maskFilter
-
+            if sum(m) < 2:
+                continue
             # DC mag (history + last measurement)
             mag_hist, err_hist = np.array([
                 dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
@@ -190,6 +200,10 @@ def kn_candidates(
                 dmag = mag_hist[-1] - mag_hist[-2]
                 dt = jd_hist[-1] - jd_hist[-2]
                 rate[filt] = dmag / dt
+        # filter messages on rate
+        rate_all.append(rate[fid[i]])
+        if rate[fid[i]] < 0.3:
+            continue
 
         # information to send
         alert_text = """
@@ -297,5 +311,7 @@ def kn_candidates(
         else:
             log = logging.Logger('Kilonova filter')
             log.warning(error_message.format(url_name))
+
+    f_kn.loc[f_kn] = np.array(rate_all) > 0.3
 
     return f_kn
