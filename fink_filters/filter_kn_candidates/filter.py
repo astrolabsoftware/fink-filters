@@ -83,7 +83,7 @@ def kn_candidates(
 
     high_drb = drb.astype(float) > 0.9
     high_classtar = classtar.astype(float) > 0.4
-    new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
+    new_detection = jd.astype(float) - jdstarthist.astype(float) < 14
     small_detection_history = ndethist.astype(float) < 20
     appeared = isdiffpos.astype(str) == 't'
     far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
@@ -202,7 +202,7 @@ def kn_candidates(
                 rate[filt] = dmag / dt
         # filter messages on rate
         rate_all.append(rate[fid[i]])
-        if rate[fid[i]] < 0.3:
+        if rate[fid[i]] <= 0.3:
             continue
 
         # information to send
