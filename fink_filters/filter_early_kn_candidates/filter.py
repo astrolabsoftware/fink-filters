@@ -243,8 +243,9 @@ def early_kn_candidates(
             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
             """.format(dict_filt[fid[i]], mag[i], err_mag[i])
         host_text = """
-            *Presumed host galaxy:*\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
+            *Presumed host galaxy:*\n- HyperlEDA Name: {:s}\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
             """.format(
+            pdf_mangrove.loc[host_galaxies[i], 'HyperlEDA_name'][2:-1],
             pdf_mangrove.loc[host_galaxies[i], '2MASS_name'][2:-1],
             pdf_mangrove.loc[host_galaxies[i], 'lum_dist'],
             pdf_mangrove.loc[host_galaxies[i], 'dist_err'],
@@ -307,7 +308,6 @@ def early_kn_candidates(
                         "type": "mrkdwn",
                         "text": tns_text
                     },
-                    
                 ]
             },
         ]
