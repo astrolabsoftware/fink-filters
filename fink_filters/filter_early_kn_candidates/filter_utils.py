@@ -51,9 +51,8 @@ def make_mangrove_pdf(path_in, path_out='mangrove_filtered.csv',
         h5py.File(path_in, 'r')['__astropy_table__']
     ))
     pdf_mangrove = pdf_mangrove.loc[:, [
-        '2MASS_name',    # Name in the GWGC catalog
-        'idx',  # Integer between 0 and N where N is the total number galaxies
-                # in initial GLADE catalog used
+        'HyperLEDA_name',    # Name in the HyperLEDA catalog
+        '2MASS_name',    # Name in the 2MASS XSC catalog
         'RA',           # Right ascention [deg] of the GLADE galaxy
         'dec',          # Declination [deg] of the GLADE galaxy
         'dist',         # Luminosity distance [Mpc] of the GLADE galaxy,
