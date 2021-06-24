@@ -33,7 +33,7 @@ from fink_science.conversion import dc_mag
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def rate_based_kn_candidates(
-        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        objectId, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
         cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
         cisdiffposc
@@ -48,8 +48,8 @@ def rate_based_kn_candidates(
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
-        Columns containing the scores for: 'Kilonova', 'Early SN Ia',
+    rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Early SN Ia',
         'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
@@ -137,7 +137,6 @@ def rate_based_kn_candidates(
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
-        knscore = np.array(knscore.astype(float)[f_kn])
         rfscore = np.array(rfscore.astype(float)[f_kn])
         snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
         snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
@@ -203,7 +202,6 @@ def rate_based_kn_candidates(
         alert_text = """
             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
             """.format(alertID, alertID)
-        knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
         score_text = """
             *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
             """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
@@ -229,10 +227,6 @@ def rate_based_kn_candidates(
                         "type": "mrkdwn",
                         "text": alert_text
                     },
-                    {
-                        "type": "mrkdwn",
-                        "text": knscore_text
-                    }
                 ]
              },
             {
@@ -277,7 +271,7 @@ def rate_based_kn_candidates(
                     os.environ[url_name],
                     json={
                         'blocks': blocks,
-                        'username': 'Classifier-based kilonova bot'
+                        'username': 'Rate-based kilonova bot'
                     },
                     headers={'Content-Type': 'application/json'},
                 )
@@ -295,7 +289,7 @@ def rate_based_kn_candidates(
 
         if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & ama_in_env:
             requests.post(
-                os.environ['KNWEBHOOK_AMA_CL'],
+                os.environ['KNWEBHOOK_AMA_RATE'],
                 json={
                     'blocks': blocks,
                     'username': 'kilonova bot'
