@@ -152,11 +152,6 @@ def rate_based_kn_candidates(
         # Careful - Spark casts None as NaN!
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
 
-        # Initialise containers
-        rate = {1: float('nan'), 2: float('nan')}
-        mag = {1: float('nan'), 2: float('nan')}
-        err_mag = {1: float('nan'), 2: float('nan')}
-
         # Time since last detection (independently of the band)
         jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
         if len(jd_hist_allbands) < 2:
@@ -164,45 +159,44 @@ def rate_based_kn_candidates(
             continue
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
-        # This could be further simplified as we only care
-        # about the filter of the last measurement.
-        # But the loop is fast enough to keep it for the moment
-        # (and it could be  useful later to have a
-        # general way to extract rates etc.)
-        for filt in [1, 2]:
-            maskFilter = np.array(cfidc[f_kn].values[i]) == filt
-            m = maskNotNone * maskFilter
-            if sum(m) < 2:
-                continue
-            # DC mag (history + last measurement)
-            mag_hist, err_hist = np.array([
-                dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
-                for k in zip(
-                    cfidc[f_kn].values[i][m][-2:],
-                    cmagpsfc[f_kn].values[i][m][-2:],
-                    csigmapsfc[f_kn].values[i][m][-2:],
-                    cmagnrc[f_kn].values[i][m][-2:],
-                    csigmagnrc[f_kn].values[i][m][-2:],
-                    cmagzpscic[f_kn].values[i][m][-2:],
-                    cisdiffposc[f_kn].values[i][m][-2:],
-                )
-            ]).T
 
-            # Grab the last measurement and its error estimate
-            mag[filt] = mag_hist[-1]
-            err_mag[filt] = err_hist[-1]
+        filt = fid[i]
+        maskFilter = np.array(cfidc[f_kn].values[i]) == filt
+        m = maskNotNone * maskFilter
+        if sum(m) < 2:
+            rate_all.append(0)
+            continue
+        # DC mag (history + last measurement)
+        mag_hist, err_hist = np.array([
+            dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+            for k in zip(
+                cfidc[f_kn].values[i][m][-2:],
+                cmagpsfc[f_kn].values[i][m][-2:],
+                csigmapsfc[f_kn].values[i][m][-2:],
+                cmagnrc[f_kn].values[i][m][-2:],
+                csigmagnrc[f_kn].values[i][m][-2:],
+                cmagzpscic[f_kn].values[i][m][-2:],
+                cisdiffposc[f_kn].values[i][m][-2:],
+            )
+        ]).T
 
-            # Compute rate only if more than 1 measurement available
-            if len(mag_hist) > 1:
-                jd_hist = cjdc[f_kn].values[i][m]
+        # Grab the last measurement and its error estimate
+        mag = mag_hist[-1]
+        err_mag = err_hist[-1]
 
-                # rate is between `last` and `last-1` measurements only
-                dmag = mag_hist[-1] - mag_hist[-2]
-                dt = jd_hist[-1] - jd_hist[-2]
-                rate[filt] = dmag / dt
+        # Compute rate only if more than 1 measurement available
+        if len(mag_hist) > 1:
+            jd_hist = cjdc[f_kn].values[i][m]
+
+            # rate is between `last` and `last-1` measurements only
+            dmag = mag_hist[-1] - mag_hist[-2]
+            dt = jd_hist[-1] - jd_hist[-2]
+            rate = dmag / dt
+            error_rate = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
+
         # filter messages on rate
-        rate_all.append(rate[fid[i]])
-        if rate[fid[i]] <= 0.3:
+        rate_all.append(rate)
+        if rate <= 0.3:
             continue
 
         # information to send
@@ -217,8 +211,8 @@ def rate_based_kn_candidates(
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
             """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
         measurements_text = """
-            *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: {:.2f} mag/day\n
-            """.format(dict_filt[fid[i]], mag[fid[i]], err_mag[fid[i]], rate[fid[i]])
+            *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
+            """.format(dict_filt[fid[i]], mag, err_mag, rate, error_rate)
         radec_text = """
              *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
              """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
@@ -299,7 +293,7 @@ def rate_based_kn_candidates(
         # Monday is 1 and Sunday is 7
         is_friday = (now.isoweekday() == 5)
 
-        if (np.abs(b[i]) > 20) & (mag[fid[i]] < 20) & is_friday & ama_in_env:
+        if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & ama_in_env:
             requests.post(
                 os.environ['KNWEBHOOK_AMA_CL'],
                 json={
