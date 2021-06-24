@@ -203,7 +203,7 @@ def rate_based_kn_candidates(
             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
             """.format(alertID, alertID)
         score_text = """
-            *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
+            *Scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
             """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
         time_text = """
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
