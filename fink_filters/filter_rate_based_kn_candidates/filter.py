@@ -90,6 +90,10 @@ def rate_based_kn_candidates(
     appeared = isdiffpos.astype(str) == 't'
     far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
 
+    # galactic plane
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic.b
+    awaw_from_galactic_plane = np.abs(b) > 10
+
     list_simbad_galaxies = [
         "galaxy",
         "Galaxy",
@@ -114,6 +118,7 @@ def rate_based_kn_candidates(
 
     f_kn = high_drb & high_classtar & new_detection & small_detection_history
     f_kn = f_kn & cdsxmatch.isin(keep_cds) & appeared & far_from_mpc
+    f_kn = f_kn & awaw_from_galactic_plane
 
     if f_kn.any():
         # Galactic latitude transformation
