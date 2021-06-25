@@ -41,6 +41,8 @@ def rate_based_kn_candidates(
     """
     Return alerts considered as KN candidates.
 
+    The cuts are based on Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
+
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
 
@@ -278,7 +280,7 @@ def rate_based_kn_candidates(
                 log = logging.Logger('Kilonova filter')
                 log.warning(error_message.format(url_name))
 
-        ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ)
+        ama_in_env = ('KNWEBHOOK_AMA_RATE' in os.environ)
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
@@ -291,7 +293,7 @@ def rate_based_kn_candidates(
                 os.environ['KNWEBHOOK_AMA_RATE'],
                 json={
                     'blocks': blocks,
-                    'username': 'kilonova bot'
+                    'username': 'Rate-based kilonova bot'
                 },
                 headers={'Content-Type': 'application/json'},
             )

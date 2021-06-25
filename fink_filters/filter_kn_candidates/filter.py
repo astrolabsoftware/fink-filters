@@ -282,7 +282,7 @@ def kn_candidates(
                 os.environ['KNWEBHOOK_AMA_CL'],
                 json={
                     'blocks': blocks,
-                    'username': 'kilonova bot'
+                    'username': 'Classifier-based kilonova bot'
                 },
                 headers={'Content-Type': 'application/json'},
             )
