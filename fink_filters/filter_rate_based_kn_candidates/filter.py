@@ -158,7 +158,6 @@ def rate_based_kn_candidates(
             continue
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
-
         filt = fid[i]
         maskFilter = np.array(cfidc[f_kn].values[i]) == filt
         m = maskNotNone * maskFilter
