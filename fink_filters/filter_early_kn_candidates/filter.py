@@ -217,7 +217,7 @@ def early_kn_candidates(
             table = SDSS.query_region(pos, fields=['type'],
                                       radius=5 * u.arcsec)
             type_close_objects = []
-            if len(table) is not None:
+            if table is not None:
                 type_close_objects = table['type']
             # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
             # 5: SKY, 6: STAR_LATE, 7: GAL_EM
