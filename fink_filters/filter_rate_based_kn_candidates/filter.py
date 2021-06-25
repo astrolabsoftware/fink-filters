@@ -32,13 +32,16 @@ from fink_science.conversion import dc_mag
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(
-        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
-        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc
+def rate_based_kn_candidates(
+        objectId, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
+        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
+        cisdiffposc
         ) -> pd.Series:
     """
     Return alerts considered as KN candidates.
+
+    The cuts are based on Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
 
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
@@ -47,8 +50,8 @@ def kn_candidates(
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
-        Columns containing the scores for: 'Kilonova', 'Early SN Ia',
+    rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Early SN Ia',
         'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
@@ -64,6 +67,8 @@ def kn_candidates(
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
+    ssdistnr: Spark DataFrame Column
+        distance to nearest known solar system object; -999.0 if none [arcsec]
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
         Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
@@ -76,12 +81,14 @@ def kn_candidates(
     # Extract last (new) measurement from the concatenated column
     jd = cjdc.apply(lambda x: x[-1])
     fid = cfidc.apply(lambda x: x[-1])
+    isdiffpos = cisdiffposc.apply(lambda x: x[-1])
 
-    high_knscore = knscore.astype(float) > 0.5
-    high_drb = drb.astype(float) > 0.5
+    high_drb = drb.astype(float) > 0.9
     high_classtar = classtar.astype(float) > 0.4
-    new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
+    new_detection = jd.astype(float) - jdstarthist.astype(float) < 14
     small_detection_history = ndethist.astype(float) < 20
+    appeared = isdiffpos.astype(str) == 't'
+    far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
 
     list_simbad_galaxies = [
         "galaxy",
@@ -105,8 +112,8 @@ def kn_candidates(
     keep_cds = \
         ["Unknown", "Transient", "Fail"] + list_simbad_galaxies
 
-    f_kn = high_knscore & high_drb & high_classtar & new_detection
-    f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
+    f_kn = high_drb & high_classtar & new_detection & small_detection_history
+    f_kn = f_kn & cdsxmatch.isin(keep_cds) & appeared & far_from_mpc
 
     if f_kn.any():
         # Galactic latitude transformation
@@ -132,7 +139,6 @@ def kn_candidates(
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
-        knscore = np.array(knscore.astype(float)[f_kn])
         rfscore = np.array(rfscore.astype(float)[f_kn])
         snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
         snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
@@ -142,18 +148,23 @@ def kn_candidates(
         jd = np.array(jd)[f_kn]
 
     dict_filt = {1: 'g', 2: 'r'}
+    rate_all = []
     for i, alertID in enumerate(objectId[f_kn]):
         # Careful - Spark casts None as NaN!
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
 
         # Time since last detection (independently of the band)
         jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
+        if len(jd_hist_allbands) < 2:
+            rate_all.append(0)
+            continue
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
         filt = fid[i]
         maskFilter = np.array(cfidc[f_kn].values[i]) == filt
         m = maskNotNone * maskFilter
         if sum(m) < 2:
+            rate_all.append(0)
             continue
         # DC mag (history + last measurement)
         mag_hist, err_hist = np.array([
@@ -183,13 +194,17 @@ def kn_candidates(
             rate = dmag / dt
             error_rate = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
 
+        # filter messages on rate
+        rate_all.append(rate)
+        if rate <= 0.3:
+            continue
+
         # information to send
         alert_text = """
             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
             """.format(alertID, alertID)
-        knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
         score_text = """
-            *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
+            *Scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
             """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
         time_text = """
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
@@ -213,10 +228,6 @@ def kn_candidates(
                         "type": "mrkdwn",
                         "text": alert_text
                     },
-                    {
-                        "type": "mrkdwn",
-                        "text": knscore_text
-                    }
                 ]
              },
             {
@@ -261,7 +272,7 @@ def kn_candidates(
                     os.environ[url_name],
                     json={
                         'blocks': blocks,
-                        'username': 'Classifier-based kilonova bot'
+                        'username': 'Rate-based kilonova bot'
                     },
                     headers={'Content-Type': 'application/json'},
                 )
@@ -269,7 +280,7 @@ def kn_candidates(
                 log = logging.Logger('Kilonova filter')
                 log.warning(error_message.format(url_name))
 
-        ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ)
+        ama_in_env = ('KNWEBHOOK_AMA_RATE' in os.environ)
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
@@ -279,15 +290,17 @@ def kn_candidates(
 
         if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & ama_in_env:
             requests.post(
-                os.environ['KNWEBHOOK_AMA_CL'],
+                os.environ['KNWEBHOOK_AMA_RATE'],
                 json={
                     'blocks': blocks,
-                    'username': 'Classifier-based kilonova bot'
+                    'username': 'Rate-based kilonova bot'
                 },
                 headers={'Content-Type': 'application/json'},
             )
         else:
             log = logging.Logger('Kilonova filter')
             log.warning(error_message.format(url_name))
+
+    f_kn.loc[f_kn] = np.array(rate_all) > 0.3
 
     return f_kn

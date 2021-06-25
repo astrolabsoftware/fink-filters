@@ -370,7 +370,7 @@ def early_kn_candidates(
                 os.environ['KNWEBHOOK_AMA_GALAXIES'],
                 json={
                     'blocks': blocks,
-                    'username': 'kilonova bot'
+                    'username': 'Cross-match-based kilonova bot'
                 },
                 headers={'Content-Type': 'application/json'},
             )
