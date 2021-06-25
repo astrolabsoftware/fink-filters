@@ -26,6 +26,7 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.time import Time
+from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
@@ -202,6 +203,29 @@ def early_kn_candidates(
                 # with galaxies idx.
 
         f_kn.loc[f_kn] = np.array(galaxy_matching, dtype=bool)
+
+    # check the nature of close objects in SDSS catalog
+    if f_kn.any():
+        no_star = []
+        for i in range(sum(f_kn)):
+            pos = SkyCoord(
+                ra=np.array(ra[f_kn])[i] * u.degree,
+                dec=np.array(dec[f_kn])[i] * u.degree
+                )
+            # for a test on "many" objects, you may wait 1s to stay under the
+            # query limit.
+            table = SDSS.query_region(pos, fields=['type'],
+                                      radius=5 * u.arcsec)
+            type_close_objects = []
+            if len(table) is not None:
+                type_close_objects = table['type']
+            # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
+            # 5: SKY, 6: STAR_LATE, 7: GAL_EM
+            to_remove_types = [1, 3, 4, 6]
+            no_star.append(
+                len(np.intersect1d(type_close_objects, to_remove_types)) == 0
+                )
+        f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
     if f_kn.any():
         # Simplify notations
