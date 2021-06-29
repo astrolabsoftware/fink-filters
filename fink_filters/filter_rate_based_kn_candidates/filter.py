@@ -27,6 +27,7 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.time import Time
+from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
@@ -122,17 +123,16 @@ def rate_based_kn_candidates(
     f_kn = f_kn & awaw_from_galactic_plane
 
     # Compute rate and error rate, get magnitude and its error
-    rate = []
-    error_rate = []
-    mag = []
-    err_mag = []
+    rate = np.zeros(len(fid))
+    error_rate = np.zeros(len(fid))
+    mag = np.zeros(len(fid))
+    err_mag = np.zeros(len(fid))
     for i, alertID in enumerate(objectId[f_kn]):
         # Spark casts None as NaN
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
         maskFilter = np.array(cfidc[f_kn].values[i]) == np.array(fid)[f_kn][i]
         m = maskNotNone * maskFilter
         if sum(m) < 2:
-            rate.append(0)
             continue
         # DC mag (history + last measurement)
         mag_hist, err_hist = np.array([
@@ -154,18 +154,38 @@ def rate_based_kn_candidates(
         # rate is between `last` and `last-1` measurements only
         dmag = mag_hist[-1] - mag_hist[-2]
         dt = jd_hist[-1] - jd_hist[-2]
-        rate.append(dmag / dt)
+        rate[f_kn][i] = dmag / dt
+        error_rate[f_kn][i] = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
 
-        if rate[-1] > 0.3:
-            # Grab the last measurement and its error estimate
-            mag.append(mag_hist[-1])
-            err_mag.append(err_hist[-1])
+        # Grab the last measurement and its error estimate
+        mag[f_kn][i] = mag_hist[-1]
+        err_mag[f_kn][i] = err_hist[-1]
 
-            error_rate.append(np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt)
+    # filter on rate. rate is 0 where f_kn is already false.
+    f_kn = pd.Series(np.array(rate) > 0.3)
 
-    # filter on rate
-    f_kn.loc[f_kn] = np.array(rate) > 0.3
-    rate = np.array(rate)[np.array(rate) > 0.3]
+    # check the nature of close objects in SDSS catalog
+    if f_kn.any():
+        no_star = []
+        for i in range(sum(f_kn)):
+            pos = SkyCoord(
+                ra=np.array(ra[f_kn])[i] * u.degree,
+                dec=np.array(dec[f_kn])[i] * u.degree
+                )
+            # for a test on "many" objects, you may wait 1s to stay under the
+            # query limit.
+            table = SDSS.query_region(pos, fields=['type'],
+                                      radius=5 * u.arcsec)
+            type_close_objects = []
+            if table is not None:
+                type_close_objects = table['type']
+            # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
+            # 5: SKY, 6: STAR_LATE, 7: GAL_EM
+            to_remove_types = [1, 3, 4, 6]
+            no_star.append(
+                len(np.intersect1d(type_close_objects, to_remove_types)) == 0
+                )
+        f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
     # Simplify notations
     if f_kn.any():
@@ -195,6 +215,12 @@ def rate_based_kn_candidates(
         # time
         fid = np.array(fid.astype(int)[f_kn])
         jd = np.array(jd)[f_kn]
+
+        # measurements
+        rate = np.array(rate)[f_kn]
+        error_rate = np.array(error_rate)[f_kn]
+        mag = np.array(mag)[f_kn]
+        err_mag = np.array(err_mag)[f_kn]
 
     # message for candidates
     for i, alertID in enumerate(objectId[f_kn]):
