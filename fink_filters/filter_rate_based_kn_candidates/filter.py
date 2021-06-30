@@ -22,6 +22,7 @@ import datetime
 import requests
 import os
 import logging
+from scipy.optimize import curve_fit
 
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle
@@ -124,9 +125,10 @@ def rate_based_kn_candidates(
 
     # Compute rate and error rate, get magnitude and its error
     rate = np.zeros(len(fid))
-    error_rate = np.zeros(len(fid))
+    sigma_rate = np.zeros(len(fid))
     mag = np.zeros(len(fid))
     err_mag = np.zeros(len(fid))
+    index_mask = np.argwhere(f_kn)
     for i, alertID in enumerate(objectId[f_kn]):
         # Spark casts None as NaN
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
@@ -138,28 +140,32 @@ def rate_based_kn_candidates(
         mag_hist, err_hist = np.array([
             dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
             for k in zip(
-                cfidc[f_kn].values[i][m][-2:],
-                cmagpsfc[f_kn].values[i][m][-2:],
-                csigmapsfc[f_kn].values[i][m][-2:],
-                cmagnrc[f_kn].values[i][m][-2:],
-                csigmagnrc[f_kn].values[i][m][-2:],
-                cmagzpscic[f_kn].values[i][m][-2:],
-                cisdiffposc[f_kn].values[i][m][-2:],
+                cfidc[f_kn].values[i][m],
+                cmagpsfc[f_kn].values[i][m],
+                csigmapsfc[f_kn].values[i][m],
+                cmagnrc[f_kn].values[i][m],
+                csigmagnrc[f_kn].values[i][m],
+                cmagzpscic[f_kn].values[i][m],
+                cisdiffposc[f_kn].values[i][m],
             )
         ]).T
 
         # Compute rate
         jd_hist = cjdc[f_kn].values[i][m]
 
-        # rate is between `last` and `last-1` measurements only
-        dmag = mag_hist[-1] - mag_hist[-2]
-        dt = jd_hist[-1] - jd_hist[-2]
-        rate[f_kn][i] = dmag / dt
-        error_rate[f_kn][i] = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
+        if jd_hist[-1]-jd_hist[0] > 0.5:
+            popt, pcov = curve_fit(
+                lambda x, a, b: a*x + b,
+                jd_hist,
+                mag_hist,
+                sigma=err_hist
+            )
+            rate[index_mask[i]] = popt[0]
+            sigma_rate[index_mask[i]] = pcov[0, 0]
 
         # Grab the last measurement and its error estimate
-        mag[f_kn][i] = mag_hist[-1]
-        err_mag[f_kn][i] = err_hist[-1]
+        mag[index_mask[i]] = mag_hist[-1]
+        err_mag[index_mask[i]] = err_hist[-1]
 
     # filter on rate. rate is 0 where f_kn is already false.
     f_kn = pd.Series(np.array(rate) > 0.3)
@@ -217,10 +223,10 @@ def rate_based_kn_candidates(
         jd = np.array(jd)[f_kn]
 
         # measurements
-        rate = np.array(rate)[f_kn]
-        error_rate = np.array(error_rate)[f_kn]
-        mag = np.array(mag)[f_kn]
-        err_mag = np.array(err_mag)[f_kn]
+        mag = mag[f_kn]
+        rate = rate[f_kn]
+        err_mag = err_mag[f_kn]
+        sigma_rate = sigma_rate[f_kn]
 
     # message for candidates
     for i, alertID in enumerate(objectId[f_kn]):
@@ -243,7 +249,7 @@ def rate_based_kn_candidates(
             """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
         measurements_text = """
             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
-            """.format(dict_filt[fid[i]], mag[i], err_mag[i], rate[i], error_rate[i])
+            """.format(dict_filt[fid[i]], mag[i], err_mag[i], rate[i], sigma_rate[i])
         radec_text = """
               *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
               """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
