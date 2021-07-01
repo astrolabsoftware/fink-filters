@@ -150,15 +150,19 @@ def rate_based_kn_candidates(
             )
         ]).T
 
-        # Compute rate
-        jd_hist = cjdc[f_kn].values[i][m]
+        # remove abnormal values
+        mask_outliers = mag_hist < 21
+        if sum(mask_outliers) < 2:
+            continue
+        jd_hist = cjdc[f_kn].values[i][m][mask_outliers]
 
         if jd_hist[-1]-jd_hist[0] > 0.5:
+            # Compute rate
             popt, pcov = curve_fit(
                 lambda x, a, b: a*x + b,
                 jd_hist,
-                mag_hist,
-                sigma=err_hist
+                mag_hist[mask_outliers],
+                sigma=err_hist[mask_outliers],
             )
             rate[index_mask[i]] = popt[0]
             sigma_rate[index_mask[i]] = pcov[0, 0]
