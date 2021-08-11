@@ -5,12 +5,14 @@
 This repository contains filters used to flag only particular parts of the full stream to be distributed to Fink users. Available filters (i.e. topics) are:
 
 - sn_candidates: alerts identified as SN candidates
-- early_sn_candidates: alerts identified as Early SN candidates
+- early_sn_candidates: alerts identified as Early SN Ia candidates
 - microlensing_candidates: alerts identified as Microlensing event candidates
-- sso_ztf_candiates: alerts identified as Solar System Object candidates by ZTF
+- sso_ztf_candiates: alerts identified as Solar System Object in the MPC database
 - sso_fink_candidates: alerts identified as Solar System Object candidates by Fink
 - rrlyr: alerts identified as RRLyr in the SIMBAD catalog
-- kn_candidates: alerts identified as kilonova candidates
+- kn_candidates: alerts identified as kilonova candidates (ML-based)
+- kn_candidates: alerts identified as kilonova candidates (cut-based)
+- orphan_grb: alerts identified as orphan GRB
 
 ## How to contribute?
 
