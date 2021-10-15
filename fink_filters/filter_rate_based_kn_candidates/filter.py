@@ -22,11 +22,13 @@ import datetime
 import requests
 import os
 import logging
+from scipy.optimize import curve_fit
 
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.time import Time
+from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
@@ -90,6 +92,11 @@ def rate_based_kn_candidates(
     appeared = isdiffpos.astype(str) == 't'
     far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
 
+    # galactic plane
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg'
+                 ).galactic.b.deg
+    awaw_from_galactic_plane = np.abs(b) > 10
+
     list_simbad_galaxies = [
         "galaxy",
         "Galaxy",
@@ -114,16 +121,86 @@ def rate_based_kn_candidates(
 
     f_kn = high_drb & high_classtar & new_detection & small_detection_history
     f_kn = f_kn & cdsxmatch.isin(keep_cds) & appeared & far_from_mpc
+    f_kn = f_kn & awaw_from_galactic_plane
 
+    # Compute rate and error rate, get magnitude and its error
+    rate = np.zeros(len(fid))
+    sigma_rate = np.zeros(len(fid))
+    mag = np.zeros(len(fid))
+    err_mag = np.zeros(len(fid))
+    index_mask = np.argwhere(f_kn)
+    for i, alertID in enumerate(objectId[f_kn]):
+        # Spark casts None as NaN
+        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
+        maskFilter = np.array(cfidc[f_kn].values[i]) == np.array(fid)[f_kn][i]
+        m = maskNotNone * maskFilter
+        if sum(m) < 2:
+            continue
+        # DC mag (history + last measurement)
+        mag_hist, err_hist = np.array([
+            dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+            for k in zip(
+                cfidc[f_kn].values[i][m],
+                cmagpsfc[f_kn].values[i][m],
+                csigmapsfc[f_kn].values[i][m],
+                cmagnrc[f_kn].values[i][m],
+                csigmagnrc[f_kn].values[i][m],
+                cmagzpscic[f_kn].values[i][m],
+                cisdiffposc[f_kn].values[i][m],
+            )
+        ]).T
+
+        # remove abnormal values
+        mask_outliers = mag_hist < 21
+        if sum(mask_outliers) < 2:
+            continue
+        jd_hist = cjdc[f_kn].values[i][m][mask_outliers]
+
+        if jd_hist[-1]-jd_hist[0] > 0.5:
+            # Compute rate
+            popt, pcov = curve_fit(
+                lambda x, a, b: a*x + b,
+                jd_hist,
+                mag_hist[mask_outliers],
+                sigma=err_hist[mask_outliers],
+            )
+            rate[index_mask[i]] = popt[0]
+            sigma_rate[index_mask[i]] = pcov[0, 0]
+
+        # Grab the last measurement and its error estimate
+        mag[index_mask[i]] = mag_hist[-1]
+        err_mag[index_mask[i]] = err_hist[-1]
+
+    # filter on rate. rate is 0 where f_kn is already false.
+    f_kn = pd.Series(np.array(rate) > 0.3)
+
+    # check the nature of close objects in SDSS catalog
     if f_kn.any():
-        # Galactic latitude transformation
-        b = SkyCoord(
-            np.array(ra[f_kn], dtype=float),
-            np.array(dec[f_kn], dtype=float),
-            unit='deg'
-        ).galactic.b.deg
+        no_star = []
+        for i in range(sum(f_kn)):
+            pos = SkyCoord(
+                ra=np.array(ra[f_kn])[i] * u.degree,
+                dec=np.array(dec[f_kn])[i] * u.degree
+                )
+            # for a test on "many" objects, you may wait 1s to stay under the
+            # query limit.
+            table = SDSS.query_region(pos, fields=['type'],
+                                      radius=5 * u.arcsec)
+            type_close_objects = []
+            if table is not None:
+                type_close_objects = table['type']
+            # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
+            # 5: SKY, 6: STAR_LATE, 7: GAL_EM
+            to_remove_types = [1, 3, 4, 6]
+            no_star.append(
+                len(np.intersect1d(type_close_objects, to_remove_types)) == 0
+                )
+        f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
-        # Simplify notations
+    # Simplify notations
+    if f_kn.any():
+        # coordinates
+        b = np.array(b)[f_kn]
         ra = Angle(
             np.array(ra.astype(float)[f_kn]) * u.degree
         ).deg
@@ -139,67 +216,32 @@ def rate_based_kn_candidates(
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
+
+        # scores
         rfscore = np.array(rfscore.astype(float)[f_kn])
         snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
         snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
 
-        # Redefine jd & fid relative to candidates
+        # time
         fid = np.array(fid.astype(int)[f_kn])
         jd = np.array(jd)[f_kn]
 
-    dict_filt = {1: 'g', 2: 'r'}
-    rate_all = []
+        # measurements
+        mag = mag[f_kn]
+        rate = rate[f_kn]
+        err_mag = err_mag[f_kn]
+        sigma_rate = sigma_rate[f_kn]
+
+    # message for candidates
     for i, alertID in enumerate(objectId[f_kn]):
-        # Careful - Spark casts None as NaN!
-        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
 
         # Time since last detection (independently of the band)
+        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
         jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
-        if len(jd_hist_allbands) < 2:
-            rate_all.append(0)
-            continue
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
-        filt = fid[i]
-        maskFilter = np.array(cfidc[f_kn].values[i]) == filt
-        m = maskNotNone * maskFilter
-        if sum(m) < 2:
-            rate_all.append(0)
-            continue
-        # DC mag (history + last measurement)
-        mag_hist, err_hist = np.array([
-            dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
-            for k in zip(
-                cfidc[f_kn].values[i][m][-2:],
-                cmagpsfc[f_kn].values[i][m][-2:],
-                csigmapsfc[f_kn].values[i][m][-2:],
-                cmagnrc[f_kn].values[i][m][-2:],
-                csigmagnrc[f_kn].values[i][m][-2:],
-                cmagzpscic[f_kn].values[i][m][-2:],
-                cisdiffposc[f_kn].values[i][m][-2:],
-            )
-        ]).T
-
-        # Grab the last measurement and its error estimate
-        mag = mag_hist[-1]
-        err_mag = err_hist[-1]
-
-        # Compute rate only if more than 1 measurement available
-        if len(mag_hist) > 1:
-            jd_hist = cjdc[f_kn].values[i][m]
-
-            # rate is between `last` and `last-1` measurements only
-            dmag = mag_hist[-1] - mag_hist[-2]
-            dt = jd_hist[-1] - jd_hist[-2]
-            rate = dmag / dt
-            error_rate = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
-
-        # filter messages on rate
-        rate_all.append(rate)
-        if rate <= 0.3:
-            continue
-
         # information to send
+        dict_filt = {1: 'g', 2: 'r'}
         alert_text = """
             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
             """.format(alertID, alertID)
@@ -211,10 +253,10 @@ def rate_based_kn_candidates(
             """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
         measurements_text = """
             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
-            """.format(dict_filt[fid[i]], mag, err_mag, rate, error_rate)
+            """.format(dict_filt[fid[i]], mag[i], err_mag[i], rate[i], sigma_rate[i])
         radec_text = """
-             *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
-             """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+              *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
+              """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
         galactic_position_text = """
             *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
 
@@ -229,7 +271,7 @@ def rate_based_kn_candidates(
                         "text": alert_text
                     },
                 ]
-             },
+              },
             {
                 "type": "section",
                 "fields": [
@@ -288,7 +330,7 @@ def rate_based_kn_candidates(
         # Monday is 1 and Sunday is 7
         is_friday = (now.isoweekday() == 5)
 
-        if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & ama_in_env:
+        if (np.abs(b[i]) > 20) & (mag[i] < 20) & is_friday & ama_in_env:
             requests.post(
                 os.environ['KNWEBHOOK_AMA_RATE'],
                 json={
@@ -300,7 +342,5 @@ def rate_based_kn_candidates(
         else:
             log = logging.Logger('Kilonova filter')
             log.warning(error_message.format(url_name))
-
-    f_kn.loc[f_kn] = np.array(rate_all) > 0.3
 
     return f_kn
