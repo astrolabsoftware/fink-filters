@@ -11,7 +11,8 @@ This repository contains filters used to flag only particular parts of the full 
 - sso_fink_candidates: alerts identified as Solar System Object candidates by Fink
 - rrlyr: alerts identified as RRLyr in the SIMBAD catalog
 - kn_candidates: alerts identified as kilonova candidates (ML-based)
-- kn_candidates: alerts identified as kilonova candidates (cut-based)
+- early_kn_candidates: alerts identified as kilonova candidates (cut-based)
+- rate_based_kn_candidates: alerts identified as kilonova candidates from a fast (> 0.3 mag/day) decay
 - orphan_grb: alerts identified as orphan GRB
 
 ## How to contribute?
