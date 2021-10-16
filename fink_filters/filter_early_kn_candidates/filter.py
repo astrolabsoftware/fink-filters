@@ -137,7 +137,13 @@ def early_kn_candidates(
     f_kn = high_drb & high_classtar & new_detection
     f_kn = f_kn & cdsxmatch.isin(keep_cds) & not_ztf_sso_candidate
 
-    if f_kn.any():
+    # check if we need slack redirection
+    need_slack1 = 'KNWEBHOOK' in os.environ
+    need_slack1 = 'KNWEBHOOK_FINK' in os.environ
+    need_slack3 = 'KNWEBHOOK_AMA_GALAXIES' in os.environ
+    need_slack4 = 'KNWEBHOOK_DWF' in os.environ
+
+    if f_kn.any() and (need_slack1 or need_slack1 or need_slack3 or need_slack4):
         # load mangrove catalog
         curdir = os.path.dirname(os.path.abspath(__file__))
         mangrove_path = curdir + '/../data/mangrove_filtered.csv'
@@ -204,18 +210,20 @@ def early_kn_candidates(
 
         f_kn.loc[f_kn] = np.array(galaxy_matching, dtype=bool)
 
-    # check the nature of close objects in SDSS catalog
-    if f_kn.any():
+        # check the nature of close objects in SDSS catalog
         no_star = []
         for i in range(sum(f_kn)):
             pos = SkyCoord(
                 ra=np.array(ra[f_kn])[i] * u.degree,
                 dec=np.array(dec[f_kn])[i] * u.degree
-                )
+            )
+
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
-            table = SDSS.query_region(pos, fields=['type'],
-                                      radius=5 * u.arcsec)
+            table = SDSS.query_region(
+                pos, fields=['type'],
+                radius=5 * u.arcsec
+            )
             type_close_objects = []
             if table is not None:
                 type_close_objects = table['type']
@@ -227,7 +235,6 @@ def early_kn_candidates(
                 )
         f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
-    if f_kn.any():
         # Simplify notations
         b = gal.b.degree[f_kn]
         ra = Angle(
@@ -254,98 +261,117 @@ def early_kn_candidates(
         err_mag = err_mag[f_kn]
         field = field[f_kn]
 
-    dict_filt = {1: 'g', 2: 'r'}
-    for i, alertID in enumerate(objectId[f_kn]):
-        # information to send
-        alert_text = """
-            *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
-            """.format(alertID, alertID)
-        time_text = """
-            *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
-            """.format(Time(jd[i], format='jd').iso, delta_jd_first[i] * 24)
-        measurements_text = """
-            *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
-            """.format(dict_filt[fid[i]], mag[i], err_mag[i])
-        host_text = """
-            *Presumed host galaxy:*\n- HyperLEDA Name: {:s}\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
+        dict_filt = {1: 'g', 2: 'r'}
+        for i, alertID in enumerate(objectId[f_kn]):
+            # information to send
+            alert_text = """
+                *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+                """.format(alertID, alertID)
+            time_text = """
+                *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
+                """.format(Time(jd[i], format='jd').iso, delta_jd_first[i] * 24)
+            measurements_text = """
+                *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
+                """.format(dict_filt[fid[i]], mag[i], err_mag[i])
+            host_text = """
+                *Presumed host galaxy:*\n- HyperLEDA Name: {:s}\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
+                """.format(
+                pdf_mangrove.loc[host_galaxies[i], 'HyperLEDA_name'][2:-1],
+                pdf_mangrove.loc[host_galaxies[i], '2MASS_name'][2:-1],
+                pdf_mangrove.loc[host_galaxies[i], 'lum_dist'],
+                pdf_mangrove.loc[host_galaxies[i], 'dist_err'],
+                pdf_mangrove.loc[host_galaxies[i], 'ra'],
+                pdf_mangrove.loc[host_galaxies[i], 'dec'],
+                pdf_mangrove.loc[host_galaxies[i], 'stellarmass'],
+            )
+            crossmatch_text = """
+            *Cross-match: *\n- Alert-host distance: {:.2f} kpc\n- Absolute magnitude: {:.2f}
             """.format(
-            pdf_mangrove.loc[host_galaxies[i], 'HyperLEDA_name'][2:-1],
-            pdf_mangrove.loc[host_galaxies[i], '2MASS_name'][2:-1],
-            pdf_mangrove.loc[host_galaxies[i], 'lum_dist'],
-            pdf_mangrove.loc[host_galaxies[i], 'dist_err'],
-            pdf_mangrove.loc[host_galaxies[i], 'ra'],
-            pdf_mangrove.loc[host_galaxies[i], 'dec'],
-            pdf_mangrove.loc[host_galaxies[i], 'stellarmass'],
-        )
-        crossmatch_text = """
-        *Cross-match: *\n- Alert-host distance: {:.2f} kpc\n- Absolute magnitude: {:.2f}
-        """.format(
-            host_alert_separation[i] * pdf_mangrove.loc[
-                host_galaxies[i], 'ang_dist'] * 1000,
-            abs_mag_candidate[i],
-        )
-        radec_text = """
-        *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
-        """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
-        galactic_position_text = """
-            *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
-        tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
-        # message formatting
-        blocks = [
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": alert_text
-                    },
-                ]
-            },
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": time_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": host_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": radec_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": crossmatch_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": galactic_position_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": measurements_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": tns_text
-                    },
-                ]
-            },
-        ]
+                host_alert_separation[i] * pdf_mangrove.loc[
+                    host_galaxies[i], 'ang_dist'] * 1000,
+                abs_mag_candidate[i],
+            )
+            radec_text = """
+            *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
+            """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+            galactic_position_text = """
+                *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+            tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
+            # message formatting
+            blocks = [
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": alert_text
+                        },
+                    ]
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": time_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": host_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": radec_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": crossmatch_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": galactic_position_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": measurements_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": tns_text
+                        },
+                    ]
+                },
+            ]
 
-        # Standard channels
-        error_message = """
-        {} is not defined as env variable
-        if an alert has passed the filter,
-        the message has not been sent to Slack
-        """
-        for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
-            if (url_name in os.environ):
+            # Standard channels
+            error_message = """
+            {} is not defined as env variable
+            if an alert has passed the filter,
+            the message has not been sent to Slack
+            """
+            for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
+                if (url_name in os.environ):
+                    requests.post(
+                        os.environ[url_name],
+                        json={
+                            'blocks': blocks,
+                            'username': 'Cross-match-based kilonova bot'
+                        },
+                        headers={'Content-Type': 'application/json'},
+                    )
+                else:
+                    log = logging.Logger('Kilonova filter')
+                    log.warning(error_message.format(url_name))
+
+            # Send alerts to amateurs only on Friday
+            now = datetime.datetime.utcnow()
+
+            # Monday is 1 and Sunday is 7
+            is_friday = (now.isoweekday() == 5)
+
+            if (np.abs(b[i]) > 20) & (mag[i] < 20) & is_friday & need_slack3:
                 requests.post(
-                    os.environ[url_name],
+                    os.environ['KNWEBHOOK_AMA_GALAXIES'],
                     json={
                         'blocks': blocks,
                         'username': 'Cross-match-based kilonova bot'
@@ -354,44 +380,22 @@ def early_kn_candidates(
                 )
             else:
                 log = logging.Logger('Kilonova filter')
-                log.warning(error_message.format(url_name))
+                log.warning(error_message.format('KNWEBHOOK_AMA_GALAXIES'))
 
-        # Grandma amateur channel
-        ama_in_env = ('KNWEBHOOK_AMA_GALAXIES' in os.environ)
-
-        # Send alerts to amateurs only on Friday
-        now = datetime.datetime.utcnow()
-
-        # Monday is 1 and Sunday is 7
-        is_friday = (now.isoweekday() == 5)
-
-        if (np.abs(b[i]) > 20) & (mag[i] < 20) & is_friday & ama_in_env:
-            requests.post(
-                os.environ['KNWEBHOOK_AMA_GALAXIES'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Cross-match-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
-            )
-        else:
-            log = logging.Logger('Kilonova filter')
-            log.warning(error_message.format('KNWEBHOOK_AMA_GALAXIES'))
-
-        # DWF channel and requirements
-        dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
-        dwf_in_env = ('KNWEBHOOK_DWF' in os.environ)
-        if (int(field.values[i]) in dwf_ztf_fields) and dwf_in_env:
-            requests.post(
-                os.environ['KNWEBHOOK_DWF'],
-                json={
-                    'blocks': blocks,
-                    'username': 'kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
-            )
-        else:
-            log = logging.Logger('Kilonova filter')
-            log.warning(error_message.format('KNWEBHOOK_DWF'))
+            # DWF channel and requirements
+            dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
+            dwf_in_env = ('KNWEBHOOK_DWF' in os.environ)
+            if (int(field.values[i]) in dwf_ztf_fields) and dwf_in_env:
+                requests.post(
+                    os.environ['KNWEBHOOK_DWF'],
+                    json={
+                        'blocks': blocks,
+                        'username': 'kilonova bot'
+                    },
+                    headers={'Content-Type': 'application/json'},
+                )
+            else:
+                log = logging.Logger('Kilonova filter')
+                log.warning(error_message.format('KNWEBHOOK_DWF'))
 
     return f_kn

@@ -108,7 +108,12 @@ def kn_candidates(
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
 
-    if f_kn.any():
+    # check if we need slack redirection
+    need_slack1 = 'KNWEBHOOK' in os.environ
+    need_slack1 = 'KNWEBHOOK_FINK' in os.environ
+    need_slack3 = 'KNWEBHOOK_AMA_CL' in os.environ
+
+    if f_kn.any() and (need_slack1 or need_slack1 or need_slack3):
         # Galactic latitude transformation
         b = SkyCoord(
             np.array(ra[f_kn], dtype=float),
@@ -141,124 +146,143 @@ def kn_candidates(
         fid = np.array(fid.astype(int)[f_kn])
         jd = np.array(jd)[f_kn]
 
-    dict_filt = {1: 'g', 2: 'r'}
-    for i, alertID in enumerate(objectId[f_kn]):
-        # Careful - Spark casts None as NaN!
-        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
+        dict_filt = {1: 'g', 2: 'r'}
+        for i, alertID in enumerate(objectId[f_kn]):
+            # Careful - Spark casts None as NaN!
+            maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
 
-        # Time since last detection (independently of the band)
-        jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
-        delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
+            # Time since last detection (independently of the band)
+            jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
+            delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
-        filt = fid[i]
-        maskFilter = np.array(cfidc[f_kn].values[i]) == filt
-        m = maskNotNone * maskFilter
-        if sum(m) < 2:
-            continue
-        # DC mag (history + last measurement)
-        mag_hist, err_hist = np.array([
-            dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
-            for k in zip(
-                cfidc[f_kn].values[i][m][-2:],
-                cmagpsfc[f_kn].values[i][m][-2:],
-                csigmapsfc[f_kn].values[i][m][-2:],
-                cmagnrc[f_kn].values[i][m][-2:],
-                csigmagnrc[f_kn].values[i][m][-2:],
-                cmagzpscic[f_kn].values[i][m][-2:],
-                cisdiffposc[f_kn].values[i][m][-2:],
-            )
-        ]).T
+            filt = fid[i]
+            maskFilter = np.array(cfidc[f_kn].values[i]) == filt
+            m = maskNotNone * maskFilter
+            if sum(m) < 2:
+                continue
+            # DC mag (history + last measurement)
+            mag_hist, err_hist = np.array([
+                dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+                for k in zip(
+                    cfidc[f_kn].values[i][m][-2:],
+                    cmagpsfc[f_kn].values[i][m][-2:],
+                    csigmapsfc[f_kn].values[i][m][-2:],
+                    cmagnrc[f_kn].values[i][m][-2:],
+                    csigmagnrc[f_kn].values[i][m][-2:],
+                    cmagzpscic[f_kn].values[i][m][-2:],
+                    cisdiffposc[f_kn].values[i][m][-2:],
+                )
+            ]).T
 
-        # Grab the last measurement and its error estimate
-        mag = mag_hist[-1]
-        err_mag = err_hist[-1]
+            # Grab the last measurement and its error estimate
+            mag = mag_hist[-1]
+            err_mag = err_hist[-1]
 
-        # Compute rate only if more than 1 measurement available
-        if len(mag_hist) > 1:
-            jd_hist = cjdc[f_kn].values[i][m]
+            # Compute rate only if more than 1 measurement available
+            if len(mag_hist) > 1:
+                jd_hist = cjdc[f_kn].values[i][m]
 
-            # rate is between `last` and `last-1` measurements only
-            dmag = mag_hist[-1] - mag_hist[-2]
-            dt = jd_hist[-1] - jd_hist[-2]
-            rate = dmag / dt
-            error_rate = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
+                # rate is between `last` and `last-1` measurements only
+                dmag = mag_hist[-1] - mag_hist[-2]
+                dt = jd_hist[-1] - jd_hist[-2]
+                rate = dmag / dt
+                error_rate = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
 
-        # information to send
-        alert_text = """
-            *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
-            """.format(alertID, alertID)
-        knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
-        score_text = """
-            *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
-            """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
-        time_text = """
-            *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
-            """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
-        measurements_text = """
-            *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
-            """.format(dict_filt[fid[i]], mag, err_mag, rate, error_rate)
-        radec_text = """
-             *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
-             """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
-        galactic_position_text = """
-            *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+            # information to send
+            alert_text = """
+                *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+                """.format(alertID, alertID)
+            knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
+            score_text = """
+                *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
+                """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
+            time_text = """
+                *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
+                """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
+            measurements_text = """
+                *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
+                """.format(dict_filt[fid[i]], mag, err_mag, rate, error_rate)
+            radec_text = """
+                 *RA/Dec:*\n- [hours, deg]: {} {}\n- [deg, deg]: {:.7f} {:+.7f}
+                 """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
+            galactic_position_text = """
+                *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
 
-        tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
-        # message formatting
-        blocks = [
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": alert_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": knscore_text
-                    }
-                ]
-             },
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": time_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": score_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": radec_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": measurements_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": galactic_position_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": tns_text
-                    },
-                ]
-            },
-        ]
+            tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
+            # message formatting
+            blocks = [
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": alert_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": knscore_text
+                        }
+                    ]
+                 },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": time_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": score_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": radec_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": measurements_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": galactic_position_text
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": tns_text
+                        },
+                    ]
+                },
+            ]
 
-        error_message = """
-        {} is not defined as env variable
-        if an alert has passed the filter,
-        the message has not been sent to Slack
-        """
-        for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
-            if (url_name in os.environ):
+            error_message = """
+            {} is not defined as env variable
+            if an alert has passed the filter,
+            the message has not been sent to Slack
+            """
+            for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
+                if (url_name in os.environ):
+                    requests.post(
+                        os.environ[url_name],
+                        json={
+                            'blocks': blocks,
+                            'username': 'Classifier-based kilonova bot'
+                        },
+                        headers={'Content-Type': 'application/json'},
+                    )
+                else:
+                    log = logging.Logger('Kilonova filter')
+                    log.warning(error_message.format(url_name))
+
+            # Send alerts to amateurs only on Friday
+            now = datetime.datetime.utcnow()
+
+            # Monday is 1 and Sunday is 7
+            is_friday = (now.isoweekday() == 5)
+
+            if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & need_slack3:
                 requests.post(
-                    os.environ[url_name],
+                    os.environ['KNWEBHOOK_AMA_CL'],
                     json={
                         'blocks': blocks,
                         'username': 'Classifier-based kilonova bot'
@@ -268,26 +292,5 @@ def kn_candidates(
             else:
                 log = logging.Logger('Kilonova filter')
                 log.warning(error_message.format(url_name))
-
-        ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ)
-
-        # Send alerts to amateurs only on Friday
-        now = datetime.datetime.utcnow()
-
-        # Monday is 1 and Sunday is 7
-        is_friday = (now.isoweekday() == 5)
-
-        if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & ama_in_env:
-            requests.post(
-                os.environ['KNWEBHOOK_AMA_CL'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Classifier-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
-            )
-        else:
-            log = logging.Logger('Kilonova filter')
-            log.warning(error_message.format(url_name))
 
     return f_kn
