@@ -13,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Derive Fink classification from alert fields"""
+"""Derive alert classification from alert fields"""
+
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import StringType
 
@@ -38,7 +39,48 @@ def extract_fink_classification_(
         ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet) -> pd.Series:
     """ Extract the classification of an alert based on module outputs
 
-    See https://arxiv.org/abs/2009.10185 for more information
+    Rule of thumb:
+
+    1. if an alert has not been flagged by any of the filters, it is tagged as `Unknown`
+    2. if an alert has a counterpart in the SIMBAD database, its classification is the one from SIMBAD.
+    3. if an alert has been flagged by one filter, its classification is given by the filter (`Early SN Ia candidate`, `KN candidate`, `SSO candidate`, etc.)
+    4. if an alert has been flagged by more than one filter (except the SIMBAD one), it is tagged as `Ambiguous`.
+
+    Parameters
+    ----------
+    cdsxmatch: Pandas series
+        Column containing the cross-match values
+    roid: Pandas series
+        Column containing the Solar System label
+    mulens_class_1: Pandas series
+        Column containing the LIA results for band g
+    mulens_class_2: Pandas series
+        Column containing the LIA results for band r
+    snn_snia_vs_nonia: Pandas series
+        Column containing the probability to be a SN Ia from SuperNNova.
+    snn_sn_vs_all: Pandas series
+        Column containing the probability to be a SNe from SuperNNova.
+    rfscore: Pandas series
+        Column containing the probability to be a SN Ia from RandomForestClassifier.
+    ndethist: Pandas series
+        Column containing the number of detection by ZTF
+    drb: Pandas series
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Pandas series
+        Column containing the sextractor score
+    jd: Pandas series
+        Column containing observation Julian dates at start of exposure [days]
+    jdstarthist: Pandas series
+        Column containing earliest Julian dates corresponding to ndethist
+    knscore_: Pandas series
+        Column containing the probability to be a Kilonova
+    tracklet: Pandas series
+        Column containing the tracklet label
+
+    Returns
+    ----------
+    out: pandas.Series of string
+        Return a Pandas series with the classification tag
 
     Examples
     ---------
@@ -131,7 +173,17 @@ def extract_fink_classification_(
     return pd.Series(classification)
 
 def extract_fink_classification_from_pdf(pdf):
-    """ Extract lazily classification from a DataFrame made of alerts
+    """ Extract classification from a DataFrame made of alerts
+
+    Parameters
+    ----------
+    pdf: Pandas DataFrame
+        DataFrame containing alert values (with Fink schema)
+
+    Returns
+    ----------
+    out: pandas.Series of string
+        Return a Pandas series with the classification tag
 
     >>> pdf = pd.read_parquet('datatest')
     >>> classification = extract_fink_classification_from_pdf(pdf)
@@ -174,9 +226,43 @@ def extract_fink_classification(
         cdsxmatch, roid, mulens_class_1, mulens_class_2,
         snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
         ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet) -> pd.Series:
-    """ Extract the classification of an alert based on module outputs
+    """ Pandas UDF version of extract_fink_classification_ for Apache Spark
 
-    For Spark usage
+    Parameters
+    ----------
+    cdsxmatch: Spark DataFrame Column
+        Column containing the cross-match values
+    roid: Spark DataFrame Column
+        Column containing the Solar System label
+    mulens_class_1: Spark DataFrame Column
+        Column containing the LIA results for band g
+    mulens_class_2: Spark DataFrame Column
+        Column containing the LIA results for band r
+    snn_snia_vs_nonia: Spark DataFrame Column
+        Column containing the probability to be a SN Ia from SuperNNova.
+    snn_sn_vs_all: Spark DataFrame Column
+        Column containing the probability to be a SNe from SuperNNova.
+    rfscore: Spark DataFrame Column
+        Column containing the probability to be a SN Ia from RandomForestClassifier.
+    ndethist: Spark DataFrame Column
+        Column containing the number of detection by ZTF
+    drb: Spark DataFrame Column
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Spark DataFrame Column
+        Column containing the sextractor score
+    jd: Spark DataFrame Column
+        Column containing observation Julian dates at start of exposure [days]
+    jdstarthist: Spark DataFrame Column
+        Column containing earliest Julian dates corresponding to ndethist
+    knscore_: Spark DataFrame Column
+        Column containing the probability to be a Kilonova
+    tracklet: Spark DataFrame Column
+        Column containing the tracklet label
+
+    Returns
+    ----------
+    out: pandas.Series of string
+        Return a Pandas series with the classification tag
 
     See https://arxiv.org/abs/2009.10185 for more information
     """
