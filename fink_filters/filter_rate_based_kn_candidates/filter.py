@@ -38,8 +38,7 @@ def rate_based_kn_candidates(
         objectId, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
         cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
-        cisdiffposc
-        ) -> pd.Series:
+        cisdiffposc) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
@@ -156,10 +155,10 @@ def rate_based_kn_candidates(
             continue
         jd_hist = cjdc[f_kn].values[i][m][mask_outliers]
 
-        if jd_hist[-1]-jd_hist[0] > 0.5:
+        if jd_hist[-1] - jd_hist[0] > 0.5:
             # Compute rate
             popt, pcov = curve_fit(
-                lambda x, a, b: a*x + b,
+                lambda x, a, b: a * x + b,
                 jd_hist,
                 mag_hist[mask_outliers],
                 sigma=err_hist[mask_outliers],
@@ -181,7 +180,7 @@ def rate_based_kn_candidates(
             pos = SkyCoord(
                 ra=np.array(ra[f_kn])[i] * u.degree,
                 dec=np.array(dec[f_kn])[i] * u.degree
-                )
+            )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
             table = SDSS.query_region(pos, fields=['type'],
@@ -194,7 +193,7 @@ def rate_based_kn_candidates(
             to_remove_types = [1, 3, 4, 6]
             no_star.append(
                 len(np.intersect1d(type_close_objects, to_remove_types)) == 0
-                )
+            )
         f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
     # Simplify notations
@@ -209,10 +208,10 @@ def rate_based_kn_candidates(
         ).deg
         ra_formatted = Angle(ra * u.degree).to_string(
             precision=2, sep=' ', unit=u.hour
-            )
+        )
         dec_formatted = Angle(dec * u.degree).to_string(
             precision=1, sep=' ', alwayssign=True
-            )
+        )
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
@@ -271,7 +270,7 @@ def rate_based_kn_candidates(
                         "text": alert_text
                     },
                 ]
-              },
+            },
             {
                 "type": "section",
                 "fields": [

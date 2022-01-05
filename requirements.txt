@@ -1,2 +1,18 @@
 numpy>=1.14
+
+fink-science
+
+# Coverage
+coveralls
+coverage>=4.2
+codecov
+
+scipy
+
+astropy
+astroquery
+
 pandas
+pyarrow
+
+h5py

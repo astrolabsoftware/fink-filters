@@ -62,7 +62,7 @@ def make_mangrove_pdf(path_in, path_out='mangrove_filtered.csv',
                         # object, empty if no association
     ]]
     pdf_mangrove = pdf_mangrove[pdf_mangrove.dist < range_interferometers]
-    pdf_mangrove['ang_dist'] = pdf_mangrove.dist/np.square(1+pdf_mangrove.z)
+    pdf_mangrove['ang_dist'] = pdf_mangrove.dist / np.square(1 + pdf_mangrove.z)
     pdf_mangrove.drop(columns=['z'], inplace=True)
     pdf_mangrove.rename(columns={'idx': 'galaxy_idx', 'RA': 'ra',
                                  'dist': 'lum_dist'}, inplace=True)

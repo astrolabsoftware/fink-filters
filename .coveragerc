@@ -1,0 +1,14 @@
+[run]
+branch = false
+parallel = true
+data_file = ${PWD}/.coverage
+omit=
+    $SPARK_HOME/*
+    setup.py
+    dist/*
+    $PWD/fink_filters/filter_snlike/*
+    $PWD/fink_filters/filter_orphan_grb_candidates/*
+    $PWD/fink_filters/filter_rrlyr/*
+    $PWD/fink_filters/early_sn_candidates/*
+    $PWD/fink_filters/filter_rate_based_kn_candidates/*
+    $PWD/fink_filters/filter_early_kn_candidates/filter_utils.py
