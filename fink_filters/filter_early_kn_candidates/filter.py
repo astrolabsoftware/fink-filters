@@ -1,5 +1,5 @@
-# Copyright 2021 AstroLab Software
-# Author: Juliette Vlieghe
+# Copyright 2021-2022 AstroLab Software
+# Author: Juliette Vlieghe, Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,74 +30,82 @@ from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
-
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def early_kn_candidates(
-        objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid,
-        field) -> pd.Series:
-    """
-    Return alerts considered as KN candidates.
-
-    If the environment variable KNWEBHOOK is defined and match a
-    webhook url, the alerts that pass the filter will be sent to the matching
-    Slack channel.
+def early_kn_candidates_(
+        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid) -> pd.Series:
+    """ Return alerts considered as KN candidates from the xmatch with Mangrove
 
     Note the default `data/mangrove_filtered.csv` catalog is loaded.
 
     Parameters
     ----------
-    objectId: Spark DataFrame Column
-        Column containing the alert IDs
-    drb: Spark DataFrame Column
+    drb: Pandas series
         Column containing the Deep-Learning Real Bogus score
-    classtar: Spark DataFrame Column
+    classtar: Pandas series
         Column containing the sextractor score
-    jd: Spark DataFrame Column
+    jd: Pandas series
         Column containing observation Julian dates at start of exposure [days]
-    jdstarthist: Spark DataFrame Column
+    jdstarthist: Pandas series
         Column containing earliest Julian dates corresponding to ndethist
-    ndethist: Spark DataFrame Column
+    ndethist: Pandas series
         Column containing the number of prior detections (theshold of 3 sigma)
-    cdsxmatch: Spark DataFrame Column
+    cdsxmatch: Pandas series
         Column containing the cross-match values
-    fid: Spark DataFrame Column
+    fid: Pandas series
         Column containing filter, 1 for green and 2 for red
-    magpsf,sigmapsf: Spark DataFrame Columns
+    magpsf,sigmapsf: Pandas series
         Columns containing magnitude from PSF-fit photometry, and 1-sigma error
-    magnr,sigmagnr: Spark DataFrame Columns
+    magnr,sigmagnr: Pandas series
         Columns containing magnitude of nearest source in reference image
         PSF-catalog within 30 arcsec and 1-sigma error
-    magzpsci: Spark DataFrame Column
+    magzpsci: Pandas series
         Column containing magnitude zero point for photometry estimates
-    isdiffpos: Spark DataFrame Column
+    isdiffpos: Pandas series
         Column containing:
         t or 1 => candidate is from positive (sci minus ref) subtraction;
         f or 0 => candidate is from negative (ref minus sci) subtraction
-    ra: Spark DataFrame Column
+    ra: Pandas series
         Column containing the right Ascension of candidate; J2000 [deg]
-    dec: Spark DataFrame Column
+    dec: Pandas series
         Column containing the declination of candidate; J2000 [deg]
-    magpsf: Spark DataFrame Column
+    magpsf: Pandas series
         Column containing the magnitude from PSF-fit photometry [mag]
-    roid: Spark DataFrame Column
+    roid: Pandas series
         Column containing the Solar System label
-    field: Spark DataFrame Column
-        Column containing the ZTF field numbers (int)
 
     Returns
     -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> pdf = pd.read_parquet('datatest')
+    >>> classification = early_kn_candidates_(
+    ...     pdf['candidate'].apply(lambda x: x['drb']),
+    ...     pdf['candidate'].apply(lambda x: x['classtar']),
+    ...     pdf['candidate'].apply(lambda x: x['jd']),
+    ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
+    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
+    ...     pdf['cdsxmatch'],
+    ...     pdf['candidate'].apply(lambda x: x['fid']),
+    ...     pdf['candidate'].apply(lambda x: x['magpsf']),
+    ...     pdf['candidate'].apply(lambda x: x['sigmapsf']),
+    ...     pdf['candidate'].apply(lambda x: x['magnr']),
+    ...     pdf['candidate'].apply(lambda x: x['sigmagnr']),
+    ...     pdf['candidate'].apply(lambda x: x['magzpsci']),
+    ...     pdf['candidate'].apply(lambda x: x['isdiffpos']),
+    ...     pdf['candidate'].apply(lambda x: x['ra']),
+    ...     pdf['candidate'].apply(lambda x: x['dec']),
+    ...     pdf['roid'])
+    >>> print(pdf[classification]['objectId'].values)
+    []
     """
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
     not_ztf_sso_candidate = roid.astype(int) != 3
-
-    # galactic plane
-    gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
 
     list_simbad_galaxies = [
         "galaxy",
@@ -144,8 +152,8 @@ def early_kn_candidates(
         pdf_mangrove = pd.read_csv(mangrove_path)
 
         catalog_mangrove = SkyCoord(
-            ra=np.array(pdf_mangrove.ra, dtype=np.float) * u.degree,
-            dec=np.array(pdf_mangrove.dec, dtype=np.float) * u.degree
+            ra=np.array(pdf_mangrove.ra, dtype=float) * u.degree,
+            dec=np.array(pdf_mangrove.dec, dtype=float) * u.degree
         )
 
         pdf = pd.DataFrame.from_dict(
@@ -158,8 +166,8 @@ def early_kn_candidates(
 
         # identify galaxy somehow close to each alert. Distances are in Mpc
         idx_mangrove, idxself, _, _ = SkyCoord(
-            ra=np.array(pdf.ra, dtype=np.float) * u.degree,
-            dec=np.array(pdf.dec, dtype=np.float) * u.degree
+            ra=np.array(pdf.ra, dtype=float) * u.degree,
+            dec=np.array(pdf.dec, dtype=float) * u.degree
         ).search_around_sky(catalog_mangrove, 2 * u.degree)
 
         # cross match
@@ -226,6 +234,76 @@ def early_kn_candidates(
                 len(np.intersect1d(type_close_objects, to_remove_types)) == 0
                 )
         f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
+
+    return f_kn
+
+@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
+def early_kn_candidates(
+        objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid,
+        field) -> pd.Series:
+    """
+    Return alerts considered as KN candidates.
+
+    If the environment variable KNWEBHOOK is defined and match a
+    webhook url, the alerts that pass the filter will be sent to the matching
+    Slack channel.
+
+    Note the default `data/mangrove_filtered.csv` catalog is loaded.
+
+    Parameters
+    ----------
+    objectId: Spark DataFrame Column
+        Column containing the alert IDs
+    drb: Spark DataFrame Column
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Spark DataFrame Column
+        Column containing the sextractor score
+    jd: Spark DataFrame Column
+        Column containing observation Julian dates at start of exposure [days]
+    jdstarthist: Spark DataFrame Column
+        Column containing earliest Julian dates corresponding to ndethist
+    ndethist: Spark DataFrame Column
+        Column containing the number of prior detections (theshold of 3 sigma)
+    cdsxmatch: Spark DataFrame Column
+        Column containing the cross-match values
+    fid: Spark DataFrame Column
+        Column containing filter, 1 for green and 2 for red
+    magpsf,sigmapsf: Spark DataFrame Columns
+        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
+    magnr,sigmagnr: Spark DataFrame Columns
+        Columns containing magnitude of nearest source in reference image
+        PSF-catalog within 30 arcsec and 1-sigma error
+    magzpsci: Spark DataFrame Column
+        Column containing magnitude zero point for photometry estimates
+    isdiffpos: Spark DataFrame Column
+        Column containing:
+        t or 1 => candidate is from positive (sci minus ref) subtraction;
+        f or 0 => candidate is from negative (ref minus sci) subtraction
+    ra: Spark DataFrame Column
+        Column containing the right Ascension of candidate; J2000 [deg]
+    dec: Spark DataFrame Column
+        Column containing the declination of candidate; J2000 [deg]
+    magpsf: Spark DataFrame Column
+        Column containing the magnitude from PSF-fit photometry [mag]
+    roid: Spark DataFrame Column
+        Column containing the Solar System label
+    field: Spark DataFrame Column
+        Column containing the ZTF field numbers (int)
+
+    Returns
+    -------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+    """
+    # galactic plane
+    gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
+
+    f_kn = early_kn_candidates_(
+        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid
+    )
 
     if f_kn.any():
         # Simplify notations
@@ -395,3 +473,16 @@ def early_kn_candidates(
             log.warning(error_message.format('KNWEBHOOK_DWF'))
 
     return f_kn
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+    import sys
+    import doctest
+    import numpy as np
+
+    # Numpy introduced non-backward compatible change from v1.14.
+    if np.__version__ >= "1.14.0":
+        np.set_printoptions(legacy="1.13")
+
+    sys.exit(doctest.testmod()[0])

@@ -1,4 +1,4 @@
-# Copyright 2019-2021 AstroLab Software
+# Copyright 2019-2022 AstroLab Software
 # Authors: Julien Peloton, Juliette Vlieghe
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,53 +30,51 @@ from astropy.time import Time
 
 from fink_science.conversion import dc_mag
 
-
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def kn_candidates(
-        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
-        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc
-        ) -> pd.Series:
-    """
-    Return alerts considered as KN candidates.
-
-    If the environment variable KNWEBHOOK is defined and match a webhook url,
-    the alerts that pass the filter will be sent to the matching Slack channel.
+def kn_candidates_(
+        knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
+    """ Return alerts considered as KN candidates.
 
     Parameters
     ----------
-    objectId: Spark DataFrame Column
-        Column containing the alert IDs
-    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Pandas series
         Columns containing the scores for: 'Kilonova', 'Early SN Ia',
         'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
-    drb: Spark DataFrame Column
+    drb: Pandas series
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
         Column containing the sextractor score
-    jdstarthist: Spark DataFrame Column
+    jd: Pandas series
+    jdstarthist: Pandas series
         Column containing earliest Julian dates of epoch [days]
-    ndethist: Spark DataFrame Column
+    ndethist: Pandas series
         Column containing the number of prior detections (theshold of 3 sigma)
-    cdsxmatch: Spark DataFrame Column
+    cdsxmatch: Pandas series
         Column containing the cross-match values
-    ra: Spark DataFrame Column
-        Column containing the right Ascension of candidate; J2000 [deg]
-    dec: Spark DataFrame Column
-        Column containing the declination of candidate; J2000 [deg]
-    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
-        magzpsci, isdiffpos as arrays
+
     Returns
     ----------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
-    """
-    # Extract last (new) measurement from the concatenated column
-    jd = cjdc.apply(lambda x: x[-1])
-    fid = cfidc.apply(lambda x: x[-1])
 
+    Examples
+    ----------
+    >>> pdf = pd.read_parquet('datatest')
+    >>> classification = kn_candidates_(
+    ...     pdf['knscore'],
+    ...     pdf['rfscore'],
+    ...     pdf['snn_snia_vs_nonia'],
+    ...     pdf['snn_sn_vs_all'],
+    ...     pdf['candidate'].apply(lambda x: x['drb']),
+    ...     pdf['candidate'].apply(lambda x: x['classtar']),
+    ...     pdf['candidate'].apply(lambda x: x['jd']),
+    ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
+    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
+    ...     pdf['cdsxmatch'])
+    >>> print(pdf[classification]['objectId'].values)
+    []
+    """
     high_knscore = knscore.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
@@ -107,6 +105,60 @@ def kn_candidates(
 
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
+
+    return f_kn
+
+
+@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
+def kn_candidates(
+        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
+        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc
+        ) -> pd.Series:
+    """ Pandas UDF of kn_candidates_ for Spark
+
+    If the environment variable KNWEBHOOK is defined and match a webhook url,
+    the alerts that pass the filter will be sent to the matching Slack channel.
+
+    Parameters
+    ----------
+    objectId: Spark DataFrame Column
+        Column containing the alert IDs
+    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Kilonova', 'Early SN Ia',
+        'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
+    drb: Spark DataFrame Column
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Spark DataFrame Column
+        Column containing the sextractor score
+    jdstarthist: Spark DataFrame Column
+        Column containing earliest Julian dates of epoch [days]
+    ndethist: Spark DataFrame Column
+        Column containing the number of prior detections (theshold of 3 sigma)
+    cdsxmatch: Spark DataFrame Column
+        Column containing the cross-match values
+    ra: Spark DataFrame Column
+        Column containing the right Ascension of candidate; J2000 [deg]
+    dec: Spark DataFrame Column
+        Column containing the declination of candidate; J2000 [deg]
+    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
+        magzpsci, isdiffpos as arrays
+
+    Returns
+    ----------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+    """
+    # Extract last (new) measurement from the concatenated column
+    jd = cjdc.apply(lambda x: x[-1])
+    fid = cfidc.apply(lambda x: x[-1])
+
+    f_kn = kn_candidates_(
+        knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jd, jdstarthist, ndethist, cdsxmatch
+    )
 
     if f_kn.any():
         # Galactic latitude transformation
@@ -291,3 +343,16 @@ def kn_candidates(
             log.warning(error_message.format(url_name))
 
     return f_kn
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+    import sys
+    import doctest
+    import numpy as np
+
+    # Numpy introduced non-backward compatible change from v1.14.
+    if np.__version__ >= "1.14.0":
+        np.set_printoptions(legacy="1.13")
+
+    sys.exit(doctest.testmod()[0])

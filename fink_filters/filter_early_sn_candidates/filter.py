@@ -1,4 +1,4 @@
-# Copyright 2019-2020 AstroLab Software
+# Copyright 2019-2022 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,6 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import pandas as pd
-import numpy as np
 
 def early_sn_candidates_(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
@@ -25,19 +24,19 @@ def early_sn_candidates_(
 
     Parameters
     ----------
-    cdsxmatch: Spark DataFrame Column
+    cdsxmatch: Pandas series
         Column containing the cross-match values
-    snn_snia_vs_nonia: Spark DataFrame Column
+    snn_snia_vs_nonia: Pandas series
         Column containing the probability to be a SN Ia from SuperNNova.
-    snn_sn_vs_all: Spark DataFrame Column
+    snn_sn_vs_all: Pandas series
         Column containing the probability to be a SNe from SuperNNova.
-    rfscore: Spark DataFrame Column
+    rfscore: Pandas series
         Column containing the probability to be a SN Ia from RandomForestClassifier.
-    ndethist: Spark DataFrame Column
+    ndethist: Pandas series
         Column containing the number of detection by ZTF
-    drb: Spark DataFrame Column
+    drb: Pandas series
         Column containing the Deep-Learning Real Bogus score
-    classtar: Spark DataFrame Column
+    classtar: Pandas series
         Column containing the sextractor score
 
     Returns
@@ -112,6 +111,7 @@ if __name__ == "__main__":
     """ Execute the test suite """
     import sys
     import doctest
+    import numpy as np
 
     # Numpy introduced non-backward compatible change from v1.14.
     if np.__version__ >= "1.14.0":
