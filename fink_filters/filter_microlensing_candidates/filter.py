@@ -35,6 +35,15 @@ def microlensing_candidates_(ndethist, mulens_class_1, mulens_class_2) -> pd.Ser
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
+    Examples
+    ----------
+    >>> pdf = pd.read_parquet('datatest')
+    >>> classification = microlensing_candidates_(
+    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
+    ...     pdf['mulens'].apply(lambda x: x['class_1']),
+    ...     pdf['mulens'].apply(lambda x: x['class_2']))
+    >>> print(pdf[classification]['objectId'].values)
+    []
     """
     medium_ndethist = ndethist.astype(int) < 100
     f_mulens = (mulens_class_1 == 'ML') & (mulens_class_2 == 'ML') & medium_ndethist
@@ -67,3 +76,16 @@ def microlensing_candidates(ndethist, mulens_class_1, mulens_class_2) -> pd.Seri
     )
 
     return f_mulens
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+    import sys
+    import doctest
+    import numpy as np
+
+    # Numpy introduced non-backward compatible change from v1.14.
+    if np.__version__ >= "1.14.0":
+        np.set_printoptions(legacy="1.13")
+
+    sys.exit(doctest.testmod()[0])

@@ -1,4 +1,4 @@
-# Copyright 2019-2020 AstroLab Software
+# Copyright 2019-2022 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,9 +17,34 @@ from pyspark.sql.types import BooleanType
 
 import pandas as pd
 
+def sso_fink_candidates_(roid) -> pd.Series:
+    """ Return alerts considered as Solar System Object candidates by Fink
+
+    Parameters
+    ----------
+    roid: Pandas series
+        Column containing the Solar System label
+
+    Returns
+    ----------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> pdf = pd.read_parquet('datatest')
+    >>> classification = sso_fink_candidates_(pdf['roid'])
+    >>> print(pdf[classification]['objectId'].values)
+    ['ZTF21acqeepb' 'ZTF21acqhrit' 'ZTF21acqersm']
+    """
+    f_roid = roid.astype(int) == 2
+
+    return f_roid
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sso_fink_candidates(roid) -> pd.Series:
-    """ Return alerts considered as Solar System Object candidates by Fink
+    """ Pandas UDF version of sso_fink_candidates_ for Spark
 
     Parameters
     ----------
@@ -33,6 +58,19 @@ def sso_fink_candidates(roid) -> pd.Series:
         false for bad alert, and true for good alert.
 
     """
-    f_roid = roid.astype(int) == 2
+    f_roid = sso_fink_candidates_(roid)
 
     return f_roid
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+    import sys
+    import doctest
+    import numpy as np
+
+    # Numpy introduced non-backward compatible change from v1.14.
+    if np.__version__ >= "1.14.0":
+        np.set_printoptions(legacy="1.13")
+
+    sys.exit(doctest.testmod()[0])
