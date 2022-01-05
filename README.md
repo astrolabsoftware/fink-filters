@@ -14,6 +14,7 @@ This repository contains filters used to flag only particular parts of the full 
 - early_kn_candidates: alerts identified as kilonova candidates (cut-based)
 - rate_based_kn_candidates: alerts identified as kilonova candidates from a fast (> 0.3 mag/day) decay
 - orphan_grb: alerts identified as orphan GRB
+- tracklet_candidates: alerts belonging to a tracklet (likely space debris or satellite glint)
 
 ## How to contribute?
 
