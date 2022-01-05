@@ -35,7 +35,7 @@ import doctest
 def extract_fink_classification_(
         cdsxmatch, roid, mulens_class_1, mulens_class_2,
         snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
-        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet):
+        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet) -> pd.Series:
     """ Extract the classification of an alert based on module outputs
 
     See https://arxiv.org/abs/2009.10185 for more information
@@ -130,11 +130,50 @@ def extract_fink_classification_(
 
     return pd.Series(classification)
 
+def extract_fink_classification_from_pdf(pdf):
+    """ Extract lazily classification from a DataFrame made of alerts
+
+    >>> pdf = pd.read_parquet('datatest')
+    >>> classification = extract_fink_classification_from_pdf(pdf)
+    >>> pdf['class'] = classification
+    >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
+    class
+    Unknown               11
+    QSO                    8
+    Blue                   7
+    HotSubdwarf            6
+    Candidate_YSO          5
+    TTau*                  5
+    CataclyV*              5
+    Symbiotic*             5
+    Early SN candidate     5
+    V*                     4
+    Name: objectId, dtype: int64
+    """
+    classification = extract_fink_classification_(
+        pdf['cdsxmatch'],
+        pdf['roid'],
+        pdf['mulens'].apply(lambda x: x['class_1']),
+        pdf['mulens'].apply(lambda x: x['class_2']),
+        pdf['snn_snia_vs_nonia'],
+        pdf['snn_sn_vs_all'],
+        pdf['rfscore'],
+        pdf['candidate'].apply(lambda x: x['ndethist']),
+        pdf['candidate'].apply(lambda x: x['drb']),
+        pdf['candidate'].apply(lambda x: x['classtar']),
+        pdf['candidate'].apply(lambda x: x['jd']),
+        pdf['candidate'].apply(lambda x: x['jdstarthist']),
+        pdf['knscore'],
+        pdf['tracklet']
+    )
+
+    return classification
+
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def extract_fink_classification(
         cdsxmatch, roid, mulens_class_1, mulens_class_2,
         snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
-        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet):
+        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet) -> pd.Series:
     """ Extract the classification of an alert based on module outputs
 
     For Spark usage
