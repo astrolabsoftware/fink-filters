@@ -113,8 +113,7 @@ def kn_candidates_(
 def kn_candidates(
         objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
-        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc
-        ) -> pd.Series:
+        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc) -> pd.Series:
     """ Pandas UDF of kn_candidates_ for Spark
 
     If the environment variable KNWEBHOOK is defined and match a webhook url,
@@ -177,10 +176,10 @@ def kn_candidates(
         ).deg
         ra_formatted = Angle(ra * u.degree).to_string(
             precision=2, sep=' ', unit=u.hour
-            )
+        )
         dec_formatted = Angle(dec * u.degree).to_string(
             precision=1, sep=' ', alwayssign=True
-            )
+        )
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
@@ -270,7 +269,7 @@ def kn_candidates(
                         "text": knscore_text
                     }
                 ]
-             },
+            },
             {
                 "type": "section",
                 "fields": [
@@ -349,7 +348,6 @@ if __name__ == "__main__":
     """ Execute the test suite """
     import sys
     import doctest
-    import numpy as np
 
     # Numpy introduced non-backward compatible change from v1.14.
     if np.__version__ >= "1.14.0":

@@ -30,77 +30,9 @@ from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
-def early_kn_candidates_(
-        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid) -> pd.Series:
-    """ Return alerts considered as KN candidates from the xmatch with Mangrove
-
-    Note the default `data/mangrove_filtered.csv` catalog is loaded.
-
-    Parameters
-    ----------
-    drb: Pandas series
-        Column containing the Deep-Learning Real Bogus score
-    classtar: Pandas series
-        Column containing the sextractor score
-    jd: Pandas series
-        Column containing observation Julian dates at start of exposure [days]
-    jdstarthist: Pandas series
-        Column containing earliest Julian dates corresponding to ndethist
-    ndethist: Pandas series
-        Column containing the number of prior detections (theshold of 3 sigma)
-    cdsxmatch: Pandas series
-        Column containing the cross-match values
-    fid: Pandas series
-        Column containing filter, 1 for green and 2 for red
-    magpsf,sigmapsf: Pandas series
-        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
-    magnr,sigmagnr: Pandas series
-        Columns containing magnitude of nearest source in reference image
-        PSF-catalog within 30 arcsec and 1-sigma error
-    magzpsci: Pandas series
-        Column containing magnitude zero point for photometry estimates
-    isdiffpos: Pandas series
-        Column containing:
-        t or 1 => candidate is from positive (sci minus ref) subtraction;
-        f or 0 => candidate is from negative (ref minus sci) subtraction
-    ra: Pandas series
-        Column containing the right Ascension of candidate; J2000 [deg]
-    dec: Pandas series
-        Column containing the declination of candidate; J2000 [deg]
-    magpsf: Pandas series
-        Column containing the magnitude from PSF-fit photometry [mag]
-    roid: Pandas series
-        Column containing the Solar System label
-
-    Returns
-    -------
-    out: pandas.Series of bool
-        Return a Pandas DataFrame with the appropriate flag:
-        false for bad alert, and true for good alert.
-
-    Examples
-    ----------
-    >>> pdf = pd.read_parquet('datatest')
-    >>> classification = early_kn_candidates_(
-    ...     pdf['candidate'].apply(lambda x: x['drb']),
-    ...     pdf['candidate'].apply(lambda x: x['classtar']),
-    ...     pdf['candidate'].apply(lambda x: x['jd']),
-    ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
-    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
-    ...     pdf['cdsxmatch'],
-    ...     pdf['candidate'].apply(lambda x: x['fid']),
-    ...     pdf['candidate'].apply(lambda x: x['magpsf']),
-    ...     pdf['candidate'].apply(lambda x: x['sigmapsf']),
-    ...     pdf['candidate'].apply(lambda x: x['magnr']),
-    ...     pdf['candidate'].apply(lambda x: x['sigmagnr']),
-    ...     pdf['candidate'].apply(lambda x: x['magzpsci']),
-    ...     pdf['candidate'].apply(lambda x: x['isdiffpos']),
-    ...     pdf['candidate'].apply(lambda x: x['ra']),
-    ...     pdf['candidate'].apply(lambda x: x['dec']),
-    ...     pdf['roid'])
-    >>> print(pdf[classification]['objectId'].values)
-    []
+def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid):
+    """
     """
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
@@ -219,7 +151,7 @@ def early_kn_candidates_(
             pos = SkyCoord(
                 ra=np.array(ra[f_kn])[i] * u.degree,
                 dec=np.array(dec[f_kn])[i] * u.degree
-                )
+            )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
             table = SDSS.query_region(pos, fields=['type'],
@@ -232,8 +164,87 @@ def early_kn_candidates_(
             to_remove_types = [1, 3, 4, 6]
             no_star.append(
                 len(np.intersect1d(type_close_objects, to_remove_types)) == 0
-                )
+            )
         f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
+
+    return f_kn, pdf_mangrove, host_galaxies, host_alert_separation, abs_mag_candidate, mag, err_mag
+
+def early_kn_candidates_(
+        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid) -> pd.Series:
+    """ Return alerts considered as KN candidates from the xmatch with Mangrove
+
+    Note the default `data/mangrove_filtered.csv` catalog is loaded.
+
+    Parameters
+    ----------
+    drb: Pandas series
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Pandas series
+        Column containing the sextractor score
+    jd: Pandas series
+        Column containing observation Julian dates at start of exposure [days]
+    jdstarthist: Pandas series
+        Column containing earliest Julian dates corresponding to ndethist
+    ndethist: Pandas series
+        Column containing the number of prior detections (theshold of 3 sigma)
+    cdsxmatch: Pandas series
+        Column containing the cross-match values
+    fid: Pandas series
+        Column containing filter, 1 for green and 2 for red
+    magpsf,sigmapsf: Pandas series
+        Columns containing magnitude from PSF-fit photometry, and 1-sigma error
+    magnr,sigmagnr: Pandas series
+        Columns containing magnitude of nearest source in reference image
+        PSF-catalog within 30 arcsec and 1-sigma error
+    magzpsci: Pandas series
+        Column containing magnitude zero point for photometry estimates
+    isdiffpos: Pandas series
+        Column containing:
+        t or 1 => candidate is from positive (sci minus ref) subtraction;
+        f or 0 => candidate is from negative (ref minus sci) subtraction
+    ra: Pandas series
+        Column containing the right Ascension of candidate; J2000 [deg]
+    dec: Pandas series
+        Column containing the declination of candidate; J2000 [deg]
+    magpsf: Pandas series
+        Column containing the magnitude from PSF-fit photometry [mag]
+    roid: Pandas series
+        Column containing the Solar System label
+
+    Returns
+    -------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> pdf = pd.read_parquet('datatest')
+    >>> classification = early_kn_candidates_(
+    ...     pdf['candidate'].apply(lambda x: x['drb']),
+    ...     pdf['candidate'].apply(lambda x: x['classtar']),
+    ...     pdf['candidate'].apply(lambda x: x['jd']),
+    ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
+    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
+    ...     pdf['cdsxmatch'],
+    ...     pdf['candidate'].apply(lambda x: x['fid']),
+    ...     pdf['candidate'].apply(lambda x: x['magpsf']),
+    ...     pdf['candidate'].apply(lambda x: x['sigmapsf']),
+    ...     pdf['candidate'].apply(lambda x: x['magnr']),
+    ...     pdf['candidate'].apply(lambda x: x['sigmagnr']),
+    ...     pdf['candidate'].apply(lambda x: x['magzpsci']),
+    ...     pdf['candidate'].apply(lambda x: x['isdiffpos']),
+    ...     pdf['candidate'].apply(lambda x: x['ra']),
+    ...     pdf['candidate'].apply(lambda x: x['dec']),
+    ...     pdf['roid'])
+    >>> print(pdf[classification]['objectId'].values)
+    []
+    """
+    f_kn, _, _, _, _, _, _ = perform_classification(
+        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid
+    )
 
     return f_kn
 
@@ -300,10 +311,13 @@ def early_kn_candidates(
     # galactic plane
     gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
 
-    f_kn = early_kn_candidates_(
+    out = perform_classification(
         drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid
     )
+
+    f_kn, pdf_mangrove, host_galaxies, host_alert_separation, \
+        abs_mag_candidate, mag, err_mag = out
 
     if f_kn.any():
         # Simplify notations
@@ -479,7 +493,6 @@ if __name__ == "__main__":
     """ Execute the test suite """
     import sys
     import doctest
-    import numpy as np
 
     # Numpy introduced non-backward compatible change from v1.14.
     if np.__version__ >= "1.14.0":
