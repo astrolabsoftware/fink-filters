@@ -1,4 +1,7 @@
 [![pypi](https://img.shields.io/pypi/v/fink-filters.svg)](https://pypi.python.org/pypi/fink-filters)
+[![Sentinel](https://github.com/astrolabsoftware/fink-filters/workflows/Sentinel/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions?query=workflow%3ASentinel)
+[![PEP8](https://github.com/astrolabsoftware/fink-filters/workflows/PEP8/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions?query=workflow%3APEP8)
+[![codecov](https://codecov.io/gh/astrolabsoftware/fink-filters/branch/master/graph/badge.svg)](https://codecov.io/gh/astrolabsoftware/fink-filters)
 
 # Fink filters
 
@@ -26,7 +29,7 @@ Based on the filters outputs (which rely on alert content), we infer a classific
 3. if an alert has been flagged by one filter, its classification is given by the filter (`Early SN Ia candidate`, `KN candidate`, `SSO candidate`, etc.)
 4. if an alert has been flagged by more than one filter (except the SIMBAD one), it is tagged as `Ambiguous`.
 
-Note that this classification is subject to change over time, as we learn new things or when new filters are created. The classification method is versioned (fink-filters version), so that users can track the change. Note that all the filters are not considered for the classification. 
+Note that this classification is subject to change over time, as we learn new things or when new filters are created. The classification method is versioned (fink-filters version), so that users can track the change. Note that all the filters are not considered for the classification.
 
 ### Alert vs object classification
 
