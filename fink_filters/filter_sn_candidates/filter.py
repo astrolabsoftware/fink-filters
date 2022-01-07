@@ -63,9 +63,11 @@ def sn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
     ...     pdf['roid'],
     ...     pdf['candidate'].apply(lambda x: x['ndethist']))
-    >>> print(pdf[classification]['objectId'].values)
-    ['ZTF21acobels' 'ZTF21acoqgmy' 'ZTF21acobels' 'ZTF21acoshvy' 'ZTF21acobels'
-     'ZTF21accjkgf' 'ZTF21acoshvy' 'ZTF21acoshvy' 'ZTF21acoshvy']
+    >>> print(len(pdf[classification]['objectId'].values))
+    9
+
+    >>> assert 'ZTF21acoqgmy' in pdf[classification]['objectId'].values
+    True
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5

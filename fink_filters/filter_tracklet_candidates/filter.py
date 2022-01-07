@@ -35,8 +35,11 @@ def tracklet_candidates_(tracklet) -> pd.Series:
     ----------
     >>> pdf = pd.read_parquet('datatest')
     >>> classification = tracklet_candidates_(pdf['tracklet'])
-    >>> print(pdf[classification]['objectId'].values)
-    ['ZTF21acqersq' 'ZTF21acqersm']
+    >>> print(len(pdf[classification]['objectId'].values))
+    2
+
+    >>> assert 'ZTF21acqersq' in pdf[classification]['objectId'].values
+    True
     """
     f_tracklet = tracklet.apply(lambda x: (x is not None) & (x != ''))
 
