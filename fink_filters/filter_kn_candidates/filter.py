@@ -31,13 +31,13 @@ from astropy.time import Time
 from fink_science.conversion import dc_mag
 
 def kn_candidates_(
-        knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
     """ Return alerts considered as KN candidates.
 
     Parameters
     ----------
-    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Pandas series
+    rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all: Pandas series
         Columns containing the scores for: 'Kilonova', 'Early SN Ia',
         'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Pandas series
@@ -62,8 +62,8 @@ def kn_candidates_(
     ----------
     >>> pdf = pd.read_parquet('datatest')
     >>> classification = kn_candidates_(
-    ...     pdf['knscore'],
-    ...     pdf['rfscore'],
+    ...     pdf['rf_kn_vs_nonkn'],
+    ...     pdf['rf_snia_vs_nonia'],
     ...     pdf['snn_snia_vs_nonia'],
     ...     pdf['snn_sn_vs_all'],
     ...     pdf['candidate'].apply(lambda x: x['drb']),
@@ -75,7 +75,7 @@ def kn_candidates_(
     >>> print(pdf[classification]['objectId'].values)
     []
     """
-    high_knscore = knscore.astype(float) > 0.5
+    high_knscore = rf_kn_vs_nonkn.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
@@ -111,7 +111,7 @@ def kn_candidates_(
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(
-        objectId, knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        objectId, rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
         cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc) -> pd.Series:
     """ Pandas UDF of kn_candidates_ for Spark
@@ -123,7 +123,7 @@ def kn_candidates(
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+    rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
         Columns containing the scores for: 'Kilonova', 'Early SN Ia',
         'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
@@ -155,7 +155,7 @@ def kn_candidates(
     fid = cfidc.apply(lambda x: x[-1])
 
     f_kn = kn_candidates_(
-        knscore, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jd, jdstarthist, ndethist, cdsxmatch
     )
 
@@ -183,8 +183,8 @@ def kn_candidates(
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
-        knscore = np.array(knscore.astype(float)[f_kn])
-        rfscore = np.array(rfscore.astype(float)[f_kn])
+        rf_kn_vs_nonkn = np.array(rf_kn_vs_nonkn.astype(float)[f_kn])
+        rf_snia_vs_nonia = np.array(rf_snia_vs_nonia.astype(float)[f_kn])
         snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
         snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
 
@@ -238,10 +238,10 @@ def kn_candidates(
         alert_text = """
             *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
             """.format(alertID, alertID)
-        knscore_text = "*Kilonova score:* {:.2f}".format(knscore[i])
+        knscore_text = "*Kilonova score:* {:.2f}".format(rf_kn_vs_nonkn[i])
         score_text = """
             *Other scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
-            """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
+            """.format(rf_snia_vs_nonia[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
         time_text = """
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
             """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])

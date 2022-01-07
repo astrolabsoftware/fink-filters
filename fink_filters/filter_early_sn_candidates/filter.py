@@ -18,7 +18,7 @@ from pyspark.sql.types import BooleanType
 import pandas as pd
 
 def early_sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
+        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar) -> pd.Series:
     """ Return alerts considered as Early SN-Ia candidates
 
@@ -30,7 +30,7 @@ def early_sn_candidates_(
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Pandas series
         Column containing the probability to be a SNe from SuperNNova.
-    rfscore: Pandas series
+    rf_snia_vs_nonia: Pandas series
         Column containing the probability to be a SN Ia from RandomForestClassifier.
     ndethist: Pandas series
         Column containing the number of detection by ZTF
@@ -52,7 +52,7 @@ def early_sn_candidates_(
     ...     pdf['cdsxmatch'],
     ...     pdf['snn_snia_vs_nonia'],
     ...     pdf['snn_sn_vs_all'],
-    ...     pdf['rfscore'],
+    ...     pdf['rf_snia_vs_nonia'],
     ...     pdf['candidate'].apply(lambda x: x['ndethist']),
     ...     pdf['candidate'].apply(lambda x: x['drb']),
     ...     pdf['candidate'].apply(lambda x: x['classtar']))
@@ -61,7 +61,7 @@ def early_sn_candidates_(
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5
-    active_learn = rfscore.astype(float) > 0.5
+    active_learn = rf_snia_vs_nonia.astype(float) > 0.5
     early_ndethist = ndethist.astype(int) <= 20
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
@@ -97,11 +97,11 @@ def early_sn_candidates_(
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_sn_candidates(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
+        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar) -> pd.Series:
     """ Pandas UDF for early_sn_candidates_ """
     series = early_sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
+        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar
     )
     return series
