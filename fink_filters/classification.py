@@ -35,8 +35,8 @@ import doctest
 
 def extract_fink_classification_(
         cdsxmatch, roid, mulens_class_1, mulens_class_2,
-        snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
-        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet) -> pd.Series:
+        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
+        ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet) -> pd.Series:
     """ Extract the classification of an alert based on module outputs
 
     Rule of thumb:
@@ -60,7 +60,7 @@ def extract_fink_classification_(
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Pandas series
         Column containing the probability to be a SNe from SuperNNova.
-    rfscore: Pandas series
+    rf_snia_vs_nonia: Pandas series
         Column containing the probability to be a SN Ia from RandomForestClassifier.
     ndethist: Pandas series
         Column containing the number of detection by ZTF
@@ -72,7 +72,7 @@ def extract_fink_classification_(
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Pandas series
         Column containing earliest Julian dates corresponding to ndethist
-    knscore_: Pandas series
+    rf_kn_vs_nonkn: Pandas series
         Column containing the probability to be a Kilonova
     tracklet: Pandas series
         Column containing the tracklet label
@@ -92,13 +92,13 @@ def extract_fink_classification_(
     ...     pdf['mulens'].apply(lambda x: x['class_2']),
     ...     pdf['snn_snia_vs_nonia'],
     ...     pdf['snn_sn_vs_all'],
-    ...     pdf['rfscore'],
+    ...     pdf['rf_snia_vs_nonia'],
     ...     pdf['candidate'].apply(lambda x: x['ndethist']),
     ...     pdf['candidate'].apply(lambda x: x['drb']),
     ...     pdf['candidate'].apply(lambda x: x['classtar']),
     ...     pdf['candidate'].apply(lambda x: x['jd']),
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
-    ...     pdf['knscore'],
+    ...     pdf['rf_kn_vs_nonkn'],
     ...     pdf['tracklet'])
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
@@ -127,7 +127,7 @@ def extract_fink_classification_(
     # Early SN Ia
     f_sn_early = early_sn_candidates_(
         cdsxmatch,
-        snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
+        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar
     )
 
@@ -142,7 +142,7 @@ def extract_fink_classification_(
 
     # Kilonova (ML)
     f_kn = kn_candidates_(
-        knscore_, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jd, jdstarthist, ndethist, cdsxmatch
     )
 
@@ -209,13 +209,13 @@ def extract_fink_classification_from_pdf(pdf):
         pdf['mulens'].apply(lambda x: x['class_2']),
         pdf['snn_snia_vs_nonia'],
         pdf['snn_sn_vs_all'],
-        pdf['rfscore'],
+        pdf['rf_snia_vs_nonia'],
         pdf['candidate'].apply(lambda x: x['ndethist']),
         pdf['candidate'].apply(lambda x: x['drb']),
         pdf['candidate'].apply(lambda x: x['classtar']),
         pdf['candidate'].apply(lambda x: x['jd']),
         pdf['candidate'].apply(lambda x: x['jdstarthist']),
-        pdf['knscore'],
+        pdf['rf_kn_vs_nonkn'],
         pdf['tracklet']
     )
 
@@ -224,8 +224,8 @@ def extract_fink_classification_from_pdf(pdf):
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def extract_fink_classification(
         cdsxmatch, roid, mulens_class_1, mulens_class_2,
-        snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
-        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet) -> pd.Series:
+        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
+        ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet) -> pd.Series:
     """ Pandas UDF version of extract_fink_classification_ for Apache Spark
 
     Parameters
@@ -242,7 +242,7 @@ def extract_fink_classification(
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Spark DataFrame Column
         Column containing the probability to be a SNe from SuperNNova.
-    rfscore: Spark DataFrame Column
+    rf_snia_vs_nonia: Spark DataFrame Column
         Column containing the probability to be a SN Ia from RandomForestClassifier.
     ndethist: Spark DataFrame Column
         Column containing the number of detection by ZTF
@@ -254,7 +254,7 @@ def extract_fink_classification(
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Spark DataFrame Column
         Column containing earliest Julian dates corresponding to ndethist
-    knscore_: Spark DataFrame Column
+    rf_kn_vs_nonkn: Spark DataFrame Column
         Column containing the probability to be a Kilonova
     tracklet: Spark DataFrame Column
         Column containing the tracklet label
@@ -268,8 +268,8 @@ def extract_fink_classification(
     """
     series = extract_fink_classification_(
         cdsxmatch, roid, mulens_class_1, mulens_class_2,
-        snn_snia_vs_nonia, snn_sn_vs_all, rfscore,
-        ndethist, drb, classtar, jd, jdstarthist, knscore_, tracklet
+        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
+        ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet
     )
 
     return series
