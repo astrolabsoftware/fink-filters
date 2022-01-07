@@ -39,7 +39,6 @@ def tracklet_candidates_(tracklet) -> pd.Series:
     2
 
     >>> assert 'ZTF21acqersq' in pdf[classification]['objectId'].values
-    True
     """
     f_tracklet = tracklet.apply(lambda x: (x is not None) & (x != ''))
 

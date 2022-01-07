@@ -67,7 +67,6 @@ def sn_candidates_(
     9
 
     >>> assert 'ZTF21acoqgmy' in pdf[classification]['objectId'].values
-    True
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5

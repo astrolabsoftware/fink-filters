@@ -39,7 +39,6 @@ def sso_fink_candidates_(roid) -> pd.Series:
     3
 
     >>> assert 'ZTF21acqeepb' in pdf[classification]['objectId'].values
-    True
     """
     f_roid = roid.astype(int) == 2
 

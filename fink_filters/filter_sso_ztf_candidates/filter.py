@@ -39,7 +39,6 @@ def sso_ztf_candidates_(roid) -> pd.Series:
     3
 
     >>> assert 'ZTF21acqhroo' in pdf[classification]['objectId'].values
-    True
     """
     f_roid = roid.astype(int) == 3
 
