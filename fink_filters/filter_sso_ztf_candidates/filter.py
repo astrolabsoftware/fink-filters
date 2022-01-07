@@ -35,8 +35,10 @@ def sso_ztf_candidates_(roid) -> pd.Series:
     ----------
     >>> pdf = pd.read_parquet('datatest')
     >>> classification = sso_ztf_candidates_(pdf['roid'])
-    >>> print(pdf[classification]['objectId'].values)
-    ['ZTF21acqhroo' 'ZTF21acqdcyb' 'ZTF21acqdcyb']
+    >>> print(len(pdf[classification]['objectId'].values))
+    3
+
+    >>> assert 'ZTF21acqhroo' in pdf[classification]['objectId'].values
     """
     f_roid = roid.astype(int) == 3
 

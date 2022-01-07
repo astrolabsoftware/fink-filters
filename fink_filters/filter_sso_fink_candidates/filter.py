@@ -35,8 +35,10 @@ def sso_fink_candidates_(roid) -> pd.Series:
     ----------
     >>> pdf = pd.read_parquet('datatest')
     >>> classification = sso_fink_candidates_(pdf['roid'])
-    >>> print(pdf[classification]['objectId'].values)
-    ['ZTF21acqeepb' 'ZTF21acqhrit' 'ZTF21acqersm']
+    >>> print(len(pdf[classification]['objectId'].values))
+    3
+
+    >>> assert 'ZTF21acqeepb' in pdf[classification]['objectId'].values
     """
     f_roid = roid.astype(int) == 2
 
