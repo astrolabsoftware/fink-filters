@@ -17,17 +17,15 @@ from pyspark.sql.types import BooleanType
 
 import pandas as pd
 
-def microlensing_candidates_(ndethist, mulens_class_1, mulens_class_2) -> pd.Series:
+def microlensing_candidates_(mulens) -> pd.Series:
     """ Return alerts considered as microlensing candidates
 
     Parameters
     ----------
-    ndethist: Pandas series
-        Column containing the number of prior detections (theshold of 3 sigma)
-    mulens_class_1: Pandas series
-        Column containing the LIA results for band g
-    mulens_class_2: Pandas series
-        Column containing the LIA results for band r
+    mulens: Pandas series
+        Probability of an event to be a microlensing event from LIA.
+        The number is the mean of the per-band probabilities, and it is
+        non-zero only for events favoured as microlensing by both bands.
 
     Returns
     ----------
@@ -38,31 +36,25 @@ def microlensing_candidates_(ndethist, mulens_class_1, mulens_class_2) -> pd.Ser
     Examples
     ----------
     >>> pdf = pd.read_parquet('datatest')
-    >>> classification = microlensing_candidates_(
-    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
-    ...     pdf['mulens'].apply(lambda x: x['class_1']),
-    ...     pdf['mulens'].apply(lambda x: x['class_2']))
+    >>> classification = microlensing_candidates_(pdf['mulens'])
     >>> print(pdf[classification]['objectId'].values)
     []
     """
-    medium_ndethist = ndethist.astype(int) < 100
-    f_mulens = (mulens_class_1 == 'ML') & (mulens_class_2 == 'ML') & medium_ndethist
+    f_mulens = mulens > 0.0
 
     return f_mulens
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def microlensing_candidates(ndethist, mulens_class_1, mulens_class_2) -> pd.Series:
+def microlensing_candidates(mulens) -> pd.Series:
     """ Return alerts considered as microlensing candidates
 
     Parameters
     ----------
-    ndethist: Spark DataFrame Column
-        Column containing the number of prior detections (theshold of 3 sigma)
-    mulens_class_1: Spark DataFrame Column
-        Column containing the LIA results for band g
-    mulens_class_2: Spark DataFrame Column
-        Column containing the LIA results for band r
+    mulens: Spark DataFrame Column
+        Probability of an event to be a microlensing event from LIA.
+        The number is the mean of the per-band probabilities, and it is
+        non-zero only for events favoured as microlensing by both bands.
 
     Returns
     ----------
@@ -72,7 +64,7 @@ def microlensing_candidates(ndethist, mulens_class_1, mulens_class_2) -> pd.Seri
 
     """
     f_mulens = microlensing_candidates_(
-        ndethist, mulens_class_1, mulens_class_2
+        mulens
     )
 
     return f_mulens
