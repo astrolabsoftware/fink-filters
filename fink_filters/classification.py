@@ -34,7 +34,7 @@ import sys
 import doctest
 
 def extract_fink_classification_(
-        cdsxmatch, roid, mulens_class_1, mulens_class_2,
+        cdsxmatch, roid, mulens,
         snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet) -> pd.Series:
     """ Extract the classification of an alert based on module outputs
@@ -52,10 +52,10 @@ def extract_fink_classification_(
         Column containing the cross-match values
     roid: Pandas series
         Column containing the Solar System label
-    mulens_class_1: Pandas series
-        Column containing the LIA results for band g
-    mulens_class_2: Pandas series
-        Column containing the LIA results for band r
+    mulens: Pandas series
+        Probability of an event to be a microlensing event from LIA.
+        The number is the mean of the per-band probabilities, and it is
+        non-zero only for events favoured as microlensing by both bands.
     snn_snia_vs_nonia: Pandas series
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Pandas series
@@ -88,8 +88,7 @@ def extract_fink_classification_(
     >>> classification = extract_fink_classification_(
     ...     pdf['cdsxmatch'],
     ...     pdf['roid'],
-    ...     pdf['mulens'].apply(lambda x: x['class_1']),
-    ...     pdf['mulens'].apply(lambda x: x['class_2']),
+    ...     pdf['mulens'],
     ...     pdf['snn_snia_vs_nonia'],
     ...     pdf['snn_sn_vs_all'],
     ...     pdf['rf_snia_vs_nonia'],
@@ -138,7 +137,7 @@ def extract_fink_classification_(
     )
 
     # Microlensing
-    f_mulens = microlensing_candidates_(ndethist, mulens_class_1, mulens_class_2)
+    f_mulens = microlensing_candidates_(mulens)
 
     # Kilonova (ML)
     f_kn = kn_candidates_(
@@ -205,8 +204,7 @@ def extract_fink_classification_from_pdf(pdf):
     classification = extract_fink_classification_(
         pdf['cdsxmatch'],
         pdf['roid'],
-        pdf['mulens'].apply(lambda x: x['class_1']),
-        pdf['mulens'].apply(lambda x: x['class_2']),
+        pdf['mulens'],
         pdf['snn_snia_vs_nonia'],
         pdf['snn_sn_vs_all'],
         pdf['rf_snia_vs_nonia'],
@@ -223,7 +221,7 @@ def extract_fink_classification_from_pdf(pdf):
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def extract_fink_classification(
-        cdsxmatch, roid, mulens_class_1, mulens_class_2,
+        cdsxmatch, roid, mulens,
         snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet) -> pd.Series:
     """ Pandas UDF version of extract_fink_classification_ for Apache Spark
@@ -234,10 +232,10 @@ def extract_fink_classification(
         Column containing the cross-match values
     roid: Spark DataFrame Column
         Column containing the Solar System label
-    mulens_class_1: Spark DataFrame Column
-        Column containing the LIA results for band g
-    mulens_class_2: Spark DataFrame Column
-        Column containing the LIA results for band r
+    mulens: Spark DataFrame Column
+        Probability of an event to be a microlensing event from LIA.
+        The number is the mean of the per-band probabilities, and it is
+        non-zero only for events favoured as microlensing by both bands.
     snn_snia_vs_nonia: Spark DataFrame Column
         Column containing the probability to be a SN Ia from SuperNNova.
     snn_sn_vs_all: Spark DataFrame Column
@@ -267,7 +265,7 @@ def extract_fink_classification(
     See https://arxiv.org/abs/2009.10185 for more information
     """
     series = extract_fink_classification_(
-        cdsxmatch, roid, mulens_class_1, mulens_class_2,
+        cdsxmatch, roid, mulens,
         snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet
     )
