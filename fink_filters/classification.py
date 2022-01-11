@@ -102,16 +102,16 @@ def extract_fink_classification_(
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
-    Unknown               11
-    QSO                    8
-    Blue                   7
-    HotSubdwarf            6
-    Candidate_YSO          5
-    TTau*                  5
-    CataclyV*              5
-    Symbiotic*             5
-    Early SN candidate     5
-    V*                     4
+    Unknown                  11
+    QSO                       8
+    Blue                      7
+    HotSubdwarf               6
+    Candidate_YSO             5
+    TTau*                     5
+    CataclyV*                 5
+    Symbiotic*                5
+    Early SN Ia candidate     5
+    V*                        4
     Name: objectId, dtype: int64
     """
     classification = pd.Series(['Unknown'] * len(cdsxmatch))
@@ -153,7 +153,7 @@ def extract_fink_classification_(
 
     classification.mask(f_mulens.values, 'Microlensing candidate', inplace=True)
     classification.mask(f_sn.values, 'SN candidate', inplace=True)
-    classification.mask(f_sn_early.values, 'Early SN candidate', inplace=True)
+    classification.mask(f_sn_early.values, 'Early SN Ia candidate', inplace=True)
     classification.mask(f_kn.values, 'Kilonova candidate', inplace=True)
     classification.mask(f_roid_2.values, 'Solar System candidate', inplace=True)
     classification.mask(f_tracklet.values, 'Tracklet', inplace=True)
@@ -189,16 +189,16 @@ def extract_fink_classification_from_pdf(pdf):
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
-    Unknown               11
-    QSO                    8
-    Blue                   7
-    HotSubdwarf            6
-    Candidate_YSO          5
-    TTau*                  5
-    CataclyV*              5
-    Symbiotic*             5
-    Early SN candidate     5
-    V*                     4
+    Unknown                  11
+    QSO                       8
+    Blue                      7
+    HotSubdwarf               6
+    Candidate_YSO             5
+    TTau*                     5
+    CataclyV*                 5
+    Symbiotic*                5
+    Early SN Ia candidate     5
+    V*                        4
     Name: objectId, dtype: int64
     """
     classification = extract_fink_classification_(
