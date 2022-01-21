@@ -77,6 +77,12 @@ def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, 
     f_kn = high_drb & high_classtar & new_detection
     f_kn = f_kn & cdsxmatch.isin(keep_cds) & not_ztf_sso_candidate
 
+    # Containers
+    pdf_mangrove = pd.DataFrame()
+    host_galaxies = []
+    host_alert_separation = []
+    abs_mag_candidate = []
+
     if f_kn.any():
         # load mangrove catalog
         curdir = os.path.dirname(os.path.abspath(__file__))
