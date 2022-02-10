@@ -302,6 +302,12 @@ def rate_based_kn_candidates(
         cisdiffposc
     )
 
+    jd = cjdc.apply(lambda x: x[-1])
+    fid = cfidc.apply(lambda x: x[-1])
+
+    # galactic plane
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic.b.deg
+
     # Simplify notations
     if f_kn.any():
         # coordinates
