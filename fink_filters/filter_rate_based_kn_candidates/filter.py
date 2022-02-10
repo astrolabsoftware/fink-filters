@@ -1,4 +1,4 @@
-# Copyright 2019-2021 AstroLab Software
+# Copyright 2019-2022 AstroLab Software
 # Authors: Julien Peloton, Juliette Vlieghe
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
@@ -32,10 +31,8 @@ from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
-
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def rate_based_kn_candidates(
-        objectId, rfscore, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+def perform_classification(
+        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
         cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
         cisdiffposc) -> pd.Series:
@@ -51,7 +48,7 @@ def rate_based_kn_candidates(
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    rfscore, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+    rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
         Columns containing the scores for: 'Early SN Ia',
         'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
@@ -92,8 +89,8 @@ def rate_based_kn_candidates(
     far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
 
     # galactic plane
-    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg'
-                 ).galactic.b.deg
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic.b.deg
+
     awaw_from_galactic_plane = np.abs(b) > 10
 
     list_simbad_galaxies = [
@@ -127,7 +124,7 @@ def rate_based_kn_candidates(
     sigma_rate = np.zeros(len(fid))
     mag = np.zeros(len(fid))
     err_mag = np.zeros(len(fid))
-    index_mask = np.argwhere(f_kn)
+    index_mask = np.argwhere(f_kn.values)
     for i, alertID in enumerate(objectId[f_kn]):
         # Spark casts None as NaN
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
@@ -196,6 +193,121 @@ def rate_based_kn_candidates(
             )
         f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
+    return f_kn, rate, sigma_rate, mag, err_mag
+
+def rate_based_kn_candidates_(
+        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
+        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
+        cisdiffposc) -> pd.Series:
+    """
+    Return alerts considered as KN candidates.
+
+    The cuts are based on Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
+
+    If the environment variable KNWEBHOOK is defined and match a webhook url,
+    the alerts that pass the filter will be sent to the matching Slack channel.
+
+    Parameters
+    ----------
+    objectId: Spark DataFrame Column
+        Column containing the alert IDs
+    rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Early SN Ia',
+        'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
+    drb: Spark DataFrame Column
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Spark DataFrame Column
+        Column containing the sextractor score
+    jdstarthist: Spark DataFrame Column
+        Column containing earliest Julian dates of epoch [days]
+    ndethist: Spark DataFrame Column
+        Column containing the number of prior detections (theshold of 3 sigma)
+    cdsxmatch: Spark DataFrame Column
+        Column containing the cross-match values
+    ra: Spark DataFrame Column
+        Column containing the right Ascension of candidate; J2000 [deg]
+    dec: Spark DataFrame Column
+        Column containing the declination of candidate; J2000 [deg]
+    ssdistnr: Spark DataFrame Column
+        distance to nearest known solar system object; -999.0 if none [arcsec]
+    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
+        magzpsci, isdiffpos as arrays
+    Returns
+    ----------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+    """
+    f_kn, _, _, _, _ = perform_classification(
+        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
+        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
+        cisdiffposc
+    )
+
+    return f_kn
+
+@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
+def rate_based_kn_candidates(
+        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
+        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
+        cisdiffposc) -> pd.Series:
+    """
+    Return alerts considered as KN candidates.
+
+    The cuts are based on Andreoni et al. 2021 https://arxiv.org/abs/2104.06352
+
+    If the environment variable KNWEBHOOK is defined and match a webhook url,
+    the alerts that pass the filter will be sent to the matching Slack channel.
+
+    Parameters
+    ----------
+    objectId: Spark DataFrame Column
+        Column containing the alert IDs
+    rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
+        Columns containing the scores for: 'Early SN Ia',
+        'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
+    drb: Spark DataFrame Column
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Spark DataFrame Column
+        Column containing the sextractor score
+    jdstarthist: Spark DataFrame Column
+        Column containing earliest Julian dates of epoch [days]
+    ndethist: Spark DataFrame Column
+        Column containing the number of prior detections (theshold of 3 sigma)
+    cdsxmatch: Spark DataFrame Column
+        Column containing the cross-match values
+    ra: Spark DataFrame Column
+        Column containing the right Ascension of candidate; J2000 [deg]
+    dec: Spark DataFrame Column
+        Column containing the declination of candidate; J2000 [deg]
+    ssdistnr: Spark DataFrame Column
+        distance to nearest known solar system object; -999.0 if none [arcsec]
+    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
+        magzpsci, isdiffpos as arrays
+    Returns
+    ----------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+    """
+    f_kn, rate, sigma_rate, mag, err_mag = perform_classification(
+        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
+        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
+        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
+        cisdiffposc
+    )
+
+    jd = cjdc.apply(lambda x: x[-1])
+    fid = cfidc.apply(lambda x: x[-1])
+
+    # galactic plane
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic.b.deg
+
     # Simplify notations
     if f_kn.any():
         # coordinates
@@ -217,7 +329,7 @@ def rate_based_kn_candidates(
         )
 
         # scores
-        rfscore = np.array(rfscore.astype(float)[f_kn])
+        rf_snia_vs_nonia = np.array(rf_snia_vs_nonia.astype(float)[f_kn])
         snn_snia_vs_nonia = np.array(snn_snia_vs_nonia.astype(float)[f_kn])
         snn_sn_vs_all = np.array(snn_sn_vs_all.astype(float)[f_kn])
 
@@ -246,7 +358,7 @@ def rate_based_kn_candidates(
             """.format(alertID, alertID)
         score_text = """
             *Scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
-            """.format(rfscore[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
+            """.format(rf_snia_vs_nonia[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
         time_text = """
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
             """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
@@ -343,3 +455,15 @@ def rate_based_kn_candidates(
             log.warning(error_message.format(url_name))
 
     return f_kn
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+    import sys
+    import doctest
+
+    # Numpy introduced non-backward compatible change from v1.14.
+    if np.__version__ >= "1.14.0":
+        np.set_printoptions(legacy="1.13")
+
+    sys.exit(doctest.testmod()[0])
