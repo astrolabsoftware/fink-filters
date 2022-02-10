@@ -124,7 +124,7 @@ def perform_classification(
     sigma_rate = np.zeros(len(fid))
     mag = np.zeros(len(fid))
     err_mag = np.zeros(len(fid))
-    index_mask = np.argwhere(f_kn)
+    index_mask = np.argwhere(f_kn.values)
     for i, alertID in enumerate(objectId[f_kn]):
         # Spark casts None as NaN
         maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
