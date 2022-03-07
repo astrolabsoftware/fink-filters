@@ -320,6 +320,7 @@ def early_kn_candidates(
     ----------
     >>> df = spark.read.format('parquet').load('datatest')
     >>> df = df.withColumn("isKn", early_kn_candidates(
+    ...     df['objectId'],
     ...     df['candidate.drb'],
     ...     df['candidate.classtar'],
     ...     df['candidate.jd'],
@@ -335,7 +336,8 @@ def early_kn_candidates(
     ...     df['candidate.isdiffpos'],
     ...     df['candidate.ra'],
     ...     df['candidate.dec'],
-    ...     df['roid']))
+    ...     df['roid'],
+    ...     df['candidate.field']))
     >>> print(df.filter(df['isKn'] == True).count())
     []
     """
