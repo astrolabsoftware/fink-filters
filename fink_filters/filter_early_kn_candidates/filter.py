@@ -30,6 +30,8 @@ from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
+from fink_filters.tester import spark_unit_tests
+
 def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid):
     """
