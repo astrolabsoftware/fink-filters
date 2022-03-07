@@ -335,7 +335,7 @@ def early_kn_candidates(
     ...     df['candidate.isdiffpos'],
     ...     df['candidate.ra'],
     ...     df['candidate.dec'],
-    ...     df['roid'])
+    ...     df['roid']))
     >>> print(df.filter(df['isKn'] == True).count())
     []
     """
