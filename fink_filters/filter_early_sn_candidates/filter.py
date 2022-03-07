@@ -101,7 +101,47 @@ def early_sn_candidates_(
 def early_sn_candidates(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar) -> pd.Series:
-    """ Pandas UDF for early_sn_candidates_ """
+    """ Pandas UDF for early_sn_candidates_
+
+    Parameters
+    ----------
+    cdsxmatch: Pandas series
+        Column containing the cross-match values
+    snn_snia_vs_nonia: Pandas series
+        Column containing the probability to be a SN Ia from SuperNNova.
+    snn_sn_vs_all: Pandas series
+        Column containing the probability to be a SNe from SuperNNova.
+    rf_snia_vs_nonia: Pandas series
+        Column containing the probability to be a SN Ia from RandomForestClassifier.
+    ndethist: Pandas series
+        Column containing the number of detection by ZTF
+    drb: Pandas series
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Pandas series
+        Column containing the sextractor score
+
+    Returns
+    ----------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = df.withColumn(
+    ...     'class',
+    ...     early_sn_candidates(
+    ...         df['cdsxmatch'],
+    ...         df['snn_snia_vs_nonia'],
+    ...         df['snn_sn_vs_all'],
+    ...         df['rf_snia_vs_nonia'],
+    ...         df['candidate.ndethist'],
+    ...         df['candidate.drb'],
+    ...         df['candidate.classtar']))
+    >>> print(df.filter(df['class'] == 'Early SN Ia candidate').count())
+    5
+    """
     series = early_sn_candidates_(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar
@@ -119,4 +159,5 @@ if __name__ == "__main__":
     if np.__version__ >= "1.14.0":
         np.set_printoptions(legacy="1.13")
 
-    sys.exit(doctest.testmod()[0])
+    # Run the test suite
+    spark_unit_tests()
