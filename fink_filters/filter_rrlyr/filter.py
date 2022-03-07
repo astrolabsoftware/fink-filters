@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_filters.tester import spark_unit_tests
+
 import pandas as pd
 
 from typing import Any
@@ -34,7 +36,23 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
+    Examples
+    ----------
+    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> f = 'fink_filters.filter_rrlyr.filter.rrlyr'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    5
     """
     mask = cdsxmatch.values == "RRLyr"
 
     return pd.Series(mask)
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
