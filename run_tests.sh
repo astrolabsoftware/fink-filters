@@ -21,7 +21,7 @@ Run the test suite of the modules\n\n
 Usage:\n
     \t./run_tests.sh\n\n
 
-Note you need Spark 2.4+ installed to fully test the modules.
+Note you need Spark 3.1.3+ installed to fully test the modules.
 """
 export ROOTPATH=`pwd`
 # Grab the command line arguments
