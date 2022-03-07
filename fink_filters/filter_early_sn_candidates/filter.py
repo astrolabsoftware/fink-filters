@@ -153,13 +153,6 @@ def early_sn_candidates(
 
 if __name__ == "__main__":
     """ Execute the test suite """
-    import sys
-    import doctest
-    import numpy as np
-
-    # Numpy introduced non-backward compatible change from v1.14.
-    if np.__version__ >= "1.14.0":
-        np.set_printoptions(legacy="1.13")
 
     # Run the test suite
     spark_unit_tests()
