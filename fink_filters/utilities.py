@@ -14,10 +14,74 @@
 # limitations under the License.
 from pyspark.sql.functions import col
 from pyspark.sql import DataFrame
+from pyspark.sql.types import StructType
 
 import importlib
 
 from fink_filters.tester import spark_unit_tests
+
+def return_flatten_names(
+        df: DataFrame, pref: str = "", flatten_schema: list = []) -> list:
+    """From a nested schema (using struct), retrieve full paths for entries
+    in the form level1.level2.etc.entry.
+
+    Example, if I have a nested structure such as:
+    root
+     |-- timestamp: timestamp (nullable = true)
+     |-- decoded: struct (nullable = true)
+     |    |-- schemavsn: string (nullable = true)
+     |    |-- publisher: string (nullable = true)
+     |    |-- objectId: string (nullable = true)
+     |    |-- candid: long (nullable = true)
+     |    |-- candidate: struct (nullable = true)
+
+    It will return a list like
+        ["timestamp", "decoded" ,"decoded.schemavsn", "decoded.publisher", ...]
+
+    Parameters
+    ----------
+    df : DataFrame
+        Alert DataFrame
+    pref : str, optional
+        Internal variable to keep track of the structure, initially sets to "".
+    flatten_schema: list, optional
+        List containing the names of the flatten schema names.
+        Initially sets to [].
+
+    Returns
+    -------
+    flatten_frame: list
+        List containing the names of the flatten schema names.
+
+    Examples
+    -------
+    >>> df = spark.read.format("parquet").load("datatest")
+    >>> flatten_schema = return_flatten_names(df)
+    >>> assert("candidate.candid" in flatten_schema)
+    """
+    if flatten_schema == []:
+        for colname in df.columns:
+            flatten_schema.append(colname)
+
+    # If the entry is not top level, it is then hidden inside a nested structure
+    l_struct_names = [
+        i.name for i in df.schema if isinstance(i.dataType, StructType)]
+
+    for l_struct_name in l_struct_names:
+        colnames = df.select("{}.*".format(l_struct_name)).columns
+        for colname in colnames:
+            if pref == "":
+                flatten_schema.append(".".join([l_struct_name, colname]))
+            else:
+                flatten_schema.append(".".join([pref, l_struct_name, colname]))
+
+        # Check if there are other levels nested
+        flatten_schema = return_flatten_names(
+            df.select("{}.*".format(l_struct_name)),
+            pref=l_struct_name,
+            flatten_schema=flatten_schema)
+
+    return flatten_schema
 
 def apply_user_defined_filter(df: DataFrame, toapply: str, logger=None) -> DataFrame:
     """Apply a user filter to keep only wanted alerts.
@@ -108,3 +172,11 @@ def apply_user_defined_filter(df: DataFrame, toapply: str, logger=None) -> DataF
         .withColumn("toKeep", filter_func(*colnames))\
         .filter("toKeep == true")\
         .drop("toKeep")
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
