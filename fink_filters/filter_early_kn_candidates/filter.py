@@ -313,6 +313,29 @@ def early_kn_candidates(
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = df.withColumn("isKn", early_kn_candidates(
+    ...     df['candidate.drb'],
+    ...     df['candidate.classtar'],
+    ...     df['candidate.jd'],
+    ...     df['candidate.jdstarthist'],
+    ...     df['candidate.ndethist'],
+    ...     df['cdsxmatch'],
+    ...     df['candidate.fid'],
+    ...     df['candidate.magpsf'],
+    ...     df['candidate.sigmapsf'],
+    ...     df['candidate.magnr'],
+    ...     df['candidate.sigmagnr'],
+    ...     df['candidate.magzpsci'],
+    ...     df['candidate.isdiffpos'],
+    ...     df['candidate.ra'],
+    ...     df['candidate.dec'],
+    ...     df['roid'])
+    >>> print(df.filter(df['isKn'] == True).count())
+    []
     """
     # galactic plane
     gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
@@ -497,11 +520,7 @@ def early_kn_candidates(
 
 if __name__ == "__main__":
     """ Execute the test suite """
-    import sys
-    import doctest
 
-    # Numpy introduced non-backward compatible change from v1.14.
-    if np.__version__ >= "1.14.0":
-        np.set_printoptions(legacy="1.13")
-
-    sys.exit(doctest.testmod()[0])
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
