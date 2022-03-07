@@ -318,27 +318,11 @@ def early_kn_candidates(
 
     Examples
     ----------
+    >>> from fink_filters.utilities import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
-    >>> df = df.withColumn("isKn", early_kn_candidates(
-    ...     df['objectId'],
-    ...     df['candidate.drb'],
-    ...     df['candidate.classtar'],
-    ...     df['candidate.jd'],
-    ...     df['candidate.jdstarthist'],
-    ...     df['candidate.ndethist'],
-    ...     df['cdsxmatch'],
-    ...     df['candidate.fid'],
-    ...     df['candidate.magpsf'],
-    ...     df['candidate.sigmapsf'],
-    ...     df['candidate.magnr'],
-    ...     df['candidate.sigmagnr'],
-    ...     df['candidate.magzpsci'],
-    ...     df['candidate.isdiffpos'],
-    ...     df['candidate.ra'],
-    ...     df['candidate.dec'],
-    ...     df['roid'],
-    ...     df['candidate.field']))
-    >>> print(df.filter(df['isKn'] == True).count())
+    >>> f = 'fink_filters.filter_early_kn_candidates.filter.early_kn_candidates'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
     0
     """
     # galactic plane

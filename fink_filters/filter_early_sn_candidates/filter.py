@@ -130,18 +130,11 @@ def early_sn_candidates(
 
     Examples
     ----------
+    >>> from fink_filters.utilities import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
-    >>> df = df.withColumn(
-    ...     'isIa',
-    ...     early_sn_candidates(
-    ...         df['cdsxmatch'],
-    ...         df['snn_snia_vs_nonia'],
-    ...         df['snn_sn_vs_all'],
-    ...         df['rf_snia_vs_nonia'],
-    ...         df['candidate.ndethist'],
-    ...         df['candidate.drb'],
-    ...         df['candidate.classtar']))
-    >>> print(df.filter(df['isIa'] == True).count())
+    >>> f = 'fink_filters.filter_early_sn_candidates.filter.early_sn_candidates'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
     5
     """
     series = early_sn_candidates_(
