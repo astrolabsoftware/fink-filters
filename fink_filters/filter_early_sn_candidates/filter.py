@@ -132,7 +132,7 @@ def early_sn_candidates(
     ----------
     >>> df = spark.read.format('parquet').load('datatest')
     >>> df = df.withColumn(
-    ...     'class',
+    ...     'isIa',
     ...     early_sn_candidates(
     ...         df['cdsxmatch'],
     ...         df['snn_snia_vs_nonia'],
@@ -141,7 +141,7 @@ def early_sn_candidates(
     ...         df['candidate.ndethist'],
     ...         df['candidate.drb'],
     ...         df['candidate.classtar']))
-    >>> print(df.filter(df['class'] == 'Early SN Ia candidate').count())
+    >>> print(df.filter(df['isIa'] == True).count())
     5
     """
     series = early_sn_candidates_(
@@ -155,4 +155,5 @@ if __name__ == "__main__":
     """ Execute the test suite """
 
     # Run the test suite
-    spark_unit_tests()
+    globs = globals()
+    spark_unit_tests(globs)
