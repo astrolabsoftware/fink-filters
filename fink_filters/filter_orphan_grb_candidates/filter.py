@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_filters.tester import spark_unit_tests
+
 import pandas as pd
 import numpy as np
 
@@ -77,6 +79,27 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> from fink_science.utilities import concat_col
+    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+
+    >>> to_expand = ['jd', 'fid', 'ssnamenr', 'magpsf']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> f = 'fink_filters.filter_orphan_grb_candidates.filter.orphan_grb'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    0
     """
     # 1 - No more than a month between first and last detection
     at_most_a_month = (jd - jdstarthist) <= 30
@@ -127,3 +150,11 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
     tmp = at_most_a_month & above_18 & at_least_3_det & tmp1 & tmp2 & tmp3 & tmp4
 
     return pd.Series(tmp, dtype=bool)
+
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
