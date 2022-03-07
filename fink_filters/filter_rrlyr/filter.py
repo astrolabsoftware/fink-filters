@@ -43,7 +43,7 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
     >>> f = 'fink_filters.filter_rrlyr.filter.rrlyr'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    5
+    3
     """
     mask = cdsxmatch.values == "RRLyr"
 
