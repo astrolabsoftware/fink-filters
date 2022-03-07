@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_filters.tester import spark_unit_tests
+
 import pandas as pd
 
 def early_sn_candidates_(
