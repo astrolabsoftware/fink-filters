@@ -339,7 +339,7 @@ def early_kn_candidates(
     ...     df['roid'],
     ...     df['candidate.field']))
     >>> print(df.filter(df['isKn'] == True).count())
-    []
+    0
     """
     # galactic plane
     gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
