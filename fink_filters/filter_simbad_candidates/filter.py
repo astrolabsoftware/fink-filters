@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_filters.tester import spark_unit_tests
+
 import pandas as pd
 
 def simbad_candidates_(cdsxmatch) -> pd.Series:
@@ -67,6 +69,15 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
+    Examples
+    ----------
+    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> f = 'fink_filters.filter_simbad_candidates.filter.simbad_candidates'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    293
+
     """
     f_simbad = simbad_candidates_(cdsxmatch)
 
@@ -75,12 +86,7 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
 
 if __name__ == "__main__":
     """ Execute the test suite """
-    import sys
-    import doctest
-    import numpy as np
 
-    # Numpy introduced non-backward compatible change from v1.14.
-    if np.__version__ >= "1.14.0":
-        np.set_printoptions(legacy="1.13")
-
-    sys.exit(doctest.testmod()[0])
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
