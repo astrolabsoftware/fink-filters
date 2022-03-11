@@ -1,4 +1,4 @@
-name: Sentinel - Prod
+name: Sentinel
 
 on:
   push:
@@ -9,8 +9,14 @@ on:
 jobs:
   test-suite:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        container: ["julienpeloton/fink-ci:prod", "julienpeloton/fink-ci:dev"]
+
     container:
-      image: julienpeloton/fink-ci:prod
+      image: ${{ matrix.container }}
+
     steps:
     - uses: actions/checkout@v2
 
