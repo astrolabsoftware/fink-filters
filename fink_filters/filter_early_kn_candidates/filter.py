@@ -30,6 +30,8 @@ from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
+from fink_filters.tester import spark_unit_tests
+
 def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid):
     """
@@ -313,6 +315,15 @@ def early_kn_candidates(
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> f = 'fink_filters.filter_early_kn_candidates.filter.early_kn_candidates'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    0
     """
     # galactic plane
     gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
@@ -497,11 +508,7 @@ def early_kn_candidates(
 
 if __name__ == "__main__":
     """ Execute the test suite """
-    import sys
-    import doctest
 
-    # Numpy introduced non-backward compatible change from v1.14.
-    if np.__version__ >= "1.14.0":
-        np.set_printoptions(legacy="1.13")
-
-    sys.exit(doctest.testmod()[0])
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)

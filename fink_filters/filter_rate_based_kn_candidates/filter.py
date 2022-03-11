@@ -31,6 +31,8 @@ from astroquery.sdss import SDSS
 
 from fink_science.conversion import dc_mag
 
+from fink_filters.tester import spark_unit_tests
+
 def perform_classification(
         objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
         classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
@@ -294,6 +296,27 @@ def rate_based_kn_candidates(
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> from fink_science.utilities import concat_col
+    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+
+    >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'magnr', 'sigmagnr', 'magzpsci', 'isdiffpos']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> f = 'fink_filters.filter_rate_based_kn_candidates.filter.rate_based_kn_candidates'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    0
     """
     f_kn, rate, sigma_rate, mag, err_mag = perform_classification(
         objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
@@ -459,11 +482,7 @@ def rate_based_kn_candidates(
 
 if __name__ == "__main__":
     """ Execute the test suite """
-    import sys
-    import doctest
 
-    # Numpy introduced non-backward compatible change from v1.14.
-    if np.__version__ >= "1.14.0":
-        np.set_printoptions(legacy="1.13")
-
-    sys.exit(doctest.testmod()[0])
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)

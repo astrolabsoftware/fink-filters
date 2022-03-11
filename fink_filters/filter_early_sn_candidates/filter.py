@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_filters.tester import spark_unit_tests
+
 import pandas as pd
 
 def early_sn_candidates_(
@@ -101,7 +103,40 @@ def early_sn_candidates_(
 def early_sn_candidates(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar) -> pd.Series:
-    """ Pandas UDF for early_sn_candidates_ """
+    """ Pandas UDF for early_sn_candidates_
+
+    Parameters
+    ----------
+    cdsxmatch: Pandas series
+        Column containing the cross-match values
+    snn_snia_vs_nonia: Pandas series
+        Column containing the probability to be a SN Ia from SuperNNova.
+    snn_sn_vs_all: Pandas series
+        Column containing the probability to be a SNe from SuperNNova.
+    rf_snia_vs_nonia: Pandas series
+        Column containing the probability to be a SN Ia from RandomForestClassifier.
+    ndethist: Pandas series
+        Column containing the number of detection by ZTF
+    drb: Pandas series
+        Column containing the Deep-Learning Real Bogus score
+    classtar: Pandas series
+        Column containing the sextractor score
+
+    Returns
+    ----------
+    out: pandas.Series of bool
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
+
+    Examples
+    ----------
+    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> f = 'fink_filters.filter_early_sn_candidates.filter.early_sn_candidates'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    5
+    """
     series = early_sn_candidates_(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar
@@ -111,12 +146,7 @@ def early_sn_candidates(
 
 if __name__ == "__main__":
     """ Execute the test suite """
-    import sys
-    import doctest
-    import numpy as np
 
-    # Numpy introduced non-backward compatible change from v1.14.
-    if np.__version__ >= "1.14.0":
-        np.set_printoptions(legacy="1.13")
-
-    sys.exit(doctest.testmod()[0])
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
