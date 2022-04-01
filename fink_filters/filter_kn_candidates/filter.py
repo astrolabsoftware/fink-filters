@@ -28,7 +28,7 @@ from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.time import Time
 
-from fink_science.conversion import dc_mag
+from fink_utils.photometry.conversion import dc_mag
 
 from fink_filters.tester import spark_unit_tests
 
