@@ -28,7 +28,7 @@ from astropy.coordinates import Angle
 from astropy import units as u
 from astropy.time import Time
 
-from fink_science.conversion import dc_mag
+from fink_utils.photometry.conversion import dc_mag
 
 from fink_filters.tester import spark_unit_tests
 
@@ -154,7 +154,7 @@ def kn_candidates(
 
     Examples
     ----------
-    >>> from fink_science.utilities import concat_col
+    >>> from fink_utils.spark.utils import concat_col
     >>> from fink_filters.utilities import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
 

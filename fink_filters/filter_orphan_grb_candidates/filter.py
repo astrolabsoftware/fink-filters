@@ -82,7 +82,7 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
 
     Examples
     ----------
-    >>> from fink_science.utilities import concat_col
+    >>> from fink_utils.spark.utils import concat_col
     >>> from fink_filters.utilities import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
 
