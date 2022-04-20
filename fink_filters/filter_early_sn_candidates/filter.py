@@ -130,7 +130,7 @@ def early_sn_candidates(
 
     Examples
     ----------
-    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
     >>> f = 'fink_filters.filter_early_sn_candidates.filter.early_sn_candidates'
     >>> df = apply_user_defined_filter(df, f)
