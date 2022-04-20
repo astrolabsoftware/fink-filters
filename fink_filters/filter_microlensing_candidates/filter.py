@@ -66,7 +66,7 @@ def microlensing_candidates(mulens) -> pd.Series:
 
     Examples
     ----------
-    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
     >>> f = 'fink_filters.filter_microlensing_candidates.filter.microlensing_candidates'
     >>> df = apply_user_defined_filter(df, f)

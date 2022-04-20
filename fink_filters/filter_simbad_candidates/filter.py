@@ -71,7 +71,7 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
 
     Examples
     ----------
-    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
     >>> f = 'fink_filters.filter_simbad_candidates.filter.simbad_candidates'
     >>> df = apply_user_defined_filter(df, f)

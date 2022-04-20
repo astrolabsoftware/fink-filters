@@ -63,7 +63,7 @@ def sso_fink_candidates(roid) -> pd.Series:
 
     Examples
     ----------
-    >>> from fink_filters.utilities import apply_user_defined_filter
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
     >>> f = 'fink_filters.filter_sso_fink_candidates.filter.sso_fink_candidates'
     >>> df = apply_user_defined_filter(df, f)
