@@ -12,13 +12,14 @@ This repository contains filters used to flag only particular parts of the full 
 - microlensing_candidates: alerts identified as Microlensing event candidates
 - sso_ztf_candiates: alerts identified as Solar System Object in the MPC database
 - sso_fink_candidates: alerts identified as Solar System Object candidates by Fink
-- rrlyr: alerts identified as RRLyr in the SIMBAD catalog
+- rrlyr: alerts identified as RRLyr in the SIMBAD database
 - kn_candidates: alerts identified as kilonova candidates (ML-based)
 - early_kn_candidates: alerts identified as kilonova candidates (cut-based)
 - rate_based_kn_candidates: alerts identified as kilonova candidates from a fast (> 0.3 mag/day) decay
 - orphan_grb: alerts identified as orphan GRB
 - tracklet_candidates: alerts belonging to a tracklet (likely space debris or satellite glint)
 - simbad_candidates: alerts with counterpart in the SIMBAD database
+- young_stellar_object_candidates: alerts identified as Candidate_YSO or Candidate_TTau\* in the SIMBAD database.
 
 ## Fink alert classification
 
