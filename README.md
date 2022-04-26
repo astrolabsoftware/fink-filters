@@ -19,7 +19,7 @@ This repository contains filters used to flag only particular parts of the full 
 - orphan_grb: alerts identified as orphan GRB
 - tracklet_candidates: alerts belonging to a tracklet (likely space debris or satellite glint)
 - simbad_candidates: alerts with counterpart in the SIMBAD database
-- young_stellar_object_candidates: alerts identified as Candidate_YSO or Candidate_TTau\* in the SIMBAD database.
+- yso_candidates: alerts identified as Candidate_YSO or Candidate_TTau\* in the SIMBAD database.
 
 ## Fink alert classification
 
