@@ -23,7 +23,7 @@ This repository contains filters used to flag only particular parts of the full 
 
 ## Fink alert classification
 
-Based on the filters outputs (which rely on alert content), we infer a classification for each alert. We currently have hundreds of classes that can be found [online](https://fink-portal/api/v1/classes). You can find the implementation of the classification method in [classification.py](fink_filters/classification.py), but the rule of thumb is:
+Based on the filters outputs (which rely on alert content), we infer a classification for each alert. We currently have hundreds of classes that can be found [online](https://fink-portal.org/api/v1/classes). You can find the implementation of the classification method in [classification.py](fink_filters/classification.py), but the rule of thumb is:
 
 1. if an alert has not been flagged by any of the filters, it is tagged as `Unknown`
 2. if an alert has a counterpart in the SIMBAD database, its classification is the one from SIMBAD.
