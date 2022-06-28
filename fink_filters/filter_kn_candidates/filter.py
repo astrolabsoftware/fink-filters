@@ -29,6 +29,7 @@ from astropy import units as u
 from astropy.time import Time
 
 from fink_utils.photometry.conversion import dc_mag
+from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
@@ -83,27 +84,7 @@ def kn_candidates_(
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
     small_detection_history = ndethist.astype(float) < 20
 
-    list_simbad_galaxies = [
-        "galaxy",
-        "Galaxy",
-        "EmG",
-        "Seyfert",
-        "Seyfert_1",
-        "Seyfert_2",
-        "BlueCompG",
-        "StarburstG",
-        "LSB_G",
-        "HII_G",
-        "High_z_G",
-        "GinPair",
-        "GinGroup",
-        "BClG",
-        "GinCl",
-        "PartofG",
-    ]
-
-    keep_cds = \
-        ["Unknown", "Transient", "Fail"] + list_simbad_galaxies
+    keep_cds = return_list_of_eg_host()
 
     f_kn = high_knscore & high_drb & high_classtar & new_detection
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
