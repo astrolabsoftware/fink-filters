@@ -47,6 +47,9 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
     """
     mask = cdsxmatch.values == "RRLyr"
 
+    # new taxonomy
+    mask *= cdsxmatch.values == "RRLyrae"
+
     return pd.Series(mask)
 
 

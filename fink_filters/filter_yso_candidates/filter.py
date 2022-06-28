@@ -49,7 +49,11 @@ def yso_candidates(cdsxmatch: Any) -> pd.Series:
     f1 = cdsxmatch.values == "Candidate_YSO"
     f2 = cdsxmatch.values == "Candidate_TTau*"
 
-    mask = f1 | f2
+    # New taxonomy
+    f3 = cdsxmatch.values == "YSO_Candidate"
+    f4 = cdsxmatch.values == "TTau*_Candidate"
+
+    mask = f1 | f2 | f3 | f4
 
     return pd.Series(mask)
 
