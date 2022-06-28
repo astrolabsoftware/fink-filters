@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_utils.xmatch.simbad import return_list_of_eg_host
+
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
@@ -78,26 +80,7 @@ def sn_candidates_(
     no_mpc = roid.astype(int) != 3
     no_first_det = ndethist.astype(int) > 1
 
-    list_simbad_galaxies = [
-        "galaxy",
-        "Galaxy",
-        "EmG",
-        "Seyfert",
-        "Seyfert_1",
-        "Seyfert_2",
-        "BlueCompG",
-        "StarburstG",
-        "LSB_G",
-        "HII_G",
-        "High_z_G",
-        "GinPair",
-        "GinGroup",
-        "BClG",
-        "GinCl",
-        "PartofG",
-    ]
-    keep_cds = \
-        ["Unknown", "Candidate_SN*", "SN", "Transient", "Fail"] + list_simbad_galaxies
+    keep_cds = return_list_of_eg_host()
 
     f_sn = (snn1 | snn2) & cdsxmatch.isin(keep_cds) & sn_history & high_drb & high_classtar & no_first_det & no_mpc
 

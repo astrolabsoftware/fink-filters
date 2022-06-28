@@ -29,6 +29,7 @@ from astropy.time import Time
 from astroquery.sdss import SDSS
 
 from fink_utils.photometry.conversion import dc_mag
+from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
@@ -41,27 +42,7 @@ def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, 
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
     not_ztf_sso_candidate = roid.astype(int) != 3
 
-    list_simbad_galaxies = [
-        "galaxy",
-        "Galaxy",
-        "EmG",
-        "Seyfert",
-        "Seyfert_1",
-        "Seyfert_2",
-        "BlueCompG",
-        "StarburstG",
-        "LSB_G",
-        "HII_G",
-        "High_z_G",
-        "GinPair",
-        "GinGroup",
-        "BClG",
-        "GinCl",
-        "PartofG",
-    ]
-
-    keep_cds = \
-        ["Unknown", "Transient", "Fail"] + list_simbad_galaxies
+    keep_cds = return_list_of_eg_host()
 
     # Compute DC magnitude
     mag, err_mag = np.array([
