@@ -45,10 +45,8 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
     >>> print(df.count())
     3
     """
-    mask = cdsxmatch.values == "RRLyr"
-
-    # new taxonomy
-    mask *= cdsxmatch.values == "RRLyrae"
+    # Include new taxonomy
+    mask = (cdsxmatch.values == "RRLyr") | (cdsxmatch.values == "RRLyrae")
 
     return pd.Series(mask)
 
