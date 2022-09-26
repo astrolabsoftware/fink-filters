@@ -50,7 +50,7 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     CataclyV*      5
     Name: objectId, dtype: int64
     """
-    f_simbad = ~cdsxmatch.isin(['Unknown', 'Transient', 'Fail'])
+    f_simbad = ~cdsxmatch.isin(['Unknown', 'Transient', 'Fail', 'Fail 504'])
 
     return f_simbad
 
