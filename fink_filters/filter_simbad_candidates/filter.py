@@ -52,6 +52,10 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     """
     f_simbad = ~cdsxmatch.isin(['Unknown', 'Transient', 'Fail', 'Fail 504'])
 
+    # mask all kind of failures
+    mask = cdsxmatch.apply(lambda x: x.startswith('Fail'))
+    f_simbad[mask] = False
+
     return f_simbad
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
