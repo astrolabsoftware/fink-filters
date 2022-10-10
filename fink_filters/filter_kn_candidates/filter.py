@@ -81,7 +81,7 @@ def kn_candidates_(
     high_knscore = rf_kn_vs_nonkn.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
-    new_detection = jd.astype(float) - jdstarthist.astype(float) < 20
+    new_detection = jd.astype(float) - jdstarthist.astype(float) < 5
     small_detection_history = ndethist.astype(float) < 20
 
     keep_cds = return_list_of_eg_host()
