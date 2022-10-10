@@ -86,7 +86,7 @@ def perform_classification(
 
     high_drb = drb.astype(float) > 0.9
     high_classtar = classtar.astype(float) > 0.4
-    new_detection = jd.astype(float) - jdstarthist.astype(float) < 14
+    new_detection = jd.astype(float) - jdstarthist.astype(float) < 5
     small_detection_history = ndethist.astype(float) < 20
     appeared = isdiffpos.astype(str) == 't'
     far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
