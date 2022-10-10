@@ -56,6 +56,10 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     mask = cdsxmatch.apply(lambda x: x.startswith('Fail'))
     f_simbad[mask] = False
 
+    # Remove static objects -- https://github.com/astrolabsoftware/fink-filters/issues/120
+    mask_gal = cdsxmatch.apply(lambda x: x.startswith('Galaxy'))
+    f_simbad[mask_gal] = False
+
     return f_simbad
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
