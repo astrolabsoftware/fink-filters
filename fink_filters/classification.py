@@ -102,16 +102,16 @@ def extract_fink_classification_(
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
-    Unknown                  11
+    Unknown                  14
     QSO                       8
     Blue                      7
     HotSubdwarf               6
-    Candidate_YSO             5
-    TTau*                     5
-    CataclyV*                 5
     Symbiotic*                5
     Early SN Ia candidate     5
-    V*                        4
+    CataclyV*                 5
+    Candidate_YSO             5
+    TTau*                     5
+    Candidate_CV*             4
     Name: objectId, dtype: int64
     """
     classification = pd.Series(['Unknown'] * len(cdsxmatch))
@@ -189,16 +189,16 @@ def extract_fink_classification_from_pdf(pdf):
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
-    Unknown                  11
+    Unknown                  14
     QSO                       8
     Blue                      7
     HotSubdwarf               6
-    Candidate_YSO             5
-    TTau*                     5
-    CataclyV*                 5
     Symbiotic*                5
     Early SN Ia candidate     5
-    V*                        4
+    CataclyV*                 5
+    Candidate_YSO             5
+    TTau*                     5
+    Candidate_CV*             4
     Name: objectId, dtype: int64
     """
     classification = extract_fink_classification_(

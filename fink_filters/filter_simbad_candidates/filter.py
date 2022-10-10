@@ -39,7 +39,7 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     >>> classification = simbad_candidates_(pdf['cdsxmatch'])
     >>> nalerts = len(pdf[classification]['objectId'])
     >>> print(nalerts)
-    293
+    290
 
     >>> pdf[classification].groupby('cdsxmatch').count().sort_values('objectId', ascending=False)['objectId'].head()
     cdsxmatch
@@ -47,7 +47,7 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     Blue           7
     HotSubdwarf    6
     TTau*          5
-    CataclyV*      5
+    Symbiotic*     5
     Name: objectId, dtype: int64
     """
     f_simbad = ~cdsxmatch.isin(['Unknown', 'Transient', 'Fail', 'Fail 504'])
@@ -55,6 +55,10 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     # mask all kind of failures
     mask = cdsxmatch.apply(lambda x: x.startswith('Fail'))
     f_simbad[mask] = False
+
+    # Remove static objects -- https://github.com/astrolabsoftware/fink-filters/issues/120
+    mask_gal = cdsxmatch.apply(lambda x: x.startswith('Galaxy'))
+    f_simbad[mask_gal] = False
 
     return f_simbad
 
@@ -80,7 +84,7 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
     >>> f = 'fink_filters.filter_simbad_candidates.filter.simbad_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    293
+    290
 
     """
     f_simbad = simbad_candidates_(cdsxmatch)
