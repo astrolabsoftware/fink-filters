@@ -348,7 +348,7 @@ def early_kn_candidates(
     for i, alertID in enumerate(objectId[f_kn]):
         # information to send
         alert_text = """
-            *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+            *New kilonova candidate:* <https://fink-portal.org/{}|{}>
             """.format(alertID, alertID)
         time_text = """
             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours

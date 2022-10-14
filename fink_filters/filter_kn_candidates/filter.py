@@ -242,7 +242,7 @@ def kn_candidates(
 
         # information to send
         alert_text = """
-            *New kilonova candidate:* <http://134.158.75.151:24000/{}|{}>
+            *New kilonova candidate:* <https://fink-portal.org/{}|{}>
             """.format(alertID, alertID)
         knscore_text = "*Kilonova score:* {:.2f}".format(rf_kn_vs_nonkn[i])
         score_text = """
