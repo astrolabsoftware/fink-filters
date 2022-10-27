@@ -35,7 +35,7 @@ from fink_filters.tester import spark_unit_tests
 
 def kn_candidates_(
         rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jd, jdstarthist, ndethist, cdsxmatch) -> pd.Series:
+        classtar, jd, jdstarthist, ndethist, cdsxmatch, roid) -> pd.Series:
     """ Return alerts considered as KN candidates.
 
     Parameters
@@ -54,6 +54,8 @@ def kn_candidates_(
         Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Pandas series
         Column containing the cross-match values
+    roid: Pandas series
+        Column containing SSO classification
 
     Returns
     ----------
@@ -74,7 +76,8 @@ def kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['jd']),
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
     ...     pdf['candidate'].apply(lambda x: x['ndethist']),
-    ...     pdf['cdsxmatch'])
+    ...     pdf['cdsxmatch'],
+    ...     pdf['roid'])
     >>> print(pdf[classification]['objectId'].values)
     []
     """
@@ -83,10 +86,11 @@ def kn_candidates_(
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 5
     small_detection_history = ndethist.astype(float) < 20
+    not_mpc = roid != 3
 
     keep_cds = return_list_of_eg_host()
 
-    f_kn = high_knscore & high_drb & high_classtar & new_detection
+    f_kn = high_knscore & high_drb & high_classtar & new_detection & not_mpc
     f_kn = f_kn & small_detection_history & cdsxmatch.isin(keep_cds)
 
     return f_kn
@@ -95,7 +99,7 @@ def kn_candidates_(
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(
         objectId, rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, cjdc, cfidc,
+        classtar, jdstarthist, ndethist, cdsxmatch, roid, ra, dec, cjdc, cfidc,
         cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc) -> pd.Series:
     """ Pandas UDF of kn_candidates_ for Spark
 
@@ -119,6 +123,8 @@ def kn_candidates(
         Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
+    roid: Spark DataFrame Column
+        Column containing SSO classification
     ra: Spark DataFrame Column
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
@@ -162,7 +168,7 @@ def kn_candidates(
 
     f_kn = kn_candidates_(
         rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jd, jdstarthist, ndethist, cdsxmatch
+        classtar, jd, jdstarthist, ndethist, cdsxmatch, roid
     )
 
     if f_kn.any():
