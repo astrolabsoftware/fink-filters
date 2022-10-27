@@ -142,7 +142,7 @@ def extract_fink_classification_(
     # Kilonova (ML)
     f_kn = kn_candidates_(
         rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jd, jdstarthist, ndethist, cdsxmatch
+        classtar, jd, jdstarthist, ndethist, cdsxmatch, roid
     )
 
     # SSO (MPC)
