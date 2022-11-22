@@ -168,7 +168,7 @@ def f_gold_events(fink_class, realbogus_score, grb_proba, rate):
 if __name__ == "__main__":
     """Execute the test suite"""
 
-    import pandas as pd
+    import pandas as pd  # noqa: F401
 
     # Run the test suite
     globs = globals()
