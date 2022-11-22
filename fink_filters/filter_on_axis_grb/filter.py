@@ -19,26 +19,154 @@ from pyspark.sql.types import BooleanType
 from scipy import special
 from math import sqrt
 
-@pandas_udf(BooleanType())
+from fink_filters.tester import spark_unit_tests
+
+
 def bronze_events(fink_class, realbogus_score):
+    """
+    Return alerts spatially and temporally consistent with a gcn alerts
+    Keep alerts with real bogus score higher than 0.9 
+    and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
 
+    Parameters
+    ----------
+    fink_class : pd.Series
+        Fink classification
+    realbogus_score : pd.Series
+
+    Return
+    ------
+    f_bronze : pd.Series
+        alerts falling in the bronze filters
+
+    Examples
+    --------
+    >>> df = pd.read_parquet(grb_output_data)
+    >>> df["f_bronze"] = bronze_events(df["fink_class"], df["rb"])
+    >>> len(df[df["f_bronze"]])
+    7
+    """
     f_bogus = realbogus_score >= 0.9
-    f_class = fink_class.isin(["SN candidates", "Unknown", "Ambiguous"])
+    f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
+    f_bronze = (f_bogus & f_class)
+    return f_bronze
 
-    return (f_bogus & f_class)
 
 @pandas_udf(BooleanType())
-def silver_events(fink_class, realbogus_score, grb_proba):
+def f_bronze_events(fink_class, realbogus_score):
+    """
+    see bronze_events documentation
 
+    Examples
+    --------
+    >>> df = spark.read.format('parquet').load(grb_output_data)
+    >>> df = df.withColumn("f_bronze", f_bronze_events(df["fink_class"], df["rb"])).filter("f_bronze == True").drop("f_bronze")
+    >>> df.count()
+    7
+    """
+    f_bronze = bronze_events(fink_class, realbogus_score)
+    return f_bronze
+
+
+def silver_events(fink_class, realbogus_score, grb_proba):
+    """
+    Return alerts spatially and temporally consistent with a gcn alerts
+    Keep alerts with real bogus score higher than 0.9 
+    and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
+    and the alerts with a proba > 5 sigma
+
+    Parameters
+    ----------
+    fink_class : pd.Series
+        Fink classification
+    realbogus_score : pd.Series
+
+    Return
+    ------
+    f_bronze : pd.Series
+        alerts falling in the bronze filters
+
+    Examples
+    --------
+    >>> df = pd.read_parquet(grb_output_data)
+    >>> df = df[df["grb_proba"] != 1.0]
+    >>> df["f_silver"] = silver_events(df["fink_class"], df["rb"], df["grb_proba"])
+    >>> len(df[df["f_silver"]])
+    4
+    """
     f_bronze = bronze_events(fink_class, realbogus_score)
     grb_ser_assoc = (1 - grb_proba) > special.erf(5 / sqrt(2))
-
-    return f_bronze & grb_ser_assoc
+    f_silver = (f_bronze & grb_ser_assoc)
+    return f_silver
 
 @pandas_udf(BooleanType())
-def gold_events(fink_class, realbogus_score, grb_proba, rate):
+def f_silver_events(fink_class, realbogus_score, grb_proba):
+    """
+    see silver_events documentation
 
+    Examples
+    --------
+    >>> df = spark.read.format('parquet').load(grb_output_data)
+    >>> df = df.withColumn("f_silver", f_silver_events(df["fink_class"], df["rb"], df["grb_proba"])).filter("f_silver == True").drop("f_silver")
+    >>> df.count()
+    4
+    """
+    f_silver = silver_events(fink_class, realbogus_score, grb_proba)
+    return f_silver
+
+def gold_events(fink_class, realbogus_score, grb_proba, rate):
+    """
+    Return alerts spatially and temporally consistent with a gcn alerts
+    Keep alerts with real bogus score higher than 0.9 
+    and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
+    and the alerts with a proba > 5 sigma
+    and a rate > 0.3 mag / day
+
+    Parameters
+    ----------
+    fink_class : pd.Series
+        Fink classification
+    realbogus_score : pd.Series
+
+    Return
+    ------
+    f_bronze : pd.Series
+        alerts falling in the bronze filters
+
+    Examples
+    --------
+    >>> df = pd.read_parquet(grb_output_data)
+    >>> df = df[df["grb_proba"] != 1.0]
+    >>> df["f_gold"] = gold_events(df["fink_class"], df["rb"], df["grb_proba"], df["rate"])
+    >>> len(df[df["f_gold"]])
+    3
+    """
     f_silver = silver_events(fink_class, realbogus_score, grb_proba)
     f_rate = rate.abs() > 0.3
+    f_gold = (f_silver & f_rate)
+    return f_gold
 
-    return f_silver & f_rate
+@pandas_udf(BooleanType())
+def f_gold_events(fink_class, realbogus_score, grb_proba, rate):
+    """
+    see gold_events documentation
+
+    Examples
+    --------
+    >>> df = spark.read.format('parquet').load(grb_output_data)
+    >>> df = df.withColumn("f_gold", f_gold_events(df["fink_class"], df["rb"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
+    >>> df.count()
+    3
+    """
+    f_gold = gold_events(fink_class, realbogus_score, grb_proba, rate)
+    return f_gold
+
+if __name__ == "__main__":
+    """ Execute the test suite """
+
+    import pandas as pd
+
+    # Run the test suite
+    globs = globals()
+    globs["grb_output_data"] = "datatest_grb/grb_join_output.parquet"
+    spark_unit_tests(globs)
