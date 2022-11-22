@@ -25,7 +25,7 @@ from fink_filters.tester import spark_unit_tests
 def bronze_events(fink_class, realbogus_score):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
-    Keep alerts with real bogus score higher than 0.9 
+    Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
 
     Parameters
@@ -48,7 +48,7 @@ def bronze_events(fink_class, realbogus_score):
     """
     f_bogus = realbogus_score >= 0.9
     f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
-    f_bronze = (f_bogus & f_class)
+    f_bronze = f_bogus & f_class
     return f_bronze
 
 
@@ -71,7 +71,7 @@ def f_bronze_events(fink_class, realbogus_score):
 def silver_events(fink_class, realbogus_score, grb_proba):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
-    Keep alerts with real bogus score higher than 0.9 
+    Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
     and the alerts with a proba > 5 sigma
 
@@ -96,8 +96,9 @@ def silver_events(fink_class, realbogus_score, grb_proba):
     """
     f_bronze = bronze_events(fink_class, realbogus_score)
     grb_ser_assoc = (1 - grb_proba) > special.erf(5 / sqrt(2))
-    f_silver = (f_bronze & grb_ser_assoc)
+    f_silver = f_bronze & grb_ser_assoc
     return f_silver
+
 
 @pandas_udf(BooleanType())
 def f_silver_events(fink_class, realbogus_score, grb_proba):
@@ -114,10 +115,11 @@ def f_silver_events(fink_class, realbogus_score, grb_proba):
     f_silver = silver_events(fink_class, realbogus_score, grb_proba)
     return f_silver
 
+
 def gold_events(fink_class, realbogus_score, grb_proba, rate):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
-    Keep alerts with real bogus score higher than 0.9 
+    Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
     and the alerts with a proba > 5 sigma
     and a rate > 0.3 mag / day
@@ -143,8 +145,9 @@ def gold_events(fink_class, realbogus_score, grb_proba, rate):
     """
     f_silver = silver_events(fink_class, realbogus_score, grb_proba)
     f_rate = rate.abs() > 0.3
-    f_gold = (f_silver & f_rate)
+    f_gold = f_silver & f_rate
     return f_gold
+
 
 @pandas_udf(BooleanType())
 def f_gold_events(fink_class, realbogus_score, grb_proba, rate):
@@ -161,8 +164,9 @@ def f_gold_events(fink_class, realbogus_score, grb_proba, rate):
     f_gold = gold_events(fink_class, realbogus_score, grb_proba, rate)
     return f_gold
 
+
 if __name__ == "__main__":
-    """ Execute the test suite """
+    """Execute the test suite"""
 
     import pandas as pd
 
