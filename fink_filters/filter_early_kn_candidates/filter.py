@@ -348,7 +348,10 @@ def early_kn_candidates(
     for i, alertID in enumerate(objectId[f_kn]):
         # information to send
         alert_text = """
-            *New kilonova candidate:* <https://fink-portal.org/{}|{}>
+            *Fink Science Portal:* <https://fink-portal.org/{}|{}>
+            """.format(alertID, alertID)
+        skyportal_text = """
+            *SkyPortal:* <https://skyportal-icare.ijclab.in2p3.fr/source/{}|{}>
             """.format(alertID, alertID)
         time_text = """
             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
@@ -388,6 +391,10 @@ def early_kn_candidates(
                     {
                         "type": "mrkdwn",
                         "text": alert_text
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": skyportal_text
                     },
                 ]
             },
