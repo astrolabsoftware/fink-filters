@@ -357,7 +357,7 @@ def early_kn_candidates(
             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
             """.format(Time(jd[i], format='jd').iso, delta_jd_first[i] * 24)
         measurements_text = """
-            *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
+            *Measurement (band {}):*\n- DC magnitude: {:.2f} ± {:.2f}
             """.format(dict_filt[fid[i]], mag[i], err_mag[i])
         host_text = """
             *Presumed host galaxy:*\n- HyperLEDA Name: {:s}\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
