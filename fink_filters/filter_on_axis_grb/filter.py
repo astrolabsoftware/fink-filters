@@ -80,11 +80,15 @@ def silver_events(fink_class, realbogus_score, grb_proba):
     fink_class : pd.Series
         Fink classification
     realbogus_score : pd.Series
+        real bogus score
+    grb_proba : pd.Series
+        serendipitous probilities to associates a ZTF alerts with a GCN,
+        computed by the grb module
 
     Return
     ------
-    f_bronze : pd.Series
-        alerts falling in the bronze filters
+    f_silver : pd.Series
+        alerts falling in the silver filters
 
     Examples
     --------
@@ -129,11 +133,17 @@ def gold_events(fink_class, realbogus_score, grb_proba, rate):
     fink_class : pd.Series
         Fink classification
     realbogus_score : pd.Series
+        real bogus score
+    grb_proba : pd.Series
+        serendipitous probilities to associates a ZTF alerts with a GCN,
+        computed by the grb module
+    rate : pd.Series
+        magnitude rate in mag/day computed by the grb module.
 
     Return
     ------
-    f_bronze : pd.Series
-        alerts falling in the bronze filters
+    f_gold : pd.Series
+        alerts falling in the gold filters
 
     Examples
     --------
