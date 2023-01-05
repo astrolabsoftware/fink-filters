@@ -28,13 +28,12 @@ from astropy import units as u
 from astropy.time import Time
 from astroquery.sdss import SDSS
 
-from fink_utils.photometry.conversion import dc_mag
 from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
 def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid):
+        magpsf, sigmapsf, ra, dec, roid):
     """
     """
     high_drb = drb.astype(float) > 0.5
@@ -43,19 +42,6 @@ def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, 
     not_ztf_sso_candidate = roid.astype(int) != 3
 
     keep_cds = return_list_of_eg_host()
-
-    # Compute DC magnitude
-    mag, err_mag = np.array([
-        dc_mag(i[0], i[1], i[2], i[3], i[4], i[5], i[6])
-        for i in zip(
-            np.array(fid),
-            np.array(magpsf),
-            np.array(sigmapsf),
-            np.array(magnr),
-            np.array(sigmagnr),
-            np.array(magzpsci),
-            np.array(isdiffpos))
-    ]).T
 
     f_kn = high_drb & high_classtar & new_detection
     f_kn = f_kn & cdsxmatch.isin(keep_cds) & not_ztf_sso_candidate
@@ -80,8 +66,8 @@ def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, 
         pdf = pd.DataFrame.from_dict(
             {
                 'fid': fid[f_kn], 'ra': ra[f_kn],
-                'dec': dec[f_kn], 'mag': mag[f_kn],
-                'err_mag': err_mag[f_kn]
+                'dec': dec[f_kn], 'mag': magpsf[f_kn],
+                'err_mag': sigmapsf[f_kn]
             }
         )
 
@@ -156,11 +142,11 @@ def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, 
             )
         f_kn.loc[f_kn] = np.array(no_star, dtype=bool)
 
-    return f_kn, pdf_mangrove, host_galaxies, host_alert_separation, abs_mag_candidate, mag, err_mag
+    return f_kn, pdf_mangrove, host_galaxies, host_alert_separation, abs_mag_candidate
 
 def early_kn_candidates_(
         drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid) -> pd.Series:
+        magpsf, sigmapsf, ra, dec, roid) -> pd.Series:
     """ Return alerts considered as KN candidates from the xmatch with Mangrove
 
     Note the default `data/mangrove_filtered.csv` catalog is loaded.
@@ -183,15 +169,6 @@ def early_kn_candidates_(
         Column containing filter, 1 for green and 2 for red
     magpsf,sigmapsf: Pandas series
         Columns containing magnitude from PSF-fit photometry, and 1-sigma error
-    magnr,sigmagnr: Pandas series
-        Columns containing magnitude of nearest source in reference image
-        PSF-catalog within 30 arcsec and 1-sigma error
-    magzpsci: Pandas series
-        Column containing magnitude zero point for photometry estimates
-    isdiffpos: Pandas series
-        Column containing:
-        t or 1 => candidate is from positive (sci minus ref) subtraction;
-        f or 0 => candidate is from negative (ref minus sci) subtraction
     ra: Pandas series
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Pandas series
@@ -220,10 +197,6 @@ def early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['fid']),
     ...     pdf['candidate'].apply(lambda x: x['magpsf']),
     ...     pdf['candidate'].apply(lambda x: x['sigmapsf']),
-    ...     pdf['candidate'].apply(lambda x: x['magnr']),
-    ...     pdf['candidate'].apply(lambda x: x['sigmagnr']),
-    ...     pdf['candidate'].apply(lambda x: x['magzpsci']),
-    ...     pdf['candidate'].apply(lambda x: x['isdiffpos']),
     ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']),
     ...     pdf['roid'])
@@ -232,7 +205,7 @@ def early_kn_candidates_(
     """
     f_kn, _, _, _, _, _, _ = perform_classification(
         drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid
+        magpsf, sigmapsf, ra, dec, roid
     )
 
     return f_kn
@@ -240,7 +213,7 @@ def early_kn_candidates_(
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_kn_candidates(
         objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid,
+        magpsf, sigmapsf, ra, dec, roid,
         field) -> pd.Series:
     """
     Return alerts considered as KN candidates.
@@ -271,15 +244,6 @@ def early_kn_candidates(
         Column containing filter, 1 for green and 2 for red
     magpsf,sigmapsf: Spark DataFrame Columns
         Columns containing magnitude from PSF-fit photometry, and 1-sigma error
-    magnr,sigmagnr: Spark DataFrame Columns
-        Columns containing magnitude of nearest source in reference image
-        PSF-catalog within 30 arcsec and 1-sigma error
-    magzpsci: Spark DataFrame Column
-        Column containing magnitude zero point for photometry estimates
-    isdiffpos: Spark DataFrame Column
-        Column containing:
-        t or 1 => candidate is from positive (sci minus ref) subtraction;
-        f or 0 => candidate is from negative (ref minus sci) subtraction
     ra: Spark DataFrame Column
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
@@ -311,11 +275,11 @@ def early_kn_candidates(
 
     out = perform_classification(
         drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, magnr, sigmagnr, magzpsci, isdiffpos, ra, dec, roid
+        magpsf, sigmapsf, ra, dec, roid
     )
 
     f_kn, pdf_mangrove, host_galaxies, host_alert_separation, \
-        abs_mag_candidate, mag, err_mag = out
+        abs_mag_candidate = out
 
     if f_kn.any():
         # Simplify notations
@@ -340,8 +304,8 @@ def early_kn_candidates(
         # Redefine notations relative to candidates
         fid = np.array(fid)[f_kn]
         jd = np.array(jd)[f_kn]
-        mag = mag[f_kn]
-        err_mag = err_mag[f_kn]
+        mag = magpsf[f_kn]
+        err_mag = sigmapsf[f_kn]
         field = field[f_kn]
 
     dict_filt = {1: 'g', 2: 'r'}
