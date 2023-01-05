@@ -203,7 +203,7 @@ def early_kn_candidates_(
     >>> print(pdf[classification]['objectId'].values)
     []
     """
-    f_kn, _, _, _, _, _, _ = perform_classification(
+    f_kn, _, _, _, _ = perform_classification(
         drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, ra, dec, roid
     )
