@@ -46,7 +46,7 @@ def bronze_events(fink_class, realbogus_score):
     >>> len(df[df["f_bronze"]])
     7
     """
-    f_bogus = realbogus_score >= 0.9
+    f_bogus = realbogus_score >= 0.5
     f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
     f_bronze = f_bogus & f_class
     return f_bronze
