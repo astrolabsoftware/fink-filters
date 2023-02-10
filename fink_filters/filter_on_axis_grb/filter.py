@@ -1,4 +1,4 @@
-# Copyright 2019-2022 AstroLab Software
+# Copyright 2019-2023 AstroLab Software
 # Author: Roman Le Montagner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,8 +47,12 @@ def bronze_events(fink_class, realbogus_score):
     25
     """
     f_bogus = realbogus_score >= 0.5
+
     f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
-    f_bronze = f_bogus & f_class
+
+    f_fail = fink_class.str.startswith("Fail")
+
+    f_bronze = f_bogus & (f_class | f_fail)
     return f_bronze
 
 
