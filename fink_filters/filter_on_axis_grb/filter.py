@@ -44,7 +44,7 @@ def bronze_events(fink_class, realbogus_score):
     >>> df = pd.read_parquet(grb_output_data)
     >>> df["f_bronze"] = bronze_events(df["fink_class"], df["rb"])
     >>> len(df[df["f_bronze"]])
-    7
+    25
     """
     f_bogus = realbogus_score >= 0.5
     f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
@@ -62,7 +62,7 @@ def f_bronze_events(fink_class, realbogus_score):
     >>> df = spark.read.format('parquet').load(grb_output_data)
     >>> df = df.withColumn("f_bronze", f_bronze_events(df["fink_class"], df["rb"])).filter("f_bronze == True").drop("f_bronze")
     >>> df.count()
-    7
+    25
     """
     f_bronze = bronze_events(fink_class, realbogus_score)
     return f_bronze
@@ -96,7 +96,7 @@ def silver_events(fink_class, realbogus_score, grb_proba):
     >>> df = df[df["grb_proba"] != 1.0]
     >>> df["f_silver"] = silver_events(df["fink_class"], df["rb"], df["grb_proba"])
     >>> len(df[df["f_silver"]])
-    4
+    9
     """
     f_bronze = bronze_events(fink_class, realbogus_score)
     grb_ser_assoc = (1 - grb_proba) > special.erf(5 / sqrt(2))
@@ -114,7 +114,7 @@ def f_silver_events(fink_class, realbogus_score, grb_proba):
     >>> df = spark.read.format('parquet').load(grb_output_data)
     >>> df = df.withColumn("f_silver", f_silver_events(df["fink_class"], df["rb"], df["grb_proba"])).filter("f_silver == True").drop("f_silver")
     >>> df.count()
-    4
+    9
     """
     f_silver = silver_events(fink_class, realbogus_score, grb_proba)
     return f_silver
@@ -151,7 +151,7 @@ def gold_events(fink_class, realbogus_score, grb_proba, rate):
     >>> df = df[df["grb_proba"] != 1.0]
     >>> df["f_gold"] = gold_events(df["fink_class"], df["rb"], df["grb_proba"], df["rate"])
     >>> len(df[df["f_gold"]])
-    3
+    7
     """
     f_silver = silver_events(fink_class, realbogus_score, grb_proba)
     f_rate = rate.abs() > 0.3
@@ -169,7 +169,7 @@ def f_gold_events(fink_class, realbogus_score, grb_proba, rate):
     >>> df = spark.read.format('parquet').load(grb_output_data)
     >>> df = df.withColumn("f_gold", f_gold_events(df["fink_class"], df["rb"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
     >>> df.count()
-    3
+    7
     """
     f_gold = gold_events(fink_class, realbogus_score, grb_proba, rate)
     return f_gold
