@@ -348,13 +348,16 @@ def early_kn_candidates(
     for i, alertID in enumerate(objectId[f_kn]):
         # information to send
         alert_text = """
-            *New kilonova candidate:* <https://fink-portal.org/{}|{}>
+            *Fink Science Portal:* <https://fink-portal.org/{}|{}>
+            """.format(alertID, alertID)
+        skyportal_text = """
+            *SkyPortal:* <https://skyportal-icare.ijclab.in2p3.fr/source/{}|{}>
             """.format(alertID, alertID)
         time_text = """
             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
             """.format(Time(jd[i], format='jd').iso, delta_jd_first[i] * 24)
         measurements_text = """
-            *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
+            *Measurement (band {}):*\n- DC magnitude: {:.2f} ± {:.2f}
             """.format(dict_filt[fid[i]], mag[i], err_mag[i])
         host_text = """
             *Presumed host galaxy:*\n- HyperLEDA Name: {:s}\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
@@ -388,6 +391,10 @@ def early_kn_candidates(
                     {
                         "type": "mrkdwn",
                         "text": alert_text
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": skyportal_text
                     },
                 ]
             },

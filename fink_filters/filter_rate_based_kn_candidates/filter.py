@@ -358,7 +358,10 @@ def rate_based_kn_candidates(
         # information to send
         dict_filt = {1: 'g', 2: 'r'}
         alert_text = """
-            *New kilonova candidate:* <https://fink-portal.org/{}|{}>
+            *Fink Science Portal:* <https://fink-portal.org/{}|{}>
+            """.format(alertID, alertID)
+        skyportal_text = """
+            *SkyPortal:* <https://skyportal-icare.ijclab.in2p3.fr/source/{}|{}>
             """.format(alertID, alertID)
         score_text = """
             *Scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
@@ -384,6 +387,10 @@ def rate_based_kn_candidates(
                     {
                         "type": "mrkdwn",
                         "text": alert_text
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": skyportal_text
                     },
                 ]
             },

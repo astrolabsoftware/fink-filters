@@ -248,7 +248,10 @@ def kn_candidates(
 
         # information to send
         alert_text = """
-            *New kilonova candidate:* <https://fink-portal.org/{}|{}>
+            *Fink Science Portal:* <https://fink-portal.org/{}|{}>
+            """.format(alertID, alertID)
+        skyportal_text = """
+            *SkyPortal:* <https://skyportal-icare.ijclab.in2p3.fr/source/{}|{}>
             """.format(alertID, alertID)
         knscore_text = "*Kilonova score:* {:.2f}".format(rf_kn_vs_nonkn[i])
         score_text = """
@@ -275,6 +278,10 @@ def kn_candidates(
                     {
                         "type": "mrkdwn",
                         "text": alert_text
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": skyportal_text
                     },
                     {
                         "type": "mrkdwn",
