@@ -38,7 +38,12 @@ An object on the sky can emit several alerts, and based on available information
 
 ## How to contribute?
 
-Learn how to [design](https://fink-broker.readthedocs.io/en/latest/tutorials/create-filters/) your filter, to integrate it inside the Fink broker, and redirect alert streams at your home.
+Learn how to [design](https://fink-broker.readthedocs.io/en/latest/tutorials/create-filters/) your filter, to integrate it inside the Fink broker, and redirect alert streams at your home. You can also easily test your filter locally:
+
+```bash
+cd example
+PYSPARK_DRIVER_PYTHON=`which jupyter-notebook` `which pyspark`
+```
 
 ## Installation
 
