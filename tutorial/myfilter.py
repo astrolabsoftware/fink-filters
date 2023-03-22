@@ -60,7 +60,7 @@ def example_filter_(cdsxmatch, magpsf) -> pd.Series:
     mask_gal = cdsxmatch.apply(lambda x: x.startswith('Galaxy'))
     myfilter[mask_gal] = False
     
-    mask_mag = magpsf <= 20
+    mask_mag = magpsf <= 20.5
     myfilter[mask_mag] = False
     
     return myfilter
