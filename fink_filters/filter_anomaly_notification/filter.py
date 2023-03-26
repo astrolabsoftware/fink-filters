@@ -67,6 +67,6 @@ GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}
 UTC: {str(row.timestamp)[:-3]}
 Real bogus: {round(row.rb, 2)}
 Anomaly score: {round(row.anomaly_score, 2)}''')
-    filter_utils.msg_handler(send_data, slack_data, med)
     med = round(med, 2)
+    filter_utils.msg_handler(send_data, slack_data, med)
     return pd.Series(result)
