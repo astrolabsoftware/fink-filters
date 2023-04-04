@@ -1,5 +1,5 @@
-import requests
 import time
+import requests
 from slackclient import SlackClient
 import tokens
 
@@ -13,10 +13,10 @@ def msg_handler_slack(slack_data, channel_name, med):
                 channel_buf = channel['id']
                 break
     except KeyError:
-        r = requests.post("https://api.telegram.org/bot" + "/sendMessage", data={
+        requests.post("https://api.telegram.org/bot" + "/sendMessage", data={
             "chat_id": "@fink_test",
             "text": 'Slack API error'
-        })
+        }, timeout=8)
         channel_buf = None
     slack_data = [f'Median anomaly score overnight: {med}'] + slack_data
     for slack_obj in slack_data:
@@ -35,14 +35,14 @@ def msg_handler_tg(tg_data, channel_id, med):
     method = url + "/sendMessage"
     tg_data = [f'Median anomaly score overnight: {med}'] + tg_data
     for tg_obj in tg_data:
-        r = requests.post(method, data={
+        res = requests.post(method, data={
              "chat_id": channel_id,
              "text": tg_obj,
              "parse_mode": "markdown"
-              })
-        if r.status_code != 200:
-            r = requests.post(method, data={
+              }, timeout=8)
+        if res.status_code != 200:
+            res = requests.post(method, data={
                 "chat_id": "@fink_test",
-                "text": str(r.status_code)
-            })
+                "text": str(res.status_code)
+            }, timeout=8)
         time.sleep(3)

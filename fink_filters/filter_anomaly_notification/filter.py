@@ -1,13 +1,11 @@
-from pyspark.sql.functions import when, lit
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-import pandas as pd
 import filter_utils
 
 
 def anomaly_notification_(
-        df, threshold=10,
+        df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
         send_to_slack=False, channel_name=None):
     """ Create event notifications with a high anomaly_score value
@@ -69,11 +67,11 @@ def anomaly_notification_(
     >>> print(df_out.filter(df_out['flag']).count())
     """
     # Compute the median for the night
-    med = df.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
+    med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
 
     # Extract anomalous objects
-    pdf_anomalies = df.sort(['anomaly_score'], ascending=True).limit(threshold).toPandas()
+    pdf_anomalies = df_proc.sort(['anomaly_score'], ascending=True).limit(threshold).toPandas()
     upper_bound = np.max(pdf_anomalies['anomaly_score'].values)
 
     tg_data, slack_data = [], []
@@ -81,24 +79,24 @@ def anomaly_notification_(
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
         t1a = f'ID: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
-        t2 = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
-        t3 = f'UTC: {str(row.timestamp)[:-3]}'
-        t4 = f'Real bogus: {round(row.rb, 2)}'
-        t5 = f'Anomaly score: {round(row.anomaly_score, 2)}'
+        t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
+        t3_ = f'UTC: {str(row.timestamp)[:-3]}'
+        t4_ = f'Real bogus: {round(row.rb, 2)}'
+        t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
         tg_data.append(f'''{t1a}
-{t2}
-{t3}
-{t4}
-{t5}''')
+{t2_}
+{t3_}
+{t4_}
+{t5_}''')
         slack_data.append(f'''{t1b}
-{t2}
-{t3}
-{t4}
-{t5}''')
+{t2_}
+{t3_}
+{t4_}
+{t5_}''')
     if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, med)
     if send_to_tg:
         filter_utils.msg_handler_tg(tg_data, channel_id, med)
 
-    df = df.withColumn('flag', df['anomaly_score'] <= upper_bound)
-    return df
+    df_result = df_proc.withColumn('flag', df_proc['anomaly_score'] <= upper_bound)
+    return df_result
