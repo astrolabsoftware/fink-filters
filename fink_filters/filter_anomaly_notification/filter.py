@@ -6,27 +6,44 @@ import pandas as pd
 import filter_utils
 
 
+def anomaly_notification_(
+        df, threshold=10,
+        send_to_tg=False, channel_id=None,
+        send_to_slack=False, channel_name=None):
+    """ Create event notifications with a high anomaly_score value
 
-def anomaly_notification_(df, threshold=10) -> pd.Series:
-    """
-    Create event notifications with a high anomaly_score value
+    Notes
+    ----------
+    Notifications can be sent to a Slack or Telegram channels.
+
     Parameters
     ----------
-    df : Spark DataFrame with column :
-        objectId : unique identifier for this object
-        lc_features: Dict of dicts of floats.
-            Keys of first dict - filters (fid),
-            keys of inner dicts - names of features
-        rb: RealBogus quality score
-        anomaly_score: Anomaly score
-        timestamp : UTC time
-    threshold : Number of notifications (10 by default)
+    df : Spark DataFrame
+        Mandatory columns are:
+            objectId : unique identifier for this object
+            ra: Right Ascension of candidate; J2000 [deg]
+            dec: Declination of candidate; J2000 [deg]
+            rb: RealBogus quality score
+            anomaly_score: Anomaly score
+            timestamp : UTC time
+    threshold: optional, int
+        Number of notifications. Default is 10
+    send_to_tg: optional, boolean
+        If true, send message to Telegram. Default is False
+    channel_id: str
+        If `send_to_tg` is True, `channel_id` is the name of the
+        Telegram channel.
+    send_to_slack: optional, boolean
+        If true, send message to Slack. Default is False
+    channel_id: str
+        If `send_to_slack` is True, `channel_name` is the name of the
+        Slack channel.
 
     Returns
     ----------
-    out: pandas.Series of bool
-    Return a Pandas DataFrame with the appropriate flag:
-    false for bad alert, and true for good alert.
+    out: DataFrame
+        Return the input Spark DataFrame with a new column `flag`
+        for locating anomalous alerts
     Examples
     ----------
     >>> from fink_utils.spark.utils import concat_col
@@ -40,33 +57,48 @@ def anomaly_notification_(df, threshold=10) -> pd.Series:
     ...    df = concat_col(df, colname, prefix=prefix)
     >>> df = df.withColumn('lc_features', extract_features_ad(*what_prefix, 'objectId'))
     >>> df = df.withColumn("anomaly_score", anomaly_score("lc_features"))
-    >>> df_proc = df.select('objectId', 'candidate.ra',
-    >>>                     'candidate.dec', 'candidate.rb',
-    >>>                     'anomaly_score', 'timestamp')
-    >>> mask = anomaly_notification_(df_proc)
-    >>> print(sum(mask))
+    >>> df_proc = df.select(
+    ...     'objectId', 'candidate.ra',
+    ...     'candidate.dec', 'candidate.rb',
+    ...     'anomaly_score', 'timestamp')
+    >>> df_out = anomaly_notification_(df_proc)
+    >>> #For sending to messengers:
+    >>> #df_out = anomaly_notification_(df_proc, threshold=10,
+        send_to_tg=True, channel_id="@ZTF_anomaly_bot",
+        send_to_slack=True, channel_name='fink_alert')
+    >>> print(df_out.filter(df_out['flag']).count())
     """
-    med = df.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.25)
-    df_filtred = df.sort(['anomaly_score'], ascending=True).limit(min(df.count(), threshold))
-    df_min = df_filtred.toPandas() #Only 10-20 objects fall into the Pandas dataframe
-    filtred_id = set(df_min['objectId'].values)
-    df = df.withColumn('flag',
-                       when((df.objectId.isin(filtred_id)), lit(True))
-                       .otherwise(lit(False)))
-    result = np.array(df.select('flag').collect()).reshape(1,-1)[0]
-    send_data, slack_data = [], []
-    for _, row in df_min.iterrows():
-        gal = SkyCoord(ra=row.ra*u.degree, dec=row.dec*u.degree, frame='icrs').galactic
-        send_data.append(f'''ID: [{row.objectId}](https://fink-portal.org/{row.objectId})
-GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}
-UTC: {str(row.timestamp)[:-3]}
-Real bogus: {round(row.rb, 2)}
-Anomaly score: {round(row.anomaly_score, 2)}''')
-        slack_data.append(f'''ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>
-GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}
-UTC: {str(row.timestamp)[:-3]}
-Real bogus: {round(row.rb, 2)}
-Anomaly score: {round(row.anomaly_score, 2)}''')
+    # Compute the median for the night
+    med = df.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
-    filter_utils.msg_handler(send_data, slack_data, med)
-    return pd.Series(result)
+
+    # Extract anomalous objects
+    pdf_anomalies = df.sort(['anomaly_score'], ascending=True).limit(threshold).toPandas()
+    upper_bound = np.max(pdf_anomalies['anomaly_score'].values)
+
+    tg_data, slack_data = [], []
+    for _, row in pdf_anomalies.iterrows():
+        gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
+        t1a = f'ID: [{row.objectId}](https://fink-portal.org/{row.objectId})'
+        t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
+        t2 = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
+        t3 = f'UTC: {str(row.timestamp)[:-3]}'
+        t4 = f'Real bogus: {round(row.rb, 2)}'
+        t5 = f'Anomaly score: {round(row.anomaly_score, 2)}'
+        tg_data.append(f'''{t1a}
+{t2}
+{t3}
+{t4}
+{t5}''')
+        slack_data.append(f'''{t1b}
+{t2}
+{t3}
+{t4}
+{t5}''')
+    if send_to_slack:
+        filter_utils.msg_handler_slack(slack_data, channel_name, med)
+    if send_to_tg:
+        filter_utils.msg_handler_tg(tg_data, channel_id, med)
+
+    df = df.withColumn('flag', df['anomaly_score'] <= upper_bound)
+    return df
