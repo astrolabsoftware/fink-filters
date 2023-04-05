@@ -69,15 +69,12 @@ def anomaly_notification_(
     # Compute the median for the night
     med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
-
     # Extract anomalous objects
     pdf_dup_group = df_proc.groupBy('objectId').min('anomaly_score')
     pdf_dup_group = pdf_dup_group.sort(['min(anomaly_score)'], ascending=True).limit(threshold).toPandas()
     upper_bound = np.max(pdf_dup_group['min(anomaly_score)'].values)
     df_result = df_proc.withColumn('flag', df_proc['anomaly_score'] <= upper_bound)
     pdf_anomalies = df_result.filter(df_result['flag']).toPandas()
-    
-    
     tg_data, slack_data = [], []
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
@@ -101,6 +98,4 @@ def anomaly_notification_(
         filter_utils.msg_handler_slack(slack_data, channel_name, med)
     if send_to_tg:
         filter_utils.msg_handler_tg(tg_data, channel_id, med)
-
-    
     return df_result
