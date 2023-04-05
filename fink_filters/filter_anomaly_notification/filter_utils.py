@@ -36,10 +36,11 @@ def msg_handler_tg(tg_data, channel_id, med):
     tg_data = [f'Median anomaly score overnight: {med}'] + tg_data
     for tg_obj in tg_data:
         res = requests.post(method, data={
-             "chat_id": channel_id,
-             "text": tg_obj,
-             "parse_mode": "markdown"
-              }, timeout=8)
+            "chat_id": channel_id,
+            "text": tg_obj,
+            "parse_mode": "markdown"
+        }, timeout=8
+        )
         if res.status_code != 200:
             res = requests.post(method, data={
                 "chat_id": "@fink_test",
