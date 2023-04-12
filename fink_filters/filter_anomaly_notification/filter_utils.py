@@ -3,7 +3,6 @@ import time
 import requests
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-import tokens
 
 
 def msg_handler_slack(slack_data, channel_name, med):
@@ -25,7 +24,7 @@ def msg_handler_slack(slack_data, channel_name, med):
     -------
         None
     '''
-    slack_client = WebClient(tokens.slack_token)
+    slack_client = WebClient(os.environ['ANOMALY_SLACK_TOKEN'])
     slack_data = [f'Median anomaly score overnight: {med}'] + slack_data
     try:
         for slack_obj in slack_data:
@@ -33,7 +32,7 @@ def msg_handler_slack(slack_data, channel_name, med):
             time.sleep(3)
     except SlackApiError as e:
         if e.response["ok"] is False:
-            requests.post("https://api.telegram.org/bot" + tokens.tg_token + "/sendMessage", data={
+            requests.post("https://api.telegram.org/bot" + os.environ['ANOMALY_TG_TOKEN'] + "/sendMessage", data={
                 "chat_id": "@fink_test",
                 "text": e.response["error"]
             }, timeout=8)
@@ -58,7 +57,7 @@ def msg_handler_tg(tg_data, channel_id, med):
         None
     '''
     url = "https://api.telegram.org/bot"
-    url += tokens.tg_token
+    url += os.environ['ANOMALY_TG_TOKEN']
     method = url + "/sendMessage"
     tg_data = [f'Median anomaly score overnight: {med}'] + tg_data
     for tg_obj in tg_data:
