@@ -5,6 +5,24 @@ import tokens
 
 
 def msg_handler_slack(slack_data, channel_name, med):
+    '''
+    Notes
+    ----------
+    The function sends notifications to the "channel_name" channel of Slack.
+
+    Parameters
+    ----------
+    slack_data: list
+        List of lines. Each item is a separate notification
+    channel_name: string
+        Channel name in Slack
+    med: float
+        Median anomaly score overnight
+
+    Returns
+    -------
+        None
+    '''
     slack_client = SlackClient(tokens.slack_token)
     try:
         channels = slack_client.api_call("conversations.list")['channels']
@@ -30,6 +48,24 @@ def msg_handler_slack(slack_data, channel_name, med):
         time.sleep(3)
 
 def msg_handler_tg(tg_data, channel_id, med):
+    '''
+    Notes
+    ----------
+    The function sends notifications to the "channel_id" channel of Telegram.
+
+    Parameters
+    ----------
+    tg_data: list
+        List of lines. Each item is a separate notification
+    channel_id: string
+        Channel id in Telegram
+    med: float
+        Median anomaly score overnight
+
+    Returns
+    -------
+        None
+    '''
     url = "https://api.telegram.org/bot"
     url += tokens.tg_token
     method = url + "/sendMessage"

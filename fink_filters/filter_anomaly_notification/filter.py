@@ -7,7 +7,8 @@ import filter_utils
 def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
-        send_to_slack=False, channel_name=None):
+        send_to_slack=False, channel_name=None,
+        trick_par=10):
     """ Create event notifications with a high anomaly_score value
 
     Notes
@@ -70,7 +71,6 @@ def anomaly_notification_(
     med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
     # Extract anomalous objects
-    trick_par = 10
     pdf_anomalies_ext = df_proc.sort(['anomaly_score'], ascending=True).limit(trick_par * threshold).toPandas()
     pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(['objectId'])
     upper_bound = np.max(pdf_anomalies_ext['anomaly_score'].values[:threshold])
