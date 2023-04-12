@@ -1,6 +1,8 @@
+import os
 import time
 import requests
-from slackclient import SlackClient
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 import tokens
 
 
@@ -23,29 +25,18 @@ def msg_handler_slack(slack_data, channel_name, med):
     -------
         None
     '''
-    slack_client = SlackClient(tokens.slack_token)
-    try:
-        channels = slack_client.api_call("conversations.list")['channels']
-        for channel in channels:
-            if channel['name'] == channel_name:
-                channel_buf = channel['id']
-                break
-    except KeyError:
-        requests.post("https://api.telegram.org/bot" + "/sendMessage", data={
-            "chat_id": "@fink_test",
-            "text": 'Slack API error'
-        }, timeout=8)
-        channel_buf = None
+    slack_client = WebClient(tokens.slack_token)
     slack_data = [f'Median anomaly score overnight: {med}'] + slack_data
-    for slack_obj in slack_data:
-        if channel_buf:
-            slack_client.api_call(
-                "chat.postMessage",
-                channel=channel_buf,
-                text=slack_obj,
-                username='fink-bot'
-            )
-        time.sleep(3)
+    try:
+        for slack_obj in slack_data:
+            slack_client.chat_postMessage(channel=channel_name, text=slack_obj)
+            time.sleep(3)
+    except SlackApiError as e:
+        if e.response["ok"] is False:
+            requests.post("https://api.telegram.org/bot" + tokens.tg_token + "/sendMessage", data={
+                "chat_id": "@fink_test",
+                "text": e.response["error"]
+            }, timeout=8)
 
 def msg_handler_tg(tg_data, channel_id, med):
     '''
