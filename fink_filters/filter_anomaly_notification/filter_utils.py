@@ -96,6 +96,6 @@ def msg_handler_tg(tg_data, channel_id, med):
                     "chat_id": "@fink_test",
                     "text": str(res.status_code)
                 },
-            timeout=8
-        )
+                timeout=8
+            )
         time.sleep(3)
