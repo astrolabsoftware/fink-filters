@@ -1,7 +1,23 @@
+# Copyright 2023 AstroLab Software
+# Author: Тимофей Пшеничный
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import numpy as np
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-import filter_utils
+
+from fink_filters.filter_anomaly_notification import filter_utils
 
 
 def anomaly_notification_(
@@ -70,11 +86,13 @@ def anomaly_notification_(
     # Compute the median for the night
     med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
+
     # Extract anomalous objects
     pdf_anomalies_ext = df_proc.sort(['anomaly_score'], ascending=True).limit(trick_par * threshold).toPandas()
     pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(['objectId'])
     upper_bound = np.max(pdf_anomalies_ext['anomaly_score'].values[:threshold])
     pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext['anomaly_score'] <= upper_bound]
+
     tg_data, slack_data = [], []
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
@@ -98,5 +116,6 @@ def anomaly_notification_(
         filter_utils.msg_handler_slack(slack_data, channel_name, med)
     if send_to_tg:
         filter_utils.msg_handler_tg(tg_data, channel_id, med)
+
     df_result = df_proc.withColumn('flag', df_proc['anomaly_score'] <= upper_bound)
     return df_result

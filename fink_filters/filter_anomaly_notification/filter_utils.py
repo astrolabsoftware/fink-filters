@@ -1,6 +1,21 @@
+# Copyright 2023 AstroLab Software
+# Author: Тимофей Пшеничный
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
 import time
 import requests
+
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -32,10 +47,14 @@ def msg_handler_slack(slack_data, channel_name, med):
             time.sleep(3)
     except SlackApiError as e:
         if e.response["ok"] is False:
-            requests.post("https://api.telegram.org/bot" + os.environ['ANOMALY_TG_TOKEN'] + "/sendMessage", data={
-                "chat_id": "@fink_test",
-                "text": e.response["error"]
-            }, timeout=8)
+            requests.post(
+                "https://api.telegram.org/bot" + os.environ['ANOMALY_TG_TOKEN'] + "/sendMessage",
+                data={
+                    "chat_id": "@fink_test",
+                    "text": e.response["error"]
+                },
+                timeout=8
+            )
 
 def msg_handler_tg(tg_data, channel_id, med):
     '''
@@ -61,15 +80,22 @@ def msg_handler_tg(tg_data, channel_id, med):
     method = url + "/sendMessage"
     tg_data = [f'Median anomaly score overnight: {med}'] + tg_data
     for tg_obj in tg_data:
-        res = requests.post(method, data={
-            "chat_id": channel_id,
-            "text": tg_obj,
-            "parse_mode": "markdown"
-        }, timeout=8
+        res = requests.post(
+            method,
+            data={
+                "chat_id": channel_id,
+                "text": tg_obj,
+                "parse_mode": "markdown"
+            },
+            timeout=8
         )
         if res.status_code != 200:
-            res = requests.post(method, data={
-                "chat_id": "@fink_test",
-                "text": str(res.status_code)
-            }, timeout=8)
+            res = requests.post(
+                method,
+                data={
+                    "chat_id": "@fink_test",
+                    "text": str(res.status_code)
+                },
+                timeout=8
+            )
         time.sleep(3)
