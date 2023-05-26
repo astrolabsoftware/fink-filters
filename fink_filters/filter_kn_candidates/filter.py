@@ -220,14 +220,12 @@ def kn_candidates(
             continue
         # DC mag (history + last measurement)
         mag_hist, err_hist = np.array([
-            dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+            dc_mag(k[0], k[1], k[2], k[3], k[4])
             for k in zip(
-                cfidc[f_kn].values[i][m][-2:],
                 cmagpsfc[f_kn].values[i][m][-2:],
                 csigmapsfc[f_kn].values[i][m][-2:],
                 cmagnrc[f_kn].values[i][m][-2:],
                 csigmagnrc[f_kn].values[i][m][-2:],
-                cmagzpscic[f_kn].values[i][m][-2:],
                 cisdiffposc[f_kn].values[i][m][-2:],
             )
         ]).T

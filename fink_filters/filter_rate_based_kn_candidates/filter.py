@@ -117,14 +117,12 @@ def perform_classification(
             continue
         # DC mag (history + last measurement)
         mag_hist, err_hist = np.array([
-            dc_mag(k[0], k[1], k[2], k[3], k[4], k[5], k[6])
+            dc_mag(k[0], k[1], k[2], k[3], k[4])
             for k in zip(
-                cfidc[f_kn].values[i][m],
                 cmagpsfc[f_kn].values[i][m],
                 csigmapsfc[f_kn].values[i][m],
                 cmagnrc[f_kn].values[i][m],
                 csigmagnrc[f_kn].values[i][m],
-                cmagzpscic[f_kn].values[i][m],
                 cisdiffposc[f_kn].values[i][m],
             )
         ]).T
