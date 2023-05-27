@@ -121,12 +121,13 @@ def get_OID(ra, dec):
           or
             None, if nothing was found
     '''
-    url = "https://api.telegram.org/bot"
-    url += os.environ['ANOMALY_TG_TOKEN']
-    method = url + "/sendMessage"
     r = requests.get(
-        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1')
+        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1'
+    )
     if r.status_code != 200:
+        url = "https://api.telegram.org/bot"
+        url += os.environ['ANOMALY_TG_TOKEN']
+        method = url + "/sendMessage"
         requests.post(method, data={
             "chat_id": "@fink_test",
             "text": str(r.status_code)
