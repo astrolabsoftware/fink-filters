@@ -99,3 +99,38 @@ def msg_handler_tg(tg_data, channel_id, med):
                 timeout=8
             )
         time.sleep(3)
+
+
+def get_OID(ra, dec):
+    '''
+    Notes
+    ----------
+    The function determines the nearest ZTF DR OID by the given ra and dec.
+
+    Parameters
+    ----------
+    dec: float
+        Declination of candidate; J2000 [deg]
+    ra: string
+        Right Ascension of candidate; J2000 [deg]
+
+    Returns
+    -------
+        out: str
+            ZTF DR OID
+    '''
+    url = "https://api.telegram.org/bot"
+    url += os.environ['ANOMALY_TG_TOKEN']
+    method = url + "/sendMessage"
+    r = requests.get(
+        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1')
+    if r.status_code != 200:
+        requests.post(method, data={
+            "chat_id": "@fink_test",
+            "text": str(r.status_code)
+        }, timeout=8)
+        return None
+    oids = [key for key, _ in r.json().items()]
+    if oids:
+        return oids[0]
+    return None
