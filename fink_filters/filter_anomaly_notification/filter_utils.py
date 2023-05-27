@@ -118,6 +118,8 @@ def get_OID(ra, dec):
     -------
         out: str
             ZTF DR OID
+          or 
+            None, if nothing was found
     '''
     url = "https://api.telegram.org/bot"
     url += os.environ['ANOMALY_TG_TOKEN']
