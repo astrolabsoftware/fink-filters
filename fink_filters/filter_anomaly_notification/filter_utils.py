@@ -111,7 +111,7 @@ def get_OID(ra, dec):
     ----------
     dec: float
         Declination of candidate; J2000 [deg]
-    ra: string
+    ra: float
         Right Ascension of candidate; J2000 [deg]
 
     Returns
