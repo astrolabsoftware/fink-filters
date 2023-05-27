@@ -118,7 +118,7 @@ def get_OID(ra, dec):
     -------
         out: str
             ZTF DR OID
-          or 
+          or
             None, if nothing was found
     '''
     url = "https://api.telegram.org/bot"
