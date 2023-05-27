@@ -108,18 +108,23 @@ def anomaly_notification_(
     tg_data, slack_data = [], []
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
+        oid = filter_utils.get_OID(row.ra, row.dec)
         t1a = f'ID: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
+        t_oid_1a = f'DR OID (<1"): [{oid}](https://ztf.snad.space/view/{oid})'
+        t_oid_1b = f'DR OID (<1"): <https://ztf.snad.space/view/{oid}|{oid}>'
         t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
         tg_data.append(f'''{t1a}
+{t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
 {t5_}''')
         slack_data.append(f'''{t1b}
+{t_oid_1b}
 {t2_}
 {t3_}
 {t4_}
