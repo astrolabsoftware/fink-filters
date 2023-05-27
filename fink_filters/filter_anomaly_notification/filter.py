@@ -111,8 +111,8 @@ def anomaly_notification_(
         oid = filter_utils.get_OID(row.ra, row.dec)
         t1a = f'ID: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
-        t_oid_1a = f'ZTF DR OID: [{oid}](https://ztf.snad.space/view/{oid})'
-        t_oid_1b = f'ZTF DR OID: <https://ztf.snad.space/view/{oid}|{oid}>'
+        t_oid_1a = f'DR OID (<1''): [{oid}](https://ztf.snad.space/view/{oid})'
+        t_oid_1b = f'DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>'
         t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
