@@ -25,7 +25,7 @@ from fink_filters.tester import spark_unit_tests
 GRB_OBSERVATORY = ["Fermi", "SWIFT", "INTEGRAL"]
 
 
-def bronze_events(fink_class, observatory, rb):
+def grb_bronze_events(fink_class, observatory, rb):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
     Keep alerts with real bogus score higher than 0.9
@@ -47,7 +47,7 @@ def bronze_events(fink_class, observatory, rb):
     Examples
     --------
     >>> df = pd.read_parquet(grb_output_data)
-    >>> df["f_bronze"] = bronze_events(df["fink_class"], df["observatory"], df["rb"])
+    >>> df["f_bronze"] = grb_bronze_events(df["fink_class"], df["observatory"], df["rb"])
     >>> len(df[df["f_bronze"]])
     4
     """
@@ -64,22 +64,22 @@ def bronze_events(fink_class, observatory, rb):
 
 
 @pandas_udf(BooleanType())
-def f_bronze_events(fink_class, observatory, rb):
+def f_grb_bronze_events(fink_class, observatory, rb):
     """
     see bronze_events documentation
 
     Examples
     --------
     >>> df = spark.read.format('parquet').load(grb_output_data)
-    >>> df = df.withColumn("f_bronze", f_bronze_events(df["fink_class"], df["observatory"], df["rb"])).filter("f_bronze == True").drop("f_bronze")
+    >>> df = df.withColumn("f_bronze", f_grb_bronze_events(df["fink_class"], df["observatory"], df["rb"])).filter("f_bronze == True").drop("f_bronze")
     >>> df.count()
     4
     """
-    f_bronze = bronze_events(fink_class, observatory, rb)
+    f_bronze = grb_bronze_events(fink_class, observatory, rb)
     return f_bronze
 
 
-def silver_events(fink_class, observatory, rb, grb_proba):
+def grb_silver_events(fink_class, observatory, rb, grb_proba):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
     Keep alerts with real bogus score higher than 0.9
@@ -105,33 +105,33 @@ def silver_events(fink_class, observatory, rb, grb_proba):
     --------
     >>> df = pd.read_parquet(grb_output_data)
     >>> df = df[df["grb_proba"] != 1.0]
-    >>> df["f_silver"] = silver_events(df["fink_class"], df["observatory"], df["rb"], df["grb_proba"])
+    >>> df["f_silver"] = grb_silver_events(df["fink_class"], df["observatory"], df["rb"], df["grb_proba"])
     >>> len(df[df["f_silver"]])
     2
     """
-    f_bronze = bronze_events(fink_class, observatory, rb)
+    f_bronze = grb_bronze_events(fink_class, observatory, rb)
     grb_ser_assoc = (1 - grb_proba) > special.erf(5 / sqrt(2))
     f_silver = f_bronze & grb_ser_assoc
     return f_silver
 
 
 @pandas_udf(BooleanType())
-def f_silver_events(fink_class, observatory, rb, grb_proba):
+def f_grb_silver_events(fink_class, observatory, rb, grb_proba):
     """
     see silver_events documentation
 
     Examples
     --------
     >>> df = spark.read.format('parquet').load(grb_output_data)
-    >>> df = df.withColumn("f_silver", f_silver_events(df["fink_class"], df["observatory"], df["rb"], df["grb_proba"])).filter("f_silver == True").drop("f_silver")
+    >>> df = df.withColumn("f_silver", f_grb_silver_events(df["fink_class"], df["observatory"], df["rb"], df["grb_proba"])).filter("f_silver == True").drop("f_silver")
     >>> df.count()
     2
     """
-    f_silver = silver_events(fink_class, observatory, rb, grb_proba)
+    f_silver = grb_silver_events(fink_class, observatory, rb, grb_proba)
     return f_silver
 
 
-def gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
+def grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
     Keep alerts with real bogus score higher than 0.9
@@ -162,11 +162,11 @@ def gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
     --------
     >>> df = pd.read_parquet(grb_output_data)
     >>> df = df[df["grb_proba"] != 1.0]
-    >>> df["f_gold"] = gold_events(df["fink_class"], df["observatory"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])
+    >>> df["f_gold"] = grb_gold_events(df["fink_class"], df["observatory"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])
     >>> len(df[df["f_gold"]])
     1
     """
-    f_silver = silver_events(fink_class, observatory, rb, grb_proba)
+    f_silver = grb_silver_events(fink_class, observatory, rb, grb_proba)
     f_bogus = rb >= 0.9
     f_sky_loc = (grb_loc_error / 60) <= 5  # grb_loc_error is given in arcminute
     f_rate = rate.abs() > 0.3
@@ -175,19 +175,77 @@ def gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
 
 
 @pandas_udf(BooleanType())
-def f_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
+def f_grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
     """
     see gold_events documentation
 
     Examples
     --------
     >>> df = spark.read.format('parquet').load(grb_output_data)
-    >>> df = df.withColumn("f_gold", f_gold_events(df["fink_class"], df["observatory"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
+    >>> df = df.withColumn("f_gold", f_grb_gold_events(df["fink_class"], df["observatory"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
     >>> df.count()
     1
     """
-    f_gold = gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate)
+    f_gold = grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate)
     return f_gold
+
+
+# ------ Gravitational Waves (GW) filters ------
+GW_OBSERVATORY = ["LVK"]
+
+
+def gw_bronze_events(fink_class, observatory, rb):
+    """
+    Return alerts spatially and temporally consistent with a gcn alerts
+    Keep alerts with real bogus score higher than 0.9
+    and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
+
+    Parameters
+    ----------
+    fink_class : pd.Series
+        Fink classification
+    observatory : pd.Series
+        GCN observatory emitter
+    rb : pd.Series
+
+    Return
+    ------
+    f_bronze : pd.Series
+        alerts falling in the bronze filters
+
+    Examples
+    --------
+    >>> df = pd.read_parquet(grb_output_data)
+    >>> df["f_bronze"] = gw_bronze_events(df["fink_class"], df["observatory"], df["rb"])
+    >>> len(df[df["f_bronze"]])
+    0
+    """
+    f_obs = observatory.isin(GW_OBSERVATORY)  # select only the GRB observatories
+
+    f_bogus = rb >= 0.7
+
+    f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
+
+    f_fail = fink_class.str.startswith("Fail")
+
+    f_bronze = f_bogus & f_obs & (f_class | f_fail)
+    return f_bronze
+
+
+@pandas_udf(BooleanType())
+def f_gw_bronze_events(fink_class, observatory, rb):
+    """
+    see bronze_events documentation
+
+    Examples
+    --------
+    >>> df = spark.read.format('parquet').load(grb_output_data)
+    >>> df = df.withColumn("f_bronze", f_gw_bronze_events(df["fink_class"], df["observatory"], df["rb"])).filter("f_bronze == True").drop("f_bronze")
+    >>> df.count()
+    0
+    """
+    f_bronze = gw_bronze_events(fink_class, observatory, rb)
+    return f_bronze
 
 
 if __name__ == "__main__":
