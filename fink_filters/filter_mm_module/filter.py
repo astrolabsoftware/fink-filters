@@ -21,10 +21,9 @@ from math import sqrt
 
 from fink_filters.tester import spark_unit_tests
 
-
-
 # ------ GRB filters ------
 GRB_OBSERVATORY = ["Fermi", "SWIFT", "INTEGRAL"]
+
 
 def bronze_events(fink_class, observatory, rb):
     """
@@ -52,7 +51,7 @@ def bronze_events(fink_class, observatory, rb):
     >>> len(df[df["f_bronze"]])
     4
     """
-    f_obs = observatory.isin(GRB_OBSERVATORY) # select only the GRB observatories
+    f_obs = observatory.isin(GRB_OBSERVATORY)  # select only the GRB observatories
 
     f_bogus = rb >= 0.7
 
