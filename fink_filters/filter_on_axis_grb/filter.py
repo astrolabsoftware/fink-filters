@@ -32,7 +32,7 @@ def bronze_events(fink_class, rb):
     ----------
     fink_class : pd.Series
         Fink classification
-    realbogus_score : pd.Series
+    rb : pd.Series
 
     Return
     ------
@@ -57,7 +57,7 @@ def bronze_events(fink_class, rb):
 
 
 @pandas_udf(BooleanType())
-def f_bronze_events(fink_class, realbogus_score):
+def f_bronze_events(fink_class, rb):
     """
     see bronze_events documentation
 
@@ -68,7 +68,7 @@ def f_bronze_events(fink_class, realbogus_score):
     >>> df.count()
     25
     """
-    f_bronze = bronze_events(fink_class, realbogus_score)
+    f_bronze = bronze_events(fink_class, rb)
     return f_bronze
 
 
@@ -83,7 +83,7 @@ def silver_events(fink_class, rb, grb_proba):
     ----------
     fink_class : pd.Series
         Fink classification
-    realbogus_score : pd.Series
+    rb : pd.Series
         real bogus score
     grb_proba : pd.Series
         serendipitous probilities to associates a ZTF alerts with a GCN,
@@ -136,8 +136,10 @@ def gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
     ----------
     fink_class : pd.Series
         Fink classification
-    realbogus_score : pd.Series
+    rb : pd.Series
         real bogus score
+    grb_loc_error : pd.Series
+        the sky localization error of the grb events
     grb_proba : pd.Series
         serendipitous probilities to associates a ZTF alerts with a GCN,
         computed by the grb module
@@ -153,7 +155,7 @@ def gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
     --------
     >>> df = pd.read_parquet(grb_output_data)
     >>> df = df[df["grb_proba"] != 1.0]
-    >>> df["f_gold"] = gold_events(df["fink_class"], df["rb"], df["grb_proba"], df["rate"])
+    >>> df["f_gold"] = gold_events(df["fink_class"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])
     >>> len(df[df["f_gold"]])
     7
     """
@@ -166,18 +168,18 @@ def gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
 
 
 @pandas_udf(BooleanType())
-def f_gold_events(fink_class, realbogus_score, grb_proba, rate):
+def f_gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
     """
     see gold_events documentation
 
     Examples
     --------
     >>> df = spark.read.format('parquet').load(grb_output_data)
-    >>> df = df.withColumn("f_gold", f_gold_events(df["fink_class"], df["rb"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
+    >>> df = df.withColumn("f_gold", f_gold_events(df["fink_class"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
     >>> df.count()
     7
     """
-    f_gold = gold_events(fink_class, realbogus_score, grb_proba, rate)
+    f_gold = gold_events(fink_class, rb, grb_loc_error, grb_proba, rate)
     return f_gold
 
 
