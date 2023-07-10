@@ -44,7 +44,7 @@ def bronze_events(fink_class, rb):
     >>> df = pd.read_parquet(grb_output_data)
     >>> df["f_bronze"] = bronze_events(df["fink_class"], df["rb"])
     >>> len(df[df["f_bronze"]])
-    25
+    4
     """
     f_bogus = rb >= 0.7
 
@@ -66,7 +66,7 @@ def f_bronze_events(fink_class, rb):
     >>> df = spark.read.format('parquet').load(grb_output_data)
     >>> df = df.withColumn("f_bronze", f_bronze_events(df["fink_class"], df["rb"])).filter("f_bronze == True").drop("f_bronze")
     >>> df.count()
-    25
+    4
     """
     f_bronze = bronze_events(fink_class, rb)
     return f_bronze
@@ -100,7 +100,7 @@ def silver_events(fink_class, rb, grb_proba):
     >>> df = df[df["grb_proba"] != 1.0]
     >>> df["f_silver"] = silver_events(df["fink_class"], df["rb"], df["grb_proba"])
     >>> len(df[df["f_silver"]])
-    9
+    2
     """
     f_bronze = bronze_events(fink_class, rb)
     grb_ser_assoc = (1 - grb_proba) > special.erf(5 / sqrt(2))
@@ -118,7 +118,7 @@ def f_silver_events(fink_class, rb, grb_proba):
     >>> df = spark.read.format('parquet').load(grb_output_data)
     >>> df = df.withColumn("f_silver", f_silver_events(df["fink_class"], df["rb"], df["grb_proba"])).filter("f_silver == True").drop("f_silver")
     >>> df.count()
-    9
+    2
     """
     f_silver = silver_events(fink_class, rb, grb_proba)
     return f_silver
@@ -157,11 +157,11 @@ def gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
     >>> df = df[df["grb_proba"] != 1.0]
     >>> df["f_gold"] = gold_events(df["fink_class"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])
     >>> len(df[df["f_gold"]])
-    7
+    1
     """
     f_silver = silver_events(fink_class, rb, grb_proba)
     f_bogus = rb >= 0.9
-    f_sky_loc = (grb_loc_error * 60) <= 5  # grb_loc_error is given in arcminute
+    f_sky_loc = (grb_loc_error / 60) <= 5  # grb_loc_error is given in arcminute
     f_rate = rate.abs() > 0.3
     f_gold = f_silver & f_rate & f_bogus & f_sky_loc
     return f_gold
@@ -177,7 +177,7 @@ def f_gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
     >>> df = spark.read.format('parquet').load(grb_output_data)
     >>> df = df.withColumn("f_gold", f_gold_events(df["fink_class"], df["rb"], df["grb_loc_error"], df["grb_proba"], df["rate"])).filter("f_gold == True").drop("f_gold")
     >>> df.count()
-    7
+    1
     """
     f_gold = gold_events(fink_class, rb, grb_loc_error, grb_proba, rate)
     return f_gold
@@ -190,5 +190,5 @@ if __name__ == "__main__":
 
     # Run the test suite
     globs = globals()
-    globs["grb_output_data"] = "datatest_grb/data"
+    globs["grb_output_data"] = "datatest_grb/grb_test_data.parquet"
     spark_unit_tests(globs)
