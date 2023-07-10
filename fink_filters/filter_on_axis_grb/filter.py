@@ -22,7 +22,7 @@ from math import sqrt
 from fink_filters.tester import spark_unit_tests
 
 
-def bronze_events(fink_class, realbogus_score):
+def bronze_events(fink_class, rb):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
     Keep alerts with real bogus score higher than 0.9
@@ -46,7 +46,7 @@ def bronze_events(fink_class, realbogus_score):
     >>> len(df[df["f_bronze"]])
     25
     """
-    f_bogus = realbogus_score >= 0.5
+    f_bogus = rb >= 0.7
 
     f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
 
@@ -72,7 +72,7 @@ def f_bronze_events(fink_class, realbogus_score):
     return f_bronze
 
 
-def silver_events(fink_class, realbogus_score, grb_proba):
+def silver_events(fink_class, rb, grb_proba):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
     Keep alerts with real bogus score higher than 0.9
@@ -102,14 +102,14 @@ def silver_events(fink_class, realbogus_score, grb_proba):
     >>> len(df[df["f_silver"]])
     9
     """
-    f_bronze = bronze_events(fink_class, realbogus_score)
+    f_bronze = bronze_events(fink_class, rb)
     grb_ser_assoc = (1 - grb_proba) > special.erf(5 / sqrt(2))
     f_silver = f_bronze & grb_ser_assoc
     return f_silver
 
 
 @pandas_udf(BooleanType())
-def f_silver_events(fink_class, realbogus_score, grb_proba):
+def f_silver_events(fink_class, rb, grb_proba):
     """
     see silver_events documentation
 
@@ -120,11 +120,11 @@ def f_silver_events(fink_class, realbogus_score, grb_proba):
     >>> df.count()
     9
     """
-    f_silver = silver_events(fink_class, realbogus_score, grb_proba)
+    f_silver = silver_events(fink_class, rb, grb_proba)
     return f_silver
 
 
-def gold_events(fink_class, realbogus_score, grb_proba, rate):
+def gold_events(fink_class, rb, grb_loc_error, grb_proba, rate):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
     Keep alerts with real bogus score higher than 0.9
@@ -157,9 +157,11 @@ def gold_events(fink_class, realbogus_score, grb_proba, rate):
     >>> len(df[df["f_gold"]])
     7
     """
-    f_silver = silver_events(fink_class, realbogus_score, grb_proba)
+    f_silver = silver_events(fink_class, rb, grb_proba)
+    f_bogus = rb >= 0.9
+    f_sky_loc = (grb_loc_error * 60) <= 5  # grb_loc_error is given in arcminute
     f_rate = rate.abs() > 0.3
-    f_gold = f_silver & f_rate
+    f_gold = f_silver & f_rate & f_bogus & f_sky_loc
     return f_gold
 
 
@@ -186,5 +188,5 @@ if __name__ == "__main__":
 
     # Run the test suite
     globs = globals()
-    globs["grb_output_data"] = "datatest_grb/grb_join_output.parquet"
+    globs["grb_output_data"] = "datatest_grb/data"
     spark_unit_tests(globs)
