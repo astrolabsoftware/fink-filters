@@ -60,7 +60,7 @@ def bronze_events(fink_class, observatory, rb):
 
     f_fail = fink_class.str.startswith("Fail")
 
-    f_bronze = f_bogus & (f_class | f_fail)
+    f_bronze = f_bogus & f_obs & (f_class | f_fail)
     return f_bronze
 
 
