@@ -22,6 +22,9 @@ from math import sqrt
 from fink_filters.tester import spark_unit_tests
 
 
+
+# ------ GRB filters ------
+
 def bronze_events(fink_class, rb):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
