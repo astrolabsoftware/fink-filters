@@ -26,7 +26,7 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 GRB_OBSERVATORY = ["Fermi", "SWIFT", "INTEGRAL"]
 
 
-def generic_bronze_filter(fink_class, rb, observatory):
+def generic_bronze_filter(fink_class, observatory, rb, obs_filter):
     """
     Generic bronze filter
 
@@ -34,17 +34,17 @@ def generic_bronze_filter(fink_class, rb, observatory):
     ----------
     fink_class : pd.Series
         Fink classification
-    rb : pd.Series
-        real bogus column
     observatory : pd.Series
         GCN observatory emitter
+    rb : pd.Series
+        real bogus column
 
     Returns
     -------
     boolean series
-        if True, is a bronze event
+        if True, is a bronze event 
     """
-    f_obs = observatory.isin(GRB_OBSERVATORY)  # select only the GRB observatories
+    f_obs = observatory.isin(obs_filter)  # select only the GRB observatories
 
     f_bogus = rb >= 0.7
 
@@ -83,7 +83,7 @@ def grb_bronze_events(fink_class, observatory, rb):
     >>> len(df[df["f_bronze"]])
     4
     """
-    return generic_bronze_filter(fink_class, rb, GRB_OBSERVATORY)
+    return generic_bronze_filter(fink_class, observatory, rb, GRB_OBSERVATORY)
 
 
 @pandas_udf(BooleanType())
@@ -243,7 +243,7 @@ def gw_bronze_events(fink_class, observatory, rb):
     >>> len(df[df["f_bronze"]])
     0
     """
-    return generic_bronze_filter(fink_class, rb, GW_OBSERVATORY)
+    return generic_bronze_filter(fink_class, observatory, rb, GW_OBSERVATORY)
 
 
 @pandas_udf(BooleanType())
