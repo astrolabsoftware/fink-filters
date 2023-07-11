@@ -42,7 +42,7 @@ def generic_bronze_filter(fink_class, observatory, rb, obs_filter):
     Returns
     -------
     boolean series
-        if True, is a bronze event 
+        if True, is a bronze event
     """
     f_obs = observatory.isin(obs_filter)  # select only the GRB observatories
 
