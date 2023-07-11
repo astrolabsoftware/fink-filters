@@ -26,6 +26,20 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 GRB_OBSERVATORY = ["Fermi", "SWIFT", "INTEGRAL"]
 
 
+def generic_bronze_filter(fink_class, rb, observatory):
+    f_obs = observatory.isin(GRB_OBSERVATORY)  # select only the GRB observatories
+
+    f_bogus = rb >= 0.7
+
+    base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
+    fink_extragalactic = ["KN candidate", "SN candidate", "Early SN Ia candidate", "Ambiguous"]
+    extragalactic = base_extragalactic + fink_extragalactic
+    f_class = fink_class.isin(extragalactic)
+
+    f_bronze = f_bogus & f_obs & f_class
+    return f_bronze
+
+
 def grb_bronze_events(fink_class, observatory, rb):
     """
     Return alerts spatially and temporally consistent with a gcn alerts
@@ -52,19 +66,7 @@ def grb_bronze_events(fink_class, observatory, rb):
     >>> len(df[df["f_bronze"]])
     4
     """
-    f_obs = observatory.isin(GRB_OBSERVATORY)  # select only the GRB observatories
-
-    f_bogus = rb >= 0.7
-
-    base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
-    fink_extragalactic = ["SN candidate", "Early SN Ia candidate", "Ambiguous"]
-    extragalactic = base_extragalactic + fink_extragalactic
-    f_class = fink_class.isin(extragalactic)
-
-    f_fail = fink_class.str.startswith("Fail")
-
-    f_bronze = f_bogus & f_obs & (f_class | f_fail)
-    return f_bronze
+    return generic_bronze_filter(fink_class, rb, GRB_OBSERVATORY)
 
 
 @pandas_udf(BooleanType())
@@ -224,19 +226,7 @@ def gw_bronze_events(fink_class, observatory, rb):
     >>> len(df[df["f_bronze"]])
     0
     """
-    f_obs = observatory.isin(GW_OBSERVATORY)  # select only the GRB observatories
-
-    f_bogus = rb >= 0.7
-
-    base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
-    fink_extragalactic = ["SN candidate", "Early SN Ia candidate", "Ambiguous"]
-    extragalactic = base_extragalactic + fink_extragalactic
-    f_class = fink_class.isin(extragalactic)
-
-    f_fail = fink_class.str.startswith("Fail")
-
-    f_bronze = f_bogus & f_obs & (f_class | f_fail)
-    return f_bronze
+    return generic_bronze_filter(fink_class, rb, GW_OBSERVATORY)
 
 
 @pandas_udf(BooleanType())
