@@ -20,6 +20,7 @@ from scipy import special
 from math import sqrt
 
 from fink_filters.tester import spark_unit_tests
+from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 # ------ GRB filters ------
 GRB_OBSERVATORY = ["Fermi", "SWIFT", "INTEGRAL"]
@@ -55,7 +56,10 @@ def grb_bronze_events(fink_class, observatory, rb):
 
     f_bogus = rb >= 0.7
 
-    f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
+    base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
+    fink_extragalactic = ["SN candidate", "Early SN Ia candidate", "Ambiguous"]
+    extragalactic = base_extragalactic + fink_extragalactic
+    f_class = fink_class.isin(extragalactic)
 
     f_fail = fink_class.str.startswith("Fail")
 
@@ -224,7 +228,10 @@ def gw_bronze_events(fink_class, observatory, rb):
 
     f_bogus = rb >= 0.7
 
-    f_class = fink_class.isin(["SN candidate", "Unknown", "Ambiguous"])
+    base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
+    fink_extragalactic = ["SN candidate", "Early SN Ia candidate", "Ambiguous"]
+    extragalactic = base_extragalactic + fink_extragalactic
+    f_class = fink_class.isin(extragalactic)
 
     f_fail = fink_class.str.startswith("Fail")
 
