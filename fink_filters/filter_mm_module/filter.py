@@ -27,6 +27,23 @@ GRB_OBSERVATORY = ["Fermi", "SWIFT", "INTEGRAL"]
 
 
 def generic_bronze_filter(fink_class, rb, observatory):
+    """
+    Generic bronze filter
+
+    Parameters
+    ----------
+    fink_class : pd.Series
+        Fink classification
+    rb : pd.Series
+        real bogus column
+    observatory : pd.Series
+        GCN observatory emitter
+
+    Returns
+    -------
+    boolean series
+        if True, is a bronze event
+    """
     f_obs = observatory.isin(GRB_OBSERVATORY)  # select only the GRB observatories
 
     f_bogus = rb >= 0.7
