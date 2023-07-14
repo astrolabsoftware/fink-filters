@@ -66,19 +66,32 @@ def anomaly_notification_(
 
     Examples
     ----------
+    >>> import pyspark.sql.functions as F
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_science.ad_features.processor import extract_features_ad
     >>> from fink_science.anomaly_detection.processor import anomaly_score
 
     >>> df = spark.read.format('parquet').load('datatest')
 
-    >>> what = ['magpsf', 'jd', 'sigmapsf', 'fid']
+    >>> what = [
+    ...     'jd', 'fid', 'magpsf', 'sigmapsf',
+    ...     'magnr', 'sigmagnr', 'isdiffpos', 'distnr']
+
     >>> prefix = 'c'
     >>> what_prefix = [prefix + i for i in what]
     >>> for colname in what:
     ...    df = concat_col(df, colname, prefix=prefix)
 
-    >>> df = df.withColumn('lc_features', extract_features_ad(*what_prefix, 'objectId'))
+    >>> # Add a fake distnr to skip dcmag computation
+    >>> df = df\
+            .withColumn('tmp', F.expr('TRANSFORM(cdistnr, el -> el + 100)'))\
+            .drop('cdistnr').withColumnRenamed('tmp', 'cdistnr')
+
+    >>> ad_args = [
+    ...     'cmagpsf', 'cjd', 'csigmapsf', 'cfid', 'objectId',
+    ...     'cdistnr', 'cmagnr', 'csigmagnr', 'cisdiffpos']
+
+    >>> df = df.withColumn('lc_features', extract_features_ad(*ad_args))
     >>> df = df.withColumn("anomaly_score", anomaly_score("lc_features"))
 
     >>> df_proc = df.select(
