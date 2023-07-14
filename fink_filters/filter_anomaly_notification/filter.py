@@ -111,24 +111,29 @@ def anomaly_notification_(
         oid = filter_utils.get_OID(row.ra, row.dec)
         t1a = f'ID: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
-        t_oid_1a = f'DR OID (<1"): [{oid}](https://ztf.snad.space/view/{oid})'
-        t_oid_1b = f'DR OID (<1"): <https://ztf.snad.space/view/{oid}|{oid}>'
+        t_oid_1a = f"DR OID (<1''): [{oid}](https://ztf.snad.space/view/{oid})"
+        t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
         t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
-        tg_data.append(f'''{t1a}
+        cutout, curve, cutout_perml, curve_perml = filter_utils.get_data_permalink_slack(row.objectId)
+        cutout_perml = f"<{cutout_perml}|{' '}>"
+        curve_perml = f"<{curve_perml}|{' '}>"
+        tg_data.append((f'''{t1a}
 {t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
-{t5_}''')
-        slack_data.append(f'''{t1b}
+{t5_}''', cutout, curve))
+        slack_data.append(f'''==========================
+{t1b}
 {t_oid_1b}
 {t2_}
 {t3_}
 {t4_}
-{t5_}''')
+{t5_}
+{cutout_perml}{curve_perml}''')
     if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, med)
     if send_to_tg:
