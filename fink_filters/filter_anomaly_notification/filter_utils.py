@@ -99,10 +99,10 @@ def status_check(res):
             True : The request was successful
             False: The request was executed with an error
     '''
-    url = "https://api.telegram.org/bot"
-    url += os.environ['ANOMALY_TG_TOKEN']
-    method = url + "/sendMessage"
     if res.status_code != 200:
+        url = "https://api.telegram.org/bot"
+        url += os.environ['ANOMALY_TG_TOKEN']
+        method = url + "/sendMessage"
         time.sleep(8)
         requests.post(
             method,
