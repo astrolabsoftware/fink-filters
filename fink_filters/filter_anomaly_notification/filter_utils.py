@@ -25,9 +25,7 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 import io
-import tokens
-os.environ['ANOMALY_TG_TOKEN'] = tokens.tg_token
-os.environ['ANOMALY_SLACK_TOKEN'] = tokens.slack_token
+
 
 def get_data_permalink_slack(ztf_id):
     '''
