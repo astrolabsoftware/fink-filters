@@ -40,6 +40,9 @@ jobs:
         echo `python -V`
 
     - name: Run test suites
+      env:
+        ANOMALY_SLACK_TOKEN: ${{ secrets.ANOMALY_SLACK_TOKEN }}
+        ANOMALY_TG_TOKEN: ${{ secrets.ANOMALY_TG_TOKEN }}
       run: |
         pip install fink-utils --upgrade
         ./run_tests.sh
