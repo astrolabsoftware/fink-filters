@@ -208,7 +208,7 @@ def msg_handler_tg(tg_data, channel_id, med):
         res = requests.post(
             method,
             params={
-                "chat_id": "@fink_test",
+                "chat_id": channel_id,
                 "media": f'''[
                     {{
                         "type" : "photo",
