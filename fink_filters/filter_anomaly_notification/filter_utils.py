@@ -16,9 +16,104 @@ import os
 import time
 import requests
 
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
+import io
+
+def get_data_permalink_slack(ztf_id):
+    '''
+
+    Loads cutout and light curve via the Fink API and copies them to the Slack server
+
+    Parameters
+    ----------
+    ztf_id : str
+        unique identifier for this object
+
+    Returns
+    -------
+    cutout : BytesIO stream
+        cutout image in png format
+    curve : BytesIO stream
+        light curve picture
+    cutout_perml : str
+        Link to the cutout image uploaded to the Slack server
+    curve_perml : str
+        Link to the light curve image uploaded to the Slack server
+
+    '''
+    cutout = get_cutout(ztf_id)
+    curve = get_curve(ztf_id)
+    slack_client = WebClient(os.environ['ANOMALY_SLACK_TOKEN'])
+    try:
+        curve.seek(0)
+        cutout.seek(0)
+        result = slack_client.files_upload_v2(
+            file_uploads=[
+                {
+                    "file": cutout,
+                    "title": "cutout"
+                },
+                {
+                    "file": curve,
+                    "title": "light curve"
+                }
+            ]
+        )
+        time.sleep(3)
+        curve.seek(0)
+        cutout.seek(0)
+    except SlackApiError as e:
+        if e.response["ok"] is False:
+            print(e.response['error'])
+            requests.post(
+                "https://api.telegram.org/bot" + os.environ['ANOMALY_TG_TOKEN'] + "/sendMessage",
+                data={
+                    "chat_id": "@fink_test",
+                    "text": e.response["error"]
+                },
+                timeout=25
+            )
+            return cutout, curve, None, None
+    return cutout, curve, result['files'][0]['permalink'], result['files'][1]['permalink']
+
+
+def status_check(res):
+    '''
+    Checks whether the request was successful.
+    In case of an error, sends information about the error to the @fink_test telegram channel
+
+    Parameters
+    ----------
+    res : Response object
+
+    Returns
+    -------
+        result : bool
+            True : The request was successful
+            False: The request was executed with an error
+    '''
+    if res.status_code != 200:
+        url = "https://api.telegram.org/bot"
+        url += os.environ['ANOMALY_TG_TOKEN']
+        method = url + "/sendMessage"
+        time.sleep(8)
+        requests.post(
+            method,
+            data={
+                "chat_id": "@fink_test",
+                "text": str(res.status_code)
+            },
+            timeout=25
+        )
+        return False
+    return True
 
 def msg_handler_slack(slack_data, channel_name, med):
     '''
@@ -43,7 +138,19 @@ def msg_handler_slack(slack_data, channel_name, med):
     slack_data = [f'Median anomaly score overnight: {med}'] + slack_data
     try:
         for slack_obj in slack_data:
-            slack_client.chat_postMessage(channel=channel_name, text=slack_obj)
+            slack_client.chat_postMessage(
+                channel=channel_name,
+                text=slack_obj,
+                blocks=[
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": slack_obj
+                        }
+                    }
+                ]
+            )
             time.sleep(3)
     except SlackApiError as e:
         if e.response["ok"] is False:
@@ -53,7 +160,7 @@ def msg_handler_slack(slack_data, channel_name, med):
                     "chat_id": "@fink_test",
                     "text": e.response["error"]
                 },
-                timeout=8
+                timeout=25
             )
 
 def msg_handler_tg(tg_data, channel_id, med):
@@ -65,7 +172,14 @@ def msg_handler_tg(tg_data, channel_id, med):
     Parameters
     ----------
     tg_data: list
-        List of lines. Each item is a separate notification
+        List of tuples. Each item is a separate notification.
+        Content of the tuple:
+            text_data : str
+                Notification text
+            cutout : BytesIO stream
+                cutout image in png format
+            curve : BytesIO stream
+                light curve picture
     channel_id: string
         Channel id in Telegram
     med: float
@@ -77,28 +191,44 @@ def msg_handler_tg(tg_data, channel_id, med):
     '''
     url = "https://api.telegram.org/bot"
     url += os.environ['ANOMALY_TG_TOKEN']
-    method = url + "/sendMessage"
-    tg_data = [f'Median anomaly score overnight: {med}'] + tg_data
-    for tg_obj in tg_data:
+    method = url + "/sendMediaGroup"
+    res = requests.post(
+        url + '/sendMessage',
+        data={
+            "chat_id": channel_id,
+            "text": f'Median anomaly score overnight: {med}',
+            "parse_mode": "markdown"
+        },
+        timeout=25
+    )
+    status_check(res)
+    time.sleep(8)
+    for text_data, cutout, curve in tg_data:
         res = requests.post(
             method,
-            data={
-                "chat_id": channel_id,
-                "text": tg_obj,
-                "parse_mode": "markdown"
+            params={
+                "chat_id": "@fink_test",
+                "media": f'''[
+                    {{
+                        "type" : "photo",
+                        "media": "attach://second",
+                        "caption" : "{text_data}",
+                        "parse_mode": "markdown"
+                    }},
+                    {{
+                        "type" : "photo",
+                        "media": "attach://first"
+                    }}
+                ]'''
             },
-            timeout=8
+            files={
+                "second": cutout,
+                "first": curve,
+            },
+            timeout=25
         )
-        if res.status_code != 200:
-            res = requests.post(
-                method,
-                data={
-                    "chat_id": "@fink_test",
-                    "text": str(res.status_code)
-                },
-                timeout=8
-            )
-        time.sleep(3)
+        status_check(res)
+        time.sleep(8)
 
 
 def get_OID(ra, dec):
@@ -111,29 +241,111 @@ def get_OID(ra, dec):
     ----------
     dec: float
         Declination of candidate; J2000 [deg]
-    ra: float
+    ra: string
         Right Ascension of candidate; J2000 [deg]
 
     Returns
     -------
         out: str
             ZTF DR OID
-          or
-            None, if nothing was found
     '''
     r = requests.get(
-        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1'
-    )
-    if r.status_code != 200:
-        url = "https://api.telegram.org/bot"
-        url += os.environ['ANOMALY_TG_TOKEN']
-        method = url + "/sendMessage"
-        requests.post(method, data={
-            "chat_id": "@fink_test",
-            "text": str(r.status_code)
-        }, timeout=8)
+        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1')
+    if not status_check(r):
         return None
     oids = [key for key, _ in r.json().items()]
     if oids:
         return oids[0]
     return None
+
+
+def get_cutout(ztf_id):
+    '''
+    The function loads cutout image via Fink API
+
+    Parameters
+    ----------
+        ztf_id : str
+            unique identifier for this object
+
+    Returns
+    -------
+        out : BytesIO stream
+            cutout image in png format
+
+    '''
+    r = requests.post(
+        'https://fink-portal.org/api/v1/cutouts',
+        json={
+            'objectId': ztf_id,
+            'kind': 'Difference',
+        },
+        timeout=25
+    )
+    status_check(r)
+    return io.BytesIO(r.content)
+
+def get_curve(ztf_id):
+    '''
+    The function loads light curve image via Fink API
+    Parameters
+    ----------
+        ztf_id : str
+            unique identifier for this object
+
+    Returns
+    -------
+            out : BytesIO stream
+                light curve picture
+    '''
+    r = requests.post(
+        'https://fink-portal.org/api/v1/objects',
+        json={
+            'objectId': ztf_id,
+            'withupperlim': 'True'
+        }
+    )
+    status_check(r)
+
+    # Format output in a DataFrame
+    pdf = pd.read_json(io.BytesIO(r.content))
+
+    plt.figure(figsize=(15, 6))
+
+    colordic = {1: 'C0', 2: 'C1'}
+
+    for filt in np.unique(pdf['i:fid']):
+        maskFilt = pdf['i:fid'] == filt
+
+        # The column `d:tag` is used to check data type
+        maskValid = pdf['d:tag'] == 'valid'
+        plt.errorbar(
+            pdf[maskValid & maskFilt]['i:jd'].apply(lambda x: x - 2400000.5),
+            pdf[maskValid & maskFilt]['i:magpsf'],
+            pdf[maskValid & maskFilt]['i:sigmapsf'],
+            ls='', marker='o', color=colordic[filt]
+        )
+
+        maskUpper = pdf['d:tag'] == 'upperlim'
+        plt.plot(
+            pdf[maskUpper & maskFilt]['i:jd'].apply(lambda x: x - 2400000.5),
+            pdf[maskUpper & maskFilt]['i:diffmaglim'],
+            ls='', marker='^', color=colordic[filt], markerfacecolor='none'
+        )
+
+        maskBadquality = pdf['d:tag'] == 'badquality'
+        plt.errorbar(
+            pdf[maskBadquality & maskFilt]['i:jd'].apply(lambda x: x - 2400000.5),
+            pdf[maskBadquality & maskFilt]['i:magpsf'],
+            pdf[maskBadquality & maskFilt]['i:sigmapsf'],
+            ls='', marker='v', color=colordic[filt]
+        )
+
+    plt.gca().invert_yaxis()
+    plt.xlabel('Modified Julian Date')
+    plt.ylabel('Difference magnitude')
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    return buf
