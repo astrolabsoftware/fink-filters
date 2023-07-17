@@ -25,6 +25,9 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 import io
+import tokens
+os.environ['ANOMALY_TG_TOKEN'] = tokens.tg_token
+os.environ['ANOMALY_SLACK_TOKEN'] = tokens.slack_token
 
 def get_data_permalink_slack(ztf_id):
     '''
@@ -241,7 +244,7 @@ def get_OID(ra, dec):
     ----------
     dec: float
         Declination of candidate; J2000 [deg]
-    ra: string
+    ra: float
         Right Ascension of candidate; J2000 [deg]
 
     Returns
@@ -313,6 +316,7 @@ def get_curve(ztf_id):
     plt.figure(figsize=(15, 6))
 
     colordic = {1: 'C0', 2: 'C1'}
+    filter_dict = {1: 'g band', 2: 'r band'}
 
     for filt in np.unique(pdf['i:fid']):
         maskFilt = pdf['i:fid'] == filt
@@ -323,7 +327,7 @@ def get_curve(ztf_id):
             pdf[maskValid & maskFilt]['i:jd'].apply(lambda x: x - 2400000.5),
             pdf[maskValid & maskFilt]['i:magpsf'],
             pdf[maskValid & maskFilt]['i:sigmapsf'],
-            ls='', marker='o', color=colordic[filt]
+            ls='', marker='o', color=colordic[filt], label=filter_dict[filt]
         )
 
         maskUpper = pdf['d:tag'] == 'upperlim'
@@ -342,6 +346,7 @@ def get_curve(ztf_id):
         )
 
     plt.gca().invert_yaxis()
+    plt.legend()
     plt.xlabel('Modified Julian Date')
     plt.ylabel('Difference magnitude')
 
