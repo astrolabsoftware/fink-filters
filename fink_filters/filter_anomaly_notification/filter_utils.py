@@ -199,7 +199,7 @@ def msg_handler_tg(tg_data, channel_id, med):
         timeout=25
     )
     status_check(res)
-    time.sleep(8)
+    time.sleep(10)
     for text_data, cutout, curve in tg_data:
         res = requests.post(
             method,
@@ -225,7 +225,7 @@ def msg_handler_tg(tg_data, channel_id, med):
             timeout=25
         )
         status_check(res)
-        time.sleep(8)
+        time.sleep(10)
 
 
 def get_OID(ra, dec):
