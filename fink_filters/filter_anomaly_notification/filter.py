@@ -131,6 +131,8 @@ def anomaly_notification_(
         t4_ = f'Real bogus: {round(row.rb, 2)}'
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
         cutout, curve, cutout_perml, curve_perml = filter_utils.get_data_permalink_slack(row.objectId)
+        curve.seek(0)
+        cutout.seek(0)
         cutout_perml = f"<{cutout_perml}|{' '}>"
         curve_perml = f"<{curve_perml}|{' '}>"
         tg_data.append((f'''{t1a}

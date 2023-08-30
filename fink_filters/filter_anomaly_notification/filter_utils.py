@@ -26,7 +26,6 @@ from slack_sdk.errors import SlackApiError
 
 import io
 
-
 def get_data_permalink_slack(ztf_id):
     '''
 
@@ -68,11 +67,8 @@ def get_data_permalink_slack(ztf_id):
             ]
         )
         time.sleep(3)
-        curve.seek(0)
-        cutout.seek(0)
     except SlackApiError as e:
         if e.response["ok"] is False:
-            print(e.response['error'])
             requests.post(
                 "https://api.telegram.org/bot" + os.environ['ANOMALY_TG_TOKEN'] + "/sendMessage",
                 data={
@@ -203,7 +199,7 @@ def msg_handler_tg(tg_data, channel_id, med):
         timeout=25
     )
     status_check(res)
-    time.sleep(8)
+    time.sleep(10)
     for text_data, cutout, curve in tg_data:
         res = requests.post(
             method,
@@ -229,7 +225,7 @@ def msg_handler_tg(tg_data, channel_id, med):
             timeout=25
         )
         status_check(res)
-        time.sleep(8)
+        time.sleep(10)
 
 
 def get_OID(ra, dec):
