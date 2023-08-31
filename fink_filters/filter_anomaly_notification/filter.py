@@ -112,7 +112,6 @@ def anomaly_notification_(
     >>> print(pdf_anomalies['objectId'].values)
     ['ZTF21acoshvy' 'ZTF18aapgymv' 'ZTF19aboujyi' 'ZTF18abgjtxx' 'ZTF18aaypnnd'
      'ZTF18abbtxsx' 'ZTF18aaakhsv' 'ZTF18actxdmj' 'ZTF18aapoack' 'ZTF18abzvnya']
-     :param cut_coords:
     """
     # Filtering by coordinates
     if cut_coords:
