@@ -26,7 +26,7 @@ def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
         send_to_slack=False, channel_name=None,
-        trick_par=10):
+        trick_par=10, cut_coords=False):
     """ Create event notifications with a high `anomaly_score` value
 
     Notes
@@ -58,6 +58,11 @@ def anomaly_notification_(
     trick_par: int, optional
         Internal buffer to reduce the number of candidates while giving
         space to reach the `threshold`. Defaut is 10.
+    cut_coords: bool
+        If this is True, only objects from the area bounded
+        by the following coordinates are considered:
+            1) delta <= 20°
+            2) alpha ∈ (0°, 60°)⋃(340°, 360°)
 
     Returns
     ----------
@@ -107,12 +112,19 @@ def anomaly_notification_(
     >>> print(pdf_anomalies['objectId'].values)
     ['ZTF21acoshvy' 'ZTF18aapgymv' 'ZTF19aboujyi' 'ZTF18abgjtxx' 'ZTF18aaypnnd'
      'ZTF18abbtxsx' 'ZTF18aaakhsv' 'ZTF18actxdmj' 'ZTF18aapoack' 'ZTF18abzvnya']
+     :param cut_coords:
     """
+    # Filtering by coordinates
+    if cut_coords:
+        df_proc = df_proc.filter('dec <= 20 AND (ra <= 60 OR ra >= 340)')
+        # We need to know the total number of objects per night which satisfy the condition on coordinates
+        cut_count = df_proc.count()
     # Compute the median for the night
     med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
 
     # Extract anomalous objects
+
     pdf_anomalies_ext = df_proc.sort(['anomaly_score'], ascending=True).limit(trick_par * threshold).toPandas()
     pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(['objectId'])
     upper_bound = np.max(pdf_anomalies_ext['anomaly_score'].values[:threshold])
@@ -127,6 +139,10 @@ def anomaly_notification_(
         t_oid_1a = f"DR OID (<1''): [{oid}](https://ztf.snad.space/view/{oid})"
         t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
         t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
+        t_ = f'''
+EQU: {row.ra},   {row.dec}'''
+        if cut_coords:
+            t2_ += t_
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
@@ -149,11 +165,19 @@ def anomaly_notification_(
 {t4_}
 {t5_}
 {cutout_perml}{curve_perml}''')
+    init_msg = f'Median anomaly score overnight: {med}.'
+    if cut_coords:
+        init_msg += f'''
+(of the objects in the sky area)
+Sky area:
+    1) delta <= 20°
+    2) alpha ∈ (0°, 60°)⋃(340°, 360°)
+Total number of objects per night in the area: {cut_count}.
+'''
     if send_to_slack:
-        filter_utils.msg_handler_slack(slack_data, channel_name, med)
+        filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
-        filter_utils.msg_handler_tg(tg_data, channel_id, med)
-
+        filter_utils.msg_handler_tg(tg_data, channel_id, init_msg)
     return pdf_anomalies
 
 

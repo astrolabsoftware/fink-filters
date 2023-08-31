@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
+
 import io
 
 def get_data_permalink_slack(ztf_id):
@@ -112,7 +113,7 @@ def status_check(res):
         return False
     return True
 
-def msg_handler_slack(slack_data, channel_name, med):
+def msg_handler_slack(slack_data, channel_name, init_msg):
     '''
     Notes
     ----------
@@ -124,15 +125,15 @@ def msg_handler_slack(slack_data, channel_name, med):
         List of lines. Each item is a separate notification
     channel_name: string
         Channel name in Slack
-    med: float
-        Median anomaly score overnight
+    init_msg: str
+        Initial message
 
     Returns
     -------
         None
     '''
     slack_client = WebClient(os.environ['ANOMALY_SLACK_TOKEN'])
-    slack_data = [f'Median anomaly score overnight: {med}'] + slack_data
+    slack_data = [init_msg] + slack_data
     try:
         for slack_obj in slack_data:
             slack_client.chat_postMessage(
@@ -160,7 +161,7 @@ def msg_handler_slack(slack_data, channel_name, med):
                 timeout=25
             )
 
-def msg_handler_tg(tg_data, channel_id, med):
+def msg_handler_tg(tg_data, channel_id, init_msg):
     '''
     Notes
     ----------
@@ -179,8 +180,8 @@ def msg_handler_tg(tg_data, channel_id, med):
                 light curve picture
     channel_id: string
         Channel id in Telegram
-    med: float
-        Median anomaly score overnight
+    init_msg: str
+        Initial message
 
     Returns
     -------
@@ -193,7 +194,7 @@ def msg_handler_tg(tg_data, channel_id, med):
         url + '/sendMessage',
         data={
             "chat_id": channel_id,
-            "text": f'Median anomaly score overnight: {med}',
+            "text": init_msg,
             "parse_mode": "markdown"
         },
         timeout=25
@@ -302,7 +303,8 @@ def get_curve(ztf_id):
             'withupperlim': 'True'
         }
     )
-    status_check(r)
+    if not status_check(r):
+        return None
 
     # Format output in a DataFrame
     pdf = pd.read_json(io.BytesIO(r.content))
