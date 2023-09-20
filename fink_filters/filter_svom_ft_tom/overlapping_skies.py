@@ -9,23 +9,20 @@ Created on Mon Nov 21 14:37:49 2022
 import numpy as np
 import healpy as hp
 from astroplan import Observer, FixedTarget
-from astroplan import is_observable, is_always_observable, months_observable
-from astroplan import AltitudeConstraint, AirmassConstraint, AtNightConstraint
+from astroplan import is_observable
+from astroplan import AltitudeConstraint, AirmassConstraint
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from astropy.table import Table
-import numpy as np
-import matplotlib.pyplot as plt
 from mhealpy import HealpixMap
-import mhealpy as hmap
 import pandas as pd
 import json
 
 
 def load_observatories(obs_path_file: str):
     """
-    Load the observatories for which we want to crossmacth the observable 
+    Load the observatories for which we want to crossmacth the observable
     skies
 
     Parameters
@@ -36,7 +33,7 @@ def load_observatories(obs_path_file: str):
     Returns
     -------
     observatories : Dataframes
-        pandas Dataframe of the observatory configurations 
+        pandas Dataframe of the observatory configurations
         to feed the astroplan.Observer package.
 
     """
@@ -52,7 +49,7 @@ def simu_night_time_interval(ref_obs, ref_date: str, n_days: int, day_bin: int):
     Parameters
     ----------
     ref_obs : astroplan.observer.Observer
-        astroplan.observer.Observer object for the Observatory chosen as the 
+        astroplan.observer.Observer object for the Observatory chosen as the
         reference observatory.
     ref_date : str
         Date of reference to start the simulation.
@@ -68,9 +65,7 @@ def simu_night_time_interval(ref_obs, ref_date: str, n_days: int, day_bin: int):
     """
     # Initialize the time ranges by starting 1h after astro. twiligtht at VRO
     date_0 = Time(ref_date)
-    time_interval = np.arange(0, n_days * day_bin, day_bin)
 
-    dates_start = date_0 + time_interval * u.day
     dates_night = ref_obs.tonight(horizon=-13 * u.degree)
     if dates_night[0] < date_0:
         dates_night = ref_obs.tonight(date_0 + 0 * u.day, horizon=-13 * u.degree)
@@ -97,7 +92,7 @@ def build_targets(ras: np.array, decs: np.array):
 
     Returns
     -------
-    targets : 
+    targets :
         List of targets for which we want to estimate the observability
 
     """
@@ -116,7 +111,7 @@ def build_targets(ras: np.array, decs: np.array):
 
 def make_visibility_masks(constraints, observatory, targets, time_range: list):
     """
-    Build the skymap mask regarding the obsverational constraints:  
+    Build the skymap mask regarding the obsverational constraints:
     True = the position is visible
     False = the position is not visible
 
@@ -152,7 +147,6 @@ def plot_common_sky(
     mask_common_sky: np.array,
     title_sky: str,
 ):
-
     is_nested = scheme == "nested"
     m1 = HealpixMap(nside=nside, scheme=scheme, density=True)
     m1 = np.zeros(hp.nside2npix(nside))
@@ -205,7 +199,7 @@ if __name__ == "__main__":
     for i in range(len(observatories)):
         try:
             observatory = Observer.at_site(observatories.obs_name[i])
-        except:
+        except Exception:
             observatory = Observer(
                 longitude=observatories.longitude[i] * u.deg,
                 latitude=observatories.latitude[i] * u.deg,
@@ -236,11 +230,7 @@ if __name__ == "__main__":
             sky_frac_visibilities.append(sky_frac_visibility)
 
             title_combi = (
-                "VRO-"
-                + observatories.obs_name[i]
-                + " overlapping skies = "
-                + str("%.2f" % (sky_frac_visibility * 100))
-                + " %"
+                "VRO-" + observatories.obs_name[i] + " overlapping skies = " + str("%.2f" % (sky_frac_visibility * 100)) + " %"
             )
             print(title_combi)
 
