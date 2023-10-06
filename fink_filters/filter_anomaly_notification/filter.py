@@ -140,8 +140,7 @@ def anomaly_notification_(
         t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t_ = f'''
 EQU: {row.ra},   {row.dec}'''
-        if cut_coords:
-            t2_ += t_
+        t2_ += t_
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
