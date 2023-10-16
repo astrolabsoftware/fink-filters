@@ -66,8 +66,8 @@ def anomaly_notification_(
             1) delta <= 20°
             2) alpha ∈ (0°, 60°)⋃(340°, 360°)
     history_period: int
-            Time period in days number of references of 
-            objects for which the number of references is calculated
+            Time period in days for which the number
+            of references is calculated
 
     Returns
     ----------
