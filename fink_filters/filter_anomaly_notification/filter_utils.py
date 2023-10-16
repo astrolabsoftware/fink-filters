@@ -13,11 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import io
 import time
 import requests
-
+from datetime import datetime, timedelta
+from collections import Counter
 import pandas as pd
 import numpy as np
+
 
 import matplotlib.pyplot as plt
 
@@ -25,7 +28,36 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 
-import io
+def get_an_history(delta_date=90):
+    '''
+
+    Parameters
+    ----------
+    delta_date : int
+        Time period in days for which objects are considered
+
+    Returns
+    -------
+    res_obj : Counter
+        object Counter of the following content:
+            key : object ID
+            value : number of top-10 hits for the period
+    '''
+    history_data = requests.post(
+        'https://fink-portal.org/api/v1/anomaly',
+        json={
+            'n': 100000000,
+            'columns': 'i:objectId',
+            'start_date': str((datetime.now() - timedelta(days=delta_date)).date())
+        }
+    )
+
+    if status_check(history_data):
+        res_obj = Counter(pd.read_json(io.BytesIO(history_data.content))['i:objectId'].values)
+        return res_obj
+    else:
+        return Counter()
+
 
 def get_data_permalink_slack(ztf_id):
     '''

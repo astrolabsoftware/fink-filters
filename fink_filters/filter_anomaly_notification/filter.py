@@ -12,10 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import numpy as np
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+
 
 from fink_filters.filter_anomaly_notification import filter_utils
 
@@ -26,7 +28,7 @@ def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
         send_to_slack=False, channel_name=None,
-        trick_par=10, cut_coords=False):
+        trick_par=10, cut_coords=False, history_period=90):
     """ Create event notifications with a high `anomaly_score` value
 
     Notes
@@ -129,6 +131,8 @@ def anomaly_notification_(
     upper_bound = np.max(pdf_anomalies_ext['anomaly_score'].values[:threshold])
     pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext['anomaly_score'] <= upper_bound]
 
+    history_objects = filter_utils.get_an_history(history_period)
+
     tg_data, slack_data = [], []
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
@@ -144,6 +148,9 @@ EQU: {row.ra},   {row.dec}'''
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
+        if row.objectId in history_objects:
+            t5_ += f'''
+Detected as top-{threshold} anomaly in the last {history_period} days: {history_objects[row.objectId]} times.'''
         cutout, curve, cutout_perml, curve_perml = filter_utils.get_data_permalink_slack(row.objectId)
         curve.seek(0)
         cutout.seek(0)
