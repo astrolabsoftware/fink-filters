@@ -153,7 +153,7 @@ EQU: {row.ra},   {row.dec}'''
         t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
         if row.objectId in history_objects:
             t5_ += f'''
-Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} times.'''
+Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}.'''
         cutout, curve, cutout_perml, curve_perml = filter_utils.get_data_permalink_slack(row.objectId)
         curve.seek(0)
         cutout.seek(0)
