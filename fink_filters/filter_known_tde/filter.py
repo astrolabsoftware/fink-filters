@@ -106,7 +106,7 @@ def known_tde(ra, dec) -> pd.Series:
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest')
-    >>> f = 'fink_filters.filter_known_tde.filter.know_tde'
+    >>> f = 'fink_filters.filter_known_tde.filter.known_tde'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     0
