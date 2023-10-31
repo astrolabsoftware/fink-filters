@@ -55,7 +55,7 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
 
     """
     curdir = os.path.dirname(os.path.abspath(__file__))
-    tdes = pd.read_parquet(curdir + '/tde.parquet')
+    tdes = pd.read_parquet(curdir + '/data/tde.parquet')
 
     catalog_tde = SkyCoord(
         ra=np.array(tdes.ra, dtype=float) * u.degree,
