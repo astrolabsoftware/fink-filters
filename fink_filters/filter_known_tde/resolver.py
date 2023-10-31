@@ -6,7 +6,7 @@ APIURL = 'https://fink-portal.org'
 data = {'name': [], 'ra': [], 'dec': []}
 
 # Hammerstein TDEs
-TDEs_hammerstein = pd.read_fwf('Table1_Hammerstein', skiprows = 34, header = None)
+TDEs_hammerstein = pd.read_fwf('Table1_Hammerstein', skiprows=34, header=None)
 tns_names = TDEs_hammerstein[0].to_list()
 
 unknown = []
