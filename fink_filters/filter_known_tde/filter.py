@@ -21,7 +21,6 @@ from astropy import units as u
 from fink_science.xmatch.utils import cross_match_astropy
 
 from fink_filters.filter_anomaly_notification.filter_utils import msg_handler_slack
-from fink_filters.filter_anomaly_notification.filter_utils import get_data_permalink_slack
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
@@ -100,7 +99,7 @@ def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
             t1 = f'<https://fink-portal.org/{row.objectId}|{row.objectId}> associated with {row.intname}'
             slack_data.append(f'''{t1}''')
 
-            msg_handler_slack(slack_data, "known_tde_follow_up", init_msg=f'New TDE association!')
+            msg_handler_slack(slack_data, "known_tde_follow_up", init_msg='New TDE association!')
 
     return pdf_merge['match']
 
