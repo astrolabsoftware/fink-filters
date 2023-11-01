@@ -91,8 +91,8 @@ def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
     pdf_merge.loc[mask, 'intname'] = [
         str(i).strip() for i in tdes['name'].astype(str).values[idx2]
     ]
-
-    if 'ANOMALY_SLACK_TOKEN' in os.environ:
+    print(os.environ)
+    if ('ANOMALY_SLACK_TOKEN' in os.environ) and ('GITHUB_ENV' not in os.environ):
         # send to Slack recursively
         for _, row in pdf_merge[mask].iterrows():
             slack_data = []
