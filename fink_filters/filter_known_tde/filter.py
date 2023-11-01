@@ -20,17 +20,21 @@ from astropy import units as u
 
 from fink_science.xmatch.utils import cross_match_astropy
 
+from fink_filters.filter_anomaly_notification.filter_utils import msg_handler_slack
+from fink_filters.filter_anomaly_notification.filter_utils import get_data_permalink_slack
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 import numpy as np
 import os
 
-def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
+def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
     """ Return alerts matching with known TDEs
 
     Parameters
     ----------
+    objectId: Pandas series
+        Colujmn containing ZTF object ID
     ra: Pandas series
         Column containing the RA values of alerts
     dec: Pandas series
@@ -46,12 +50,13 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest_tde')
     >>> classification = known_tde_(
+    ...     pdf['objectId'],
     ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']))
     >>> print(np.sum(classification))
-    0
+    1
 
     """
     curdir = os.path.dirname(os.path.abspath(__file__))
@@ -66,7 +71,8 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
         {
             'ra': ra,
             'dec': dec,
-            'candid': range(len(ra))
+            'candid': range(len(ra)),
+            'objectId': objectId
         }
     )
 
@@ -82,15 +88,31 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
     pdf_merge['match'] = False
     pdf_merge.loc[mask, 'match'] = True
 
+    pdf_merge['intname'] = 'Unknown'
+    pdf_merge.loc[mask, 'intname'] = [
+        str(i).strip() for i in tdes['name'].astype(str).values[idx2]
+    ]
+
+    if 'ANOMALY_SLACK_TOKEN' in os.environ:
+        # send to Slack recursively
+        for _, row in pdf_merge[mask].iterrows():
+            slack_data = []
+            t1 = f'<https://fink-portal.org/{row.objectId}|{row.objectId}> associated with {row.intname}'
+            slack_data.append(f'''{t1}''')
+
+            msg_handler_slack(slack_data, "known_tde_follow_up", init_msg=f'New TDE association!')
+
     return pdf_merge['match']
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def known_tde(ra, dec) -> pd.Series:
+def known_tde(objectId, ra, dec) -> pd.Series:
     """ Pandas UDF for early_sn_candidates_
 
     Parameters
     ----------
+    objectId: Pandas series
+        Column containing ZTF object ID
     ra: Pandas series
         Column containing the RA values of alerts
     dec: Pandas series
@@ -105,13 +127,13 @@ def known_tde(ra, dec) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest_tde')
     >>> f = 'fink_filters.filter_known_tde.filter.known_tde'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    0
+    1
     """
-    series = known_tde_(ra, dec)
+    series = known_tde_(objectId, ra, dec)
     return series
 
 

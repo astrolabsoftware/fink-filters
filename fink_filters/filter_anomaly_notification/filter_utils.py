@@ -83,7 +83,10 @@ def get_data_permalink_slack(ztf_id):
     '''
     cutout = get_cutout(ztf_id)
     curve = get_curve(ztf_id)
-    slack_client = WebClient(os.environ['ANOMALY_SLACK_TOKEN'])
+    if 'ANOMALY_SLACK_TOKEN' in os.environ:
+        slack_client = WebClient(os.environ['ANOMALY_SLACK_TOKEN'])
+    else:
+        raise KeyError("You need to set up ANOMALY_SLACK_TOKEN in your .bashrc")
     try:
         curve.seek(0)
         cutout.seek(0)
