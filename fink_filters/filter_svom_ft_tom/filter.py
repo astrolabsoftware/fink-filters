@@ -4,8 +4,12 @@ from fink_filters.classification import extract_fink_classification_
 from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from astropy.coordinates import SkyCoord
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.types import BooleanType
+from fink_filters.tester import spark_unit_tests
 
 
+@pandas_udf(BooleanType())
 def gvom_filter(
     rb: pd.Series,
     magpsf: pd.Series,
@@ -24,7 +28,7 @@ def gvom_filter(
     jdstarthist: pd.Series,
     rf_kn_vs_nonkn: pd.Series,
     tracklet: pd.Series,
-)-> pd.Series:
+) -> pd.Series:
     """
     Science filter of the gvom network.
     Select alerts that are likely to be fast transient.
@@ -70,8 +74,17 @@ def gvom_filter(
     -------
     pd.Series
         if True, the alert match the gvom science filter
+
+    Example
+    -------
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
+    >>> df = spark.read.format('parquet').load('datatest')
+    >>> f = 'fink_filters.filter_svom_ft_tom.filter.gvom_filter'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    0
     """
-    
+
     classification = extract_fink_classification_(
         cdsxmatch,
         roid,
@@ -104,13 +117,13 @@ def gvom_filter(
 
     coord = SkyCoord(ra, dec, unit="deg")
     # alerts not in the milky way
-    gal_latitude = coord.galactic.b
+    gal_latitude = coord.galactic.b.value
     mask_south_gal = gal_latitude < -15
     mask_north_gal = gal_latitude > 15
     f_gal = mask_north_gal | mask_south_gal
 
     # alerts not in the ecliptic
-    ecl_latitude = coord.transform_to("geocentricmeanecliptic").lat
+    ecl_latitude = coord.transform_to("geocentricmeanecliptic").lat.value
     mask_south_ecl = ecl_latitude < -15
     mask_north_ecl = ecl_latitude > 15
     f_ecl = mask_north_ecl | mask_south_ecl
@@ -123,3 +136,11 @@ def gvom_filter(
 
     f_gvom = f_bogus & f_class & f_short & f_brightness & f_gal & f_ecl
     return f_gvom
+
+
+if __name__ == "__main__":
+    """Execute the test suite"""
+
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
