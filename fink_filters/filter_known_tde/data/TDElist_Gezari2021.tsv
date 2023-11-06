@@ -1,0 +1,56 @@
+NGC 5905	ROSAT	X	0.01124	40.94	5.84	Bade et al. 1996
+RX J1624+75	ROSAT	X	0.0636	43.38	06.05	Grupe et al. 1999
+RX J1242-11A	ROSAT	X	0.050	42.60	5.84	Komossa & Greiner 1999
+RX J1420+53	ROSAT	X	0.147	43.38	5.67	Greiner et al. 2000
+GALEX D3-13	GALEX	U	0.3698	43.98	4.66	Gezari et al. 2006
+SDSS J1323+48	XMM	X	0.0875	44.30	5.91	Esquej et al. 2007
+GALEX D1-9	GALEX	U	0.326	43.48	4.59	Gezari et al. 2008
+TDXF J1347-32	ROSAT	X	0.0366	42.73	6.14	Cappelluti et al. 2009
+GALEX D23H-1	GALEX	U	0.1855	43.95	4.70	Gezari et al. 2009
+SDSS J1311-01	Chandra	X	0.195	41.74	6.14	Maksym, Ulmer & Eracleous 2010
+SwiftJ1644	Swift	G	0.353	ND	ND	Bloom et al. 2011
+2XMMi J1847-63	XMM	X	0.0353	42.82	5.96	Lin et al. 2011
+SDSS-TDE1	SDSS	O	0.136	43.64	4.42	van Velzen et al. 2011
+SDSS-TDE2	SDSS	O	0.2515	44.54	4.37	van Velzen et al. 2011
+PS1-10jh	PS	O	0.1696	44.47	4.59	Gezari et al. 2012
+SDSS J1201+30	XMM	X	0.146	45.00	06.06	Saxton et al. 2012
+SwiftJ2058	Swift	G	1.186	ND	ND	Cenko et al. 2012b
+WINGS J1348+26	Chandra	X	0.0651	41.79	06.06	Maksym et al. 2013
+PS1-11af	PS	O	0.4046	44.16	4.28	Chornock et al. 2014
+RBS 1032	ROSAT	X	0.026	41.70	6.11	Maksym et al. 2014b
+PTF-09ge	PTF	O	0.064	44.04	04.08	Arcavi et al. 2014
+PTF-09axc	PTF	O	0.1146	43.46	04.08	Arcavi et al. 2014
+PTF-09djl	PTF	O	0.184	44.42	4.41	Arcavi et al. 2014
+ASASSN-14ae	ASAS-SN	O	0.0436	43.87	4.29	Holoien et al. 2014
+3XMM J1521+07	XMM	X	0.179	43.51	6.30	Lin et al. 2015
+SwiftJ1112	Swift	G	0.89	ND	ND	Brown et al. 2015
+ASASSN-14li	ASAS-SN	O	0.02058	43.66	4.52	Holoien et al. 2016b
+ASASSN-15lh	ASAS-SN	O	0.2326	45.34	4.30	Dong et al. 2016
+ASASSN-15oi	ASAS-SN	O	0.0484	44.45	4.60	Holoien et al. 2016b
+iPTF-16axa	PTF	O	0.108	43.82	4.46	Hung et al. 2017
+iPTF-16fnl	PTF	O	0.0163	43.18	4.47	Blagorodnova et al. 2017
+3XMM J1500+01	XMM	X	0.1454	43.08	06.06	Lin et al. 2017
+OGLE16aaa	OGLE	O	0.1655	44.22	4.36	Wyrzykowski et al. 2017
+XMMSL1 J0740-85	XMM	X	0.0173	42.61	6.00	Saxton et al. 2017
+iPTF-15af	PTF	O	0.07897	44.10	4.85	Blagorodnova et al. 2019
+AT2017eqx/PS17dhz	PS	O	0.1089	43.82	4.32	Nicholl et al. 2019
+AT2018zr/PS18kh	PS	O	0.071	43.78	4.14	van Velzen et al. 2021
+AT2018bsi/ZTF18aahqkbt	ZTF	O	0.051	43.87	4.53	van Velzen et al. 2021
+AT2018dyb/ASASSN-18pg	ASAS-SN	O	0.018	44.08	4.40	Leloudas et al. 2019
+AT2018fyk/ASASSN-18ul	ASAS-SN	O	0.059	44.48	4.54	Wevers et al. 2019
+AT2018hco/ATLAS18way	ATLAS	O	0.088	44.25	4.39	van Velzen et al. 2021
+AT2018hyz/ASASSN-18zj	ASAS-SN	O	0.04573	44.10	4.25	Gomez et al. 2020
+AT2018iih/ATLAS18yzs	ATLAS	O	0.212	44.62	4.23	van Velzen et al. 2021
+AT2018lna/ZTF19aabbnzo	ZTF	O	0.091	44.56	4.59	van Velzen et al. 2021
+AT2018lni/ZTF18actaqdw	ZTF	O	0.138	44.21	4.38	van Velzen et al. 2021
+AT2019ahk/ASASSN-19bt	ASAS-SN	O	0.0262	44.08	4.30	Holoien et al. 2019b
+AT2019azh/ASASSN-19dj	ASAS-SN	O	0.0222	44.50	4.51	van Velzen et al. 2021
+AT2019bhf/ZTF19aakswrb	ZTF	O	0.1206	43.91	4.27	van Velzen et al. 2021
+AT2019cho/ZTF19aakiwze	ZTF	O	0.193	43.98	4.19	van Velzen et al. 2021
+AT2019dsg/ZTF19aapreis	ZTF	O	0.0512	44.26	4.59	van Velzen et al. 2021
+AT2019ehz/Gaia19bpt	Gaia	O	0.074	44.03	4.34	van Velzen et al. 2021
+AT2019eve/ZTF19aatylnl	ZTF	O	0.0813	43.14	04.06	van Velzen et al. 2021
+AT2019lwu/ZTF19abidbya	ZTF	O	0.117	43.60	4.14	van Velzen et al. 2021
+AT2019meg/ZTF19abhhjcc	ZTF	O	0.152	44.36	4.44	van Velzen et al. 2021
+AT2019mha/ATLAS19qqu	ATLAS	O	0.148	44.05	4.35	van Velzen et al. 2021
+AT2019qiz/ZTF19abzrhgq	ZTF	O	0.0151	43.44	4.27	van Velzen et al. 2021
