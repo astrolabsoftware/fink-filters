@@ -13,6 +13,7 @@ from fink_filters.tester import spark_unit_tests
 def gvom_filter(
     rb: pd.Series,
     magpsf: pd.Series,
+    mag_rate: pd.Series,
     ra: pd.Series,
     dec: pd.Series,
     cdsxmatch: pd.Series,
@@ -129,12 +130,15 @@ def gvom_filter(
     f_ecl = mask_north_ecl | mask_south_ecl
 
     # bright alerts
-    f_brightness = magpsf <= 17.0
+    f_brightness = magpsf <= 18.0
 
     # short living transient
     f_short = jd - jdstarthist <= 5
 
-    f_gvom = f_bogus & f_class & f_short & f_brightness & f_gal & f_ecl
+    # fast transient
+    f_fast = mag_rate.abs() > 0.3
+
+    f_gvom = f_bogus & f_class & f_short & f_brightness & f_gal & f_ecl & f_fast
     return f_gvom
 
 
