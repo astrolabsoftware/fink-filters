@@ -309,6 +309,7 @@ def early_kn_candidates(
         field = field[f_kn]
 
     dict_filt = {1: 'g', 2: 'r'}
+    print(mag)
     for i, alertID in enumerate(objectId[f_kn]):
         # information to send
         alert_text = """
