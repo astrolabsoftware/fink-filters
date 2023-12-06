@@ -115,8 +115,8 @@ def anomaly_notification_(
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
     >>> print(pdf_anomalies['objectId'].values)
-    ['ZTF21acoshvy' 'ZTF18aaypnnd' 'ZTF18abgjtxx' 'ZTF18aapgymv' 'ZTF18aaakhsv'
-     'ZTF18abhxigz' 'ZTF18aapoack' 'ZTF19aboujyi' 'ZTF18abbtxsx' 'ZTF18actxdmj']
+    ['ZTF21acoshvy' 'ZTF18abgjtxx' 'ZTF19acevxhv' 'ZTF19aboujyi' 'ZTF18aapgymv'
+     'ZTF18abbtxsx' 'ZTF18aaakhsv' 'ZTF18aaypnnd' 'ZTF18aapoack' 'ZTF18abzvnya']
     """
     # Filtering by coordinates
     if cut_coords:
