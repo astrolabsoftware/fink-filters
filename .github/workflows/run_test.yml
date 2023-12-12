@@ -45,5 +45,6 @@ jobs:
         ANOMALY_TG_TOKEN: ${{ secrets.ANOMALY_TG_TOKEN }}
       run: |
         pip install fink-utils --upgrade
+        pip install py4j
         ./run_tests.sh
         curl -s https://codecov.io/bash | bash
