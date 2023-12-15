@@ -53,6 +53,7 @@ def blazar(cdsxmatch: Any) -> pd.Series:
     |           BLLac|    4|
     |          Blazar|    3|
     +----------------+-----+
+    <BLANKLINE>
 
     """
     # Include new taxonomy
