@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import pandas as pd
 import numpy as np
 
 from astropy import units as u
@@ -117,12 +117,23 @@ def anomaly_notification_(
     >>> print(pdf_anomalies['objectId'].values)
     ['ZTF21acoshvy' 'ZTF18abgjtxx' 'ZTF19acevxhv' 'ZTF19aboujyi' 'ZTF18aapgymv'
      'ZTF18abbtxsx' 'ZTF18aaakhsv' 'ZTF18aaypnnd' 'ZTF18aapoack' 'ZTF18abzvnya']
+
+    # Check cut_coords
+    >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
+    ...     send_to_tg=False, channel_id=None,
+    ...     send_to_slack=False, channel_name=None, cut_coords=True)
+
+    # Not empty in this case
+    >>> assert not pdf_anomalies.empty
     """
     # Filtering by coordinates
     if cut_coords:
         df_proc = df_proc.filter('dec <= 20 AND (ra <= 60 OR ra >= 340)')
         # We need to know the total number of objects per night which satisfy the condition on coordinates
         cut_count = df_proc.count()
+        if cut_count == 0:
+            return pd.DataFrame()
+
     # Compute the median for the night
     med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
     med = round(med[0], 2)
