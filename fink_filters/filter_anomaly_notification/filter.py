@@ -123,8 +123,8 @@ def anomaly_notification_(
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None, cut_coords=True)
 
-    # Empty in this case
-    >>> assert pdf_anomalies.empty
+    # Not empty in this case
+    >>> assert not pdf_anomalies.empty
     """
     # Filtering by coordinates
     if cut_coords:
