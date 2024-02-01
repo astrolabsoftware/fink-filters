@@ -16,3 +16,5 @@ pandas
 pyarrow
 
 h5py
+
+py4j>=0.10.9.5
