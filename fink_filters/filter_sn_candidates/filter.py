@@ -56,7 +56,7 @@ def sn_candidates_(
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = sn_candidates_(
     ...     pdf['cdsxmatch'],
     ...     pdf['snn_snia_vs_nonia'],
@@ -95,7 +95,7 @@ def sn_candidates(
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_sn_candidates.filter.sn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

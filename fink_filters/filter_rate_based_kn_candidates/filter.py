@@ -73,6 +73,7 @@ def perform_classification(
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
         Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
+
     Returns
     ----------
     out: pandas.Series of bool
@@ -215,6 +216,7 @@ def rate_based_kn_candidates_(
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
         Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
+
     Returns
     ----------
     out: pandas.Series of bool
@@ -270,6 +272,7 @@ def rate_based_kn_candidates(
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
         Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
         magzpsci, isdiffpos as arrays
+
     Returns
     ----------
     out: pandas.Series of bool
@@ -280,7 +283,7 @@ def rate_based_kn_candidates(
     ----------
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
 
     >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'magnr', 'sigmagnr', 'magzpsci', 'isdiffpos']
 

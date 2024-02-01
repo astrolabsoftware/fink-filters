@@ -81,7 +81,7 @@ def anomaly_notification_(
     >>> from fink_science.ad_features.processor import extract_features_ad
     >>> from fink_science.anomaly_detection.processor import anomaly_score
 
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
 
     >>> what = [
     ...     'jd', 'fid', 'magpsf', 'sigmapsf',

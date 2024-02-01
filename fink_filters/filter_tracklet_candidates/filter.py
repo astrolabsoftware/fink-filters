@@ -35,7 +35,7 @@ def tracklet_candidates_(tracklet) -> pd.Series:
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = tracklet_candidates_(pdf['tracklet'])
     >>> print(len(pdf[classification]['objectId'].values))
     2
@@ -64,7 +64,7 @@ def tracklet_candidates(tracklet) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_tracklet_candidates.filter.tracklet_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

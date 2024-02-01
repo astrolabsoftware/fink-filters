@@ -143,7 +143,7 @@ def kn_candidates(
     ----------
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
 
     >>> to_expand = [
     ...    'jd', 'fid', 'magpsf', 'sigmapsf',

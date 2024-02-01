@@ -84,7 +84,7 @@ def extract_fink_classification_(
 
     Examples
     ---------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = extract_fink_classification_(
     ...     pdf['cdsxmatch'],
     ...     pdf['roid'],
@@ -184,7 +184,7 @@ def extract_fink_classification_from_pdf(pdf):
     out: pandas.Series of string
         Return a Pandas series with the classification tag
 
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = extract_fink_classification_from_pdf(pdf)
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)

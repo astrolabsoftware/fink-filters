@@ -40,7 +40,7 @@ def yso_candidates(cdsxmatch: Any) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_yso_candidates.filter.yso_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

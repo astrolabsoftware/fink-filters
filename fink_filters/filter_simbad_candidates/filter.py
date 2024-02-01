@@ -35,7 +35,7 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = simbad_candidates_(pdf['cdsxmatch'])
     >>> nalerts = len(pdf[classification]['objectId'])
     >>> print(nalerts)
@@ -80,7 +80,7 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_simbad_candidates.filter.simbad_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

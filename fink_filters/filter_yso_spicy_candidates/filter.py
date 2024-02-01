@@ -1,4 +1,4 @@
-# Copyright 2019-2022 AstroLab Software
+# Copyright 2024 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,41 +19,17 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
-def sso_fink_candidates_(roid) -> pd.Series:
-    """ Return alerts considered as Solar System Object candidates by Fink
-
-    Parameters
-    ----------
-    roid: Pandas series
-        Column containing the Solar System label
-
-    Returns
-    ----------
-    out: pandas.Series of bool
-        Return a Pandas DataFrame with the appropriate flag:
-        false for bad alert, and true for good alert.
-
-    Examples
-    ----------
-    >>> pdf = pd.read_parquet('datatest/regular')
-    >>> classification = sso_fink_candidates_(pdf['roid'])
-    >>> print(len(pdf[classification]['objectId'].values))
-    3
-
-    >>> assert 'ZTF21acqeepb' in pdf[classification]['objectId'].values
-    """
-    f_roid = roid.astype(int) == 2
-
-    return f_roid
+from typing import Any
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def sso_fink_candidates(roid) -> pd.Series:
-    """ Pandas UDF version of sso_fink_candidates_ for Spark
+def yso_spicy_candidates(spicy_id: Any) -> pd.Series:
+    """ Return alerts with a match in the SPICY catalog
 
     Parameters
     ----------
-    roid: Spark DataFrame Column
-        Column containing the Solar System label
+    spicy_id: Spark DataFrame Column
+        Column containing the ID of the SPICY catalog
+        -1 if no match, otherwise > 0
 
     Returns
     ----------
@@ -64,16 +40,15 @@ def sso_fink_candidates(roid) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> f = 'fink_filters.filter_sso_fink_candidates.filter.sso_fink_candidates'
+    >>> df = spark.read.format('parquet').load('datatest/spicy_yso')
+    >>> f = 'fink_filters.filter_yso_spicy_candidates.filter.yso_spicy_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    3
-
+    10
     """
-    f_roid = sso_fink_candidates_(roid)
+    mask = spicy_id.values != -1
 
-    return f_roid
+    return pd.Series(mask)
 
 
 if __name__ == "__main__":
