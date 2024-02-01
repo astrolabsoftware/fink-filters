@@ -1,0 +1,65 @@
+Title: The Final Season Reimagined: 30 Tidal Disruption Events from the 
+       ZTF-I Survey 
+Authors: Hammerstein E., van Velzen S., Gezari S., Cenko S.B., Yao Y., Ward C.,
+    Frederick S., Villanueva N., Somalwar J.J., Graham M.J., Kulkarni S.R., 
+    Stern D., Andreoni I., Bellm E.C., Dekany R., Dhawan S., Drake A.J., 
+    Fremling C., Gatkine P., Groom S.L., Ho A.Y.Q., Kasliwal M.M., 
+    Karambelkar V., Kool E.C., Masci F.J., Medford M.S., Perley D.A., 
+    Purdum J., van Roestel J., Sharma Y., Sollerman J., Taggart K., Yan L.
+Table: ZTF-I TDEs
+================================================================================
+Byte-by-byte Description of file: apjaca283t1_mrt.txt
+--------------------------------------------------------------------------------
+   Bytes Format Units Label   Explanations
+--------------------------------------------------------------------------------
+   1-  9 A9     ---   IAU     IAU name
+  11- 22 A12    ---   ZTF     ZTF Name
+  24- 35 A12    ---   Disc    Discovery Name
+  37- 48 A12    ---   GoT     ZTF TDE Working Group nickname 
+  50- 79 A30    ---   ONames  Other name(s)
+  81- 99 A19    ---   Class   First TDE classification (1)
+ 101-115 A15    ---   Spec    TDE spectral class, Section 2.3
+ 117-124 A8     ---   zspec   Spectroscopic redshift (2)
+--------------------------------------------------------------------------------
+Note (1): First TDE classification report, corresponding to either this
+    paper, to van Velzen et al. (2021) [2021ApJ...908....4V] or to the
+    following abbreviations. For AT2019azh see Hinkle et al. (2021)
+    [2021MNRAS.500.1673H] in addition to ATel #12568 --
+    ATel = Astronomerâ€™s Telegram, https://astronomerstelegram.org/);
+    AN = AstroNotes, https://www.wis-tns.org/astronotes; 
+    TNSCR = TNS classification reports.
+Note (2): Redshifts were determined using host galaxy stellar absorption
+    lines or narrow emission lines associated with star formation, namely Ca
+    II H and K or narrow H{alpha} emission.
+--------------------------------------------------------------------------------
+AT2018zr  ZTF18aabtxvd PS18kh       Ned                                         ATel #11444         TDE-H           0.075    
+AT2018bsi ZTF18aahqkbt ZTF18aahqkbt Jon                                         ATel #12035         TDE-H+He        0.051    
+AT2018hco ZTF18abxftqm ATLAS18way   Sansa                                       ATel #12263         TDE-H           0.088    
+AT2018iih ZTF18acaqdaa ATLAS18yzs   Jorah        Gaia18dpo                      2021ApJ...908....4V TDE-He          0.212    
+AT2018hyz ZTF18acpdvos ASASSN-18zj  Gendry       ATLAS18bafs                    ATel #12198         TDE-H+He        0.046    
+AT2018lni ZTF18actaqdw ZTF18actaqdw Arya                                        2021ApJ...908....4V TDE-H+He        0.138    
+AT2018lna ZTF19aabbnzo ZTF19aabbnzo Cersei                                      ATel #12509         TDE-H+He        0.091    
+AT2018jbv ZTF18acnbpmd ZTF18acnbpmd Samwell      ATLAS19acl, PS19aoz            This paper          TDE-featureless 0.340    
+AT2019cho ZTF19aakiwze ZTF19aakiwze Petyr                                       2021ApJ...908....4V TDE-H+He        0.193    
+AT2019bhf ZTF19aakswrb ZTF19aakswrb Varys                                       2021ApJ...908....4V TDE-H+He        0.121    
+AT2019azh ZTF17aaazdba ASASSN-19dj  Jaime        Gaia19bvo                      ATel #12568 *       TDE-H+He        0.022    
+AT2019dsg ZTF19aapreis ZTF19aapreis Bran         ATLAS19kl                      ATel #12752         TDE-H+He        0.051    
+AT2019ehz ZTF19aarioci Gaia19bpt    Brienne                                     ATel #12789         TDE-H           0.074    
+AT2019mha ZTF19abhejal ATLAS19qqu   Bronn                                       2021ApJ...908....4V TDE-H+He        0.148    
+AT2019meg ZTF19abhhjcc ZTF19abhhjcc Margaery     Gaia19dhd                      AN-2019-88          TDE-H           0.152    
+AT2019lwu ZTF19abidbya ZTF19abidbya Robb         ATLAS19rnz, PS19ega            2021ApJ...908....4V TDE-H           0.117    
+AT2019qiz ZTF19abzrhgq ZTF19abzrhgq Melisandre   ATLAS19vfr, Gaia19eks, PS19gdd ATel #13131         TDE-H+He        0.015    
+AT2019teq ZTF19accmaxo ZTF19accmaxo Missandei                                   TNSCR #7482         TDE-H+He        0.087    
+AT2020pj  ZTF20aabqihu ZTF20aabqihu Gilly        ATLAS20cab                     TNSCR #7481         TDE-H+He        0.068    
+AT2019vcb ZTF19acspeuw ZTF19acspeuw Tormund      Gaia19feb, ATLAS19bcyz         TNSCR #7078         TDE-H+He        0.088    
+AT2020ddv ZTF20aamqmfk ATLAS20gee   Shae                                        ATel #13655         TDE-He          0.160    
+AT2020ocn ZTF18aakelin ZTF18aakelin Podrick                                     ATel #13859         TDE-He          0.070    
+AT2020opy ZTF20abjwvae ZTF20abjwvae High Sparrow PS20fxm                        ATel #13944         TDE-H+He        0.159    
+AT2020mot ZTF20abfcszi ZTF20abfcszi Pycelle      Gaia20ead                      ATel #13944         TDE-H+He        0.070    
+AT2020mbq ZTF20abefeab ZTF20abefeab Yara         ATLAS20pfz, PS20grv            This paper          TDE-H           0.093    
+AT2020qhs ZTF20abowque ZTF20abowque Loras        ATLAS20upw, PS20krl            This paper          TDE-featureless 0.345    
+AT2020riz ZTF20abrnwfc ZTF20abrnwfc Talisa       PS20jop                        This paper          TDE-featureless 0.435    
+AT2020wey ZTF20acitpfz ZTF20acitpfz Roose        ATLAS20belb, Gaia20fck         TNSCR #7769         TDE-H+He        0.027    
+AT2020zso ZTF20acqoiyt ZTF20acqoiyt Hodor        ATLAS20bfok                    TNSCR #8025         TDE-H+He        0.057    
+AT2020ysg ZTF20abnorit ZTF20abnorit Osha         ATLAS20bjqp, PS21cru           This paper          TDE-featureless 0.277\nl 
+

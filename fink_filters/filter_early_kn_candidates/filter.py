@@ -32,7 +32,8 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
-def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
+def perform_classification(
+        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
         magpsf, sigmapsf, ra, dec, roid):
     """
     """
@@ -129,8 +130,10 @@ def perform_classification(drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, 
             )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
-            table = SDSS.query_region(pos, fields=['type'],
-                                      radius=5 * u.arcsec)
+            table = SDSS.query_region(
+                pos, fields=['type'],
+                radius=5 * u.arcsec
+            )
             type_close_objects = []
             if table is not None:
                 type_close_objects = table['type']
@@ -302,14 +305,14 @@ def early_kn_candidates(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
         # Redefine notations relative to candidates
-        fid = np.array(fid)[f_kn]
-        jd = np.array(jd)[f_kn]
-        mag = magpsf[f_kn]
-        err_mag = sigmapsf[f_kn]
-        field = field[f_kn]
+        fid = np.array(fid.values)[f_kn]
+        jd = np.array(jd.values)[f_kn]
+        mag = magpsf.values[f_kn]
+        err_mag = sigmapsf.values[f_kn]
+        field = field.values[f_kn]
 
     dict_filt = {1: 'g', 2: 'r'}
-    for i, alertID in enumerate(objectId[f_kn]):
+    for i, alertID in enumerate(objectId[f_kn].values):
         # information to send
         alert_text = """
             *Fink Science Portal:* <https://fink-portal.org/{}|{}>
@@ -442,7 +445,7 @@ def early_kn_candidates(
         # DWF channel and requirements
         dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
         dwf_in_env = ('KNWEBHOOK_DWF' in os.environ)
-        if (int(field.values[i]) in dwf_ztf_fields) and dwf_in_env:
+        if (int(field[i]) in dwf_ztf_fields) and dwf_in_env:
             requests.post(
                 os.environ['KNWEBHOOK_DWF'],
                 json={
