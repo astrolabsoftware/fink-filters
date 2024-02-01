@@ -51,7 +51,7 @@ def early_sn_candidates_(
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = early_sn_candidates_(
     ...     pdf['cdsxmatch'],
     ...     pdf['snn_snia_vs_nonia'],
