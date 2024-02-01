@@ -65,7 +65,7 @@ def kn_candidates_(
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = kn_candidates_(
     ...     pdf['rf_kn_vs_nonkn'],
     ...     pdf['rf_snia_vs_nonia'],
