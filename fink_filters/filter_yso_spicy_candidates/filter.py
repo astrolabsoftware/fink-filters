@@ -15,14 +15,15 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_utils.tg_bot.utils import get_curve, msg_handler_tg
+
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
-from typing import Any
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def yso_spicy_candidates(spicy_id: Any) -> pd.Series:
+def yso_spicy_candidates(spicy_id, spicy_class, objectId, cjdc, cmagpsfc, csigmapsfc, cdiffmaglimc, cfidc) -> pd.Series:
     """ Return alerts with a match in the SPICY catalog
 
     Parameters
@@ -47,6 +48,36 @@ def yso_spicy_candidates(spicy_id: Any) -> pd.Series:
     10
     """
     mask = spicy_id.values != -1
+
+    pdf = pd.DataFrame(
+        {
+            'objectId': objectId,
+            'magpsf': magpsf,
+            'sigmapsf': sigmapsf,
+            'diffmaglim': diffmaglim,
+            'fid': fid,
+            'jd': jd
+        }
+    )
+
+    # Loop over matches
+    payloads = []
+    for index, (_, alert) in enumerate(pdf[mask].iterrows()):
+        curve_png = get_curve(
+            jd=alert["jd"],
+            magpsf=alert["magpsf"],
+            sigmapsf=alert["sigmapsf"],
+            diffmaglim=alert["diffmaglim"],
+            fid=alert["fid"],
+            objectId=alert["objectId"],
+            origin="fields",
+        )
+        hyperlink = "[{}](https://fink-portal.org/{}): ID {} ({})".format(
+            alert["objectId"], alert["objectId"], spicy_id, spicy_class)
+        payloads.append((hyperlink, None, curve_png))
+
+    if len(payloads) > 0:
+        msg_handler_tg(payloads, channel_id="@spicy_fink", init_msg='')
 
     return pd.Series(mask)
 
