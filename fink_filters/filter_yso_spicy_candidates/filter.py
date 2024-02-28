@@ -47,7 +47,7 @@ def yso_spicy_candidates(
     >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/spicy_yso')
 
-     >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'diffmaglim']
+    >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'diffmaglim']
 
     >>> prefix = 'c'
     >>> for colname in to_expand:
@@ -90,7 +90,7 @@ def yso_spicy_candidates(
                 objectId=alert["objectId"],
                 origin="fields",
             )
-            # pd.DataFrame({'magpsf': alert["magpsf"]})['magpsf']
+
             hyperlink = "[{}](https://fink-portal.org/{}): ID {} ({})".format(
                 alert["objectId"],
                 alert["objectId"],
