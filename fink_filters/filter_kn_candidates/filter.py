@@ -65,7 +65,7 @@ def kn_candidates_(
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = kn_candidates_(
     ...     pdf['rf_kn_vs_nonkn'],
     ...     pdf['rf_snia_vs_nonia'],
@@ -143,7 +143,7 @@ def kn_candidates(
     ----------
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
 
     >>> to_expand = [
     ...    'jd', 'fid', 'magpsf', 'sigmapsf',

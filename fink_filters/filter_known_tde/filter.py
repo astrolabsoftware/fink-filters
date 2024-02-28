@@ -49,7 +49,7 @@ def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest_tde')
+    >>> pdf = pd.read_parquet('datatest/tde')
     >>> classification = known_tde_(
     ...     pdf['objectId'],
     ...     pdf['candidate'].apply(lambda x: x['ra']),
@@ -126,7 +126,7 @@ def known_tde(objectId, ra, dec) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest_tde')
+    >>> df = spark.read.format('parquet').load('datatest/tde')
     >>> f = 'fink_filters.filter_known_tde.filter.known_tde'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

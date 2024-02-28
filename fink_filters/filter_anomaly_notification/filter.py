@@ -81,7 +81,7 @@ def anomaly_notification_(
     >>> from fink_science.ad_features.processor import extract_features_ad
     >>> from fink_science.anomaly_detection.processor import anomaly_score
 
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
 
     >>> what = [
     ...     'jd', 'fid', 'magpsf', 'sigmapsf',
@@ -114,9 +114,8 @@ def anomaly_notification_(
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
-    >>> print(pdf_anomalies['objectId'].values)
-    ['ZTF21acoshvy' 'ZTF18abgjtxx' 'ZTF19acevxhv' 'ZTF19aboujyi' 'ZTF18aapgymv'
-     'ZTF18abbtxsx' 'ZTF18aaakhsv' 'ZTF18aaypnnd' 'ZTF18aapoack' 'ZTF18abzvnya']
+    >>> print(sorted(pdf_anomalies['objectId'].values))
+    ['ZTF18aaakhsv', 'ZTF18aabeyfi', 'ZTF18aapgymv', 'ZTF18aapoack', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abzvnya', 'ZTF19aboujyi', 'ZTF19acevxhv', 'ZTF21acoshvy']
 
     # Check cut_coords
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,

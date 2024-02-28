@@ -269,5 +269,5 @@ if __name__ == "__main__":
 
     # Run the test suite
     globs = globals()
-    globs["grb_output_data"] = "datatest_grb/grb_test_data.parquet"
+    globs["grb_output_data"] = "datatest/grb/grb_test_data.parquet"
     spark_unit_tests(globs)

@@ -35,7 +35,7 @@ def sso_fink_candidates_(roid) -> pd.Series:
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = sso_fink_candidates_(pdf['roid'])
     >>> print(len(pdf[classification]['objectId'].values))
     3
@@ -64,7 +64,7 @@ def sso_fink_candidates(roid) -> pd.Series:
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_sso_fink_candidates.filter.sso_fink_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

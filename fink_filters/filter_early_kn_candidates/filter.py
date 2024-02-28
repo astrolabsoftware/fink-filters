@@ -189,7 +189,7 @@ def early_kn_candidates_(
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['drb']),
     ...     pdf['candidate'].apply(lambda x: x['classtar']),
@@ -267,7 +267,7 @@ def early_kn_candidates(
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_early_kn_candidates.filter.early_kn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
