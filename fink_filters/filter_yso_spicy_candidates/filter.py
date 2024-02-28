@@ -47,7 +47,7 @@ def yso_spicy_candidates(
     >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/spicy_yso')
 
-     >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'diffmaglim']
+    >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'diffmaglim']
 
     >>> prefix = 'c'
     >>> for colname in to_expand:

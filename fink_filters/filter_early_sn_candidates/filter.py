@@ -116,7 +116,21 @@ def early_sn_candidates(
     Examples
     ----------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
+    >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/regular')
+
+    >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'diffmaglim']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> df = df.withColumn('cstampDatac', df['cutoutScience.stampData'])
+
     >>> f = 'fink_filters.filter_early_sn_candidates.filter.early_sn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
