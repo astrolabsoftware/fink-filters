@@ -23,11 +23,19 @@ from fink_utils.tg_bot.utils import msg_handler_tg
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
+import os
+
 
 def early_sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar) -> pd.Series:
-    """ Return alerts considered as Early SN-Ia candidates
+    cdsxmatch,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    rf_snia_vs_nonia,
+    ndethist,
+    drb,
+    classtar,
+) -> pd.Series:
+    """Return alerts considered as Early SN-Ia candidates
 
     Parameters
     ----------
@@ -85,10 +93,22 @@ def early_sn_candidates_(
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_sn_candidates(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar, objectId, cjdc, cmagpsfc,
-        csigmapsfc, cdiffmaglimc, cfidc, cstampDatac) -> pd.Series:
-    """ Pandas UDF for early_sn_candidates_
+    cdsxmatch,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    rf_snia_vs_nonia,
+    ndethist,
+    drb,
+    classtar,
+    objectId,
+    cjdc,
+    cmagpsfc,
+    csigmapsfc,
+    cdiffmaglimc,
+    cfidc,
+    cstampDatac,
+) -> pd.Series:
+    """Pandas UDF for early_sn_candidates_
 
     Parameters
     ----------
@@ -137,8 +157,13 @@ def early_sn_candidates(
     5
     """
     series = early_sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar
+        cdsxmatch,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        rf_snia_vs_nonia,
+        ndethist,
+        drb,
+        classtar,
     )
 
     pdf = pd.DataFrame(
@@ -152,7 +177,7 @@ def early_sn_candidates(
             "snn_snia_vs_nonia": snn_snia_vs_nonia,
             "snn_sn_vs_all": snn_sn_vs_all,
             "rf_snia_vs_nonia": rf_snia_vs_nonia,
-            "cstampDatac": cstampDatac
+            "cstampDatac": cstampDatac,
         }
     )
 
@@ -170,7 +195,7 @@ def early_sn_candidates(
                 origin="fields",
             )
 
-            cutout = get_cutout(cutout=alert['cstampDatac'])
+            cutout = get_cutout(cutout=alert["cstampDatac"])
 
             text = """
 *Object ID*: [{}](https://fink-portal.org/{})
@@ -180,7 +205,7 @@ def early_sn_candidates(
                 alert["objectId"],
                 alert["rf_snia_vs_nonia"],
                 alert["snn_snia_vs_nonia"],
-                alert["snn_sn_vs_all"]
+                alert["snn_sn_vs_all"],
             )
 
             payloads.append((text, curve_png, cutout))
@@ -191,7 +216,7 @@ def early_sn_candidates(
 
 
 if __name__ == "__main__":
-    """ Execute the test suite """
+    """Execute the test suite"""
 
     # Run the test suite
     globs = globals()
