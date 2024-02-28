@@ -114,7 +114,7 @@ def anomaly_notification_(
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
-    >>> print(pdf_anomalies['objectId'].values)
+    >>> print(sorted(pdf_anomalies['objectId'].values))
     ['ZTF21acoshvy' 'ZTF18abgjtxx' 'ZTF19acevxhv' 'ZTF19aboujyi' 'ZTF18aapgymv'
      'ZTF18abbtxsx' 'ZTF18aaakhsv' 'ZTF18aaypnnd' 'ZTF18aapoack' 'ZTF18abzvnya']
 
