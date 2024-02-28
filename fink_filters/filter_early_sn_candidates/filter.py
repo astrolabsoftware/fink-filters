@@ -16,6 +16,9 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 from fink_utils.xmatch.simbad import return_list_of_eg_host
+from fink_utils.tg_bot.utils import get_curve
+from fink_utils.tg_bot.utils import get_cutout
+from fink_utils.tg_bot.utils import msg_handler_tg
 
 from fink_filters.tester import spark_unit_tests
 
@@ -83,7 +86,8 @@ def early_sn_candidates_(
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_sn_candidates(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar) -> pd.Series:
+        ndethist, drb, classtar, objectId, cjdc, cmagpsfc,
+        csigmapsfc, cdiffmaglimc, cfidc, cstampDatac) -> pd.Series:
     """ Pandas UDF for early_sn_candidates_
 
     Parameters
@@ -122,6 +126,53 @@ def early_sn_candidates(
         cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
         ndethist, drb, classtar
     )
+
+    pdf = pd.DataFrame(
+        {
+            "objectId": objectId,
+            "magpsf": cmagpsfc,
+            "sigmapsf": csigmapsfc,
+            "diffmaglim": cdiffmaglimc,
+            "fid": cfidc,
+            "jd": cjdc,
+            "snn_snia_vs_nonia": snn_snia_vs_nonia,
+            "snn_sn_vs_all": snn_sn_vs_all,
+            "rf_snia_vs_nonia": rf_snia_vs_nonia,
+            "cstampDatac": cstampDatac
+        }
+    )
+
+    # Loop over matches
+    if "FINK_TG_TOKEN" in os.environ:
+        payloads = []
+        for _, alert in pdf[series.values].iterrows():
+            curve_png = get_curve(
+                jd=alert["jd"],
+                magpsf=alert["magpsf"],
+                sigmapsf=alert["sigmapsf"],
+                diffmaglim=alert["diffmaglim"],
+                fid=alert["fid"],
+                objectId=alert["objectId"],
+                origin="fields",
+            )
+
+            cutout = get_cutout(cutout=alert['cstampDatac'])
+
+            text = """
+*Object ID*: [{}](https://fink-portal.org/{})
+*Scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
+            """.format(
+                alert["objectId"],
+                alert["objectId"],
+                alert["rf_snia_vs_nonia"],
+                alert["snn_snia_vs_nonia"],
+                alert["snn_sn_vs_all"]
+            )
+
+            payloads.append((text, curve_png, cutout))
+
+        if len(payloads) > 0:
+            msg_handler_tg(payloads, channel_id="@fink_early_ia", init_msg="")
     return series
 
 

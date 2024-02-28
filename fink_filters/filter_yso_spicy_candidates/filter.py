@@ -90,7 +90,7 @@ def yso_spicy_candidates(
                 objectId=alert["objectId"],
                 origin="fields",
             )
-            # pd.DataFrame({'magpsf': alert["magpsf"]})['magpsf']
+
             hyperlink = "[{}](https://fink-portal.org/{}): ID {} ({})".format(
                 alert["objectId"],
                 alert["objectId"],
