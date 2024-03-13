@@ -64,7 +64,7 @@ def anomaly_notification_(
         If this is True, only objects from the area bounded
         by the following coordinates are considered:
             1) delta <= 20°
-            2) alpha ∈ (0°, 60°)⋃(340°, 360°)
+            2) alpha ∈ (160°, 240°)
     history_period: int
             Time period in days for which the number
             of references is calculated
@@ -127,7 +127,7 @@ def anomaly_notification_(
     """
     # Filtering by coordinates
     if cut_coords:
-        df_proc = df_proc.filter('dec <= 20 AND (ra <= 60 OR ra >= 340)')
+        df_proc = df_proc.filter('dec <= 20 AND (ra >= 160 AND ra <= 240)')
         # We need to know the total number of objects per night which satisfy the condition on coordinates
         cut_count = df_proc.count()
         if cut_count == 0:
@@ -189,7 +189,7 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
 (of the objects in the sky area)
 Sky area:
     1) delta <= 20°
-    2) alpha ∈ (0°, 60°)⋃(340°, 360°)
+    2) alpha ∈ (160°, 240°)
 Total number of objects per night in the area: {cut_count}.
 '''
     if send_to_slack:
