@@ -49,7 +49,7 @@ def generic_bronze_filter(fink_class, observatory, rb, obs_filter):
     f_bogus = rb >= 0.7
 
     base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
-    fink_extragalactic = ["KN candidate", "SN candidate", "Early SN Ia candidate", "Ambiguous"]
+    fink_extragalactic = ["Kilonova candidate", "SN candidate", "Early SN Ia candidate", "Ambiguous"]
     extragalactic = list(base_extragalactic) + list(fink_extragalactic)
     f_class = fink_class.isin(extragalactic)
 
