@@ -407,7 +407,7 @@ def early_kn_candidates(
         the message has not been sent to Slack
         """
         for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
-            if (url_name in os.environ):
+            if (url_name in os.environ) and os.environ[url_name] != '':
                 requests.post(
                     os.environ[url_name],
                     json={
@@ -421,7 +421,7 @@ def early_kn_candidates(
                 log.warning(error_message.format(url_name))
 
         # Grandma amateur channel
-        ama_in_env = ('KNWEBHOOK_AMA_GALAXIES' in os.environ)
+        ama_in_env = ('KNWEBHOOK_AMA_GALAXIES' in os.environ) and os.environ['KNWEBHOOK_AMA_GALAXIES'] != ''
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
@@ -444,7 +444,7 @@ def early_kn_candidates(
 
         # DWF channel and requirements
         dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
-        dwf_in_env = ('KNWEBHOOK_DWF' in os.environ)
+        dwf_in_env = ('KNWEBHOOK_DWF' in os.environ) and (os.environ['KNWEBHOOK_DWF'] != '')
         if (int(field[i]) in dwf_ztf_fields) and dwf_in_env:
             requests.post(
                 os.environ['KNWEBHOOK_DWF'],
