@@ -78,7 +78,7 @@ def yso_spicy_candidates(
     )
 
     # Loop over matches
-    if "FINK_TG_TOKEN" in os.environ:
+    if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
         payloads = []
         for _, alert in pdf[mask].iterrows():
             curve_png = get_curve(
