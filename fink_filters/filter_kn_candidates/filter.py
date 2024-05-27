@@ -337,7 +337,7 @@ def kn_candidates(
                 log = logging.Logger('Kilonova filter')
                 log.warning(error_message.format(url_name))
 
-        ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ) and (os.environ["KNWEBHOOK_AMA_CL"])
+        ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ) and (os.environ["KNWEBHOOK_AMA_CL"] != '')
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
