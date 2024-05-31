@@ -20,7 +20,8 @@ from datetime import datetime, timedelta
 from collections import Counter
 import pandas as pd
 import numpy as np
-
+import json
+import markdown
 
 import matplotlib.pyplot as plt
 
@@ -141,7 +142,7 @@ def status_check(res):
             method,
             data={
                 "chat_id": "@fink_test",
-                "text": str(res.status_code)
+                "text": f'Error: {str(res.status_code)}, description: {res.text}'
             },
             timeout=25
         )
@@ -195,6 +196,14 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
                 },
                 timeout=25
             )
+
+
+def get_user_tgid(receiver):
+    result = requests.get(f'http://157.136.253.53:24000/user/{receiver}')
+    if status_check(result):
+        return result.text.strip('"')
+    return None
+
 
 def msg_handler_tg(tg_data, channel_id, init_msg):
     '''
@@ -262,6 +271,34 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
         )
         status_check(res)
         time.sleep(10)
+
+def load_to_anomaly_base(data, login):
+    res = requests.post('https://anomaly.fink-portal.org:443/user/signin', data={
+        'username': login,
+        'password': os.environ['ANOMALY_TG_TOKEN']
+    })
+    if status_check(res):
+        for ztf_id, text_data, cutout, curve in data:
+            cutout.seek(0)
+            curve.seek(0)
+            files = {
+                "image1": cutout,
+                "image2": curve
+            }
+            data = {
+                "description": text_data
+            }
+            params = {
+                "ztf_id": ztf_id
+            }
+            headers = {
+                "Authorization": f"Bearer {json.loads(res.text)['access_token']}"
+            }
+
+            response = requests.post('https://anomaly.fink-portal.org:443/images/upload', files=files, params=params, data=data,
+                                     headers=headers)
+            status_check(response)
+
 
 
 def get_OID(ra, dec):

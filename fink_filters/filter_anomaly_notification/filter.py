@@ -24,11 +24,13 @@ from fink_filters.filter_anomaly_notification import filter_utils
 from fink_filters.tester import spark_unit_tests
 
 
+MODEL_POSTFIX = ['', '_alpha', '_beta', '_gamma']
+
 def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
         send_to_slack=False, channel_name=None,
-        trick_par=10, cut_coords=False, history_period=90):
+        trick_par=10, cut_coords=False, history_period=90, model=''):
     """ Create event notifications with a high `anomaly_score` value
 
     Notes
@@ -68,6 +70,7 @@ def anomaly_notification_(
     history_period: int
             Time period in days for which the number
             of references is calculated
+    model: TODO
 
     Returns
     ----------
@@ -134,19 +137,21 @@ def anomaly_notification_(
             return pd.DataFrame()
 
     # Compute the median for the night
-    med = df_proc.select('anomaly_score').approxQuantile('anomaly_score', [0.5], 0.05)
+    buf_df = df_proc.select(f'anomaly_score{model}')
+    med = buf_df.approxQuantile(f'anomaly_score{model}', [0.5], 0.05)
     med = round(med[0], 2)
 
     # Extract anomalous objects
 
-    pdf_anomalies_ext = df_proc.sort(['anomaly_score'], ascending=True).limit(trick_par * threshold).toPandas()
+    pdf_anomalies_ext = df_proc.sort([f'anomaly_score{model}'], ascending=True).limit(trick_par * threshold).toPandas()
     pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(['objectId'])
-    upper_bound = np.max(pdf_anomalies_ext['anomaly_score'].values[:threshold])
-    pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext['anomaly_score'] <= upper_bound]
+    upper_bound = np.max(pdf_anomalies_ext[f'anomaly_score{model}'].values[:threshold])
+    pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext[f'anomaly_score{model}'] <= upper_bound]
 
     history_objects = filter_utils.get_an_history(history_period)
 
-    tg_data, slack_data = [], []
+    tg_data, slack_data, base_data = [], [], []
+
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
         oid = filter_utils.get_OID(row.ra, row.dec)
@@ -169,13 +174,14 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
         cutout.seek(0)
         cutout_perml = f"<{cutout_perml}|{' '}>"
         curve_perml = f"<{curve_perml}|{' '}>"
-        tg_data.append((f'''{t1a}
+        if model == '':
+            tg_data.append((f'''{t1a}
 {t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
 {t5_}''', cutout, curve))
-        slack_data.append(f'''==========================
+            slack_data.append(f'''==========================
 {t1b}
 {t_oid_1b}
 {t2_}
@@ -183,19 +189,28 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
 {t4_}
 {t5_}
 {cutout_perml}{curve_perml}''')
+        base_data.append((row.objectId, f'''{t1b}
+{t_oid_1b}
+{t2_}
+{t3_}
+{t4_}
+{t5_}'''.replace('\n', '  \n'), cutout, curve))
+
     init_msg = f'Median anomaly score overnight: {med}.'
-    if cut_coords:
+    if cut_coords and model == '':
         init_msg += f'''
 (of the objects in the sky area)
 Sky area:
-    1) delta <= 20°
-    2) alpha ∈ (160°, 240°)
+1) delta <= 20°
+2) alpha ∈ (160°, 240°)
 Total number of objects per night in the area: {cut_count}.
 '''
-    if send_to_slack:
+    if send_to_slack and model == '':
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
-    if send_to_tg:
+    if send_to_tg and model == '':
         filter_utils.msg_handler_tg(tg_data, channel_id, init_msg)
+    if model != '':
+        filter_utils.load_to_anomaly_base(base_data, model)
     return pdf_anomalies
 
 
