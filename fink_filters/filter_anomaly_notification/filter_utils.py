@@ -274,7 +274,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
 
 def load_to_anomaly_base(data, login):
     res = requests.post('https://anomaly.fink-portal.org:443/user/signin', data={
-        'username': login,
+        'username': login[1:],
         'password': os.environ['ANOMALY_TG_TOKEN']
     })
     if status_check(res):
