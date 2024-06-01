@@ -21,7 +21,6 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 import json
-import markdown
 
 import matplotlib.pyplot as plt
 

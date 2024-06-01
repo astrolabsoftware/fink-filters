@@ -24,7 +24,6 @@ from fink_filters.filter_anomaly_notification import filter_utils
 from fink_filters.tester import spark_unit_tests
 
 
-MODEL_POSTFIX = ['', '_alpha', '_beta', '_gamma']
 
 def anomaly_notification_(
         df_proc, threshold=10,
@@ -146,7 +145,7 @@ def anomaly_notification_(
     pdf_anomalies_ext = df_proc.sort([f'anomaly_score{model}'], ascending=True).limit(trick_par * threshold).toPandas()
     pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(['objectId'])
     upper_bound = np.max(pdf_anomalies_ext[f'anomaly_score{model}'].values[:threshold])
-    pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext[f'anomaly_score{model}'] <= upper_bound]
+    pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext[f'anomaly_score{model}'] <= upper_bound].head(10)
 
     history_objects = filter_utils.get_an_history(history_period)
 
@@ -189,8 +188,8 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
 {t4_}
 {t5_}
 {cutout_perml}{curve_perml}''')
-        base_data.append((row.objectId, f'''{t1b}
-{t_oid_1b}
+        base_data.append((row.objectId, f'''{t1a}
+{t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
