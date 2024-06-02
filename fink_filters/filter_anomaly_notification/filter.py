@@ -117,6 +117,10 @@ def anomaly_notification_(
     ...     df_out = anomaly_notification_(df_proc, model=model)
 
     # Disable communication
+    >>> df_proc = df.select(
+    ...         'objectId', 'candidate.ra',
+    ...         'candidate.dec', 'candidate.rb',
+    ...         'anomaly_score', 'timestamp')
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
