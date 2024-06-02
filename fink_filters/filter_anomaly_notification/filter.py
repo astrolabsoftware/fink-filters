@@ -28,7 +28,7 @@ def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
         send_to_slack=False, channel_name=None,
-        trick_par=10, cut_coords=False, history_period=90, send_to_anomaly_base=False,  model=''):
+        trick_par=10, cut_coords=False, history_period=90, send_to_anomaly_base=False, model=''):
     """ Create event notifications with a high `anomaly_score` value
 
     Notes
