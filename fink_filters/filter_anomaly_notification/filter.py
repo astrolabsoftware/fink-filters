@@ -24,7 +24,6 @@ from fink_filters.filter_anomaly_notification import filter_utils
 from fink_filters.tester import spark_unit_tests
 
 
-
 def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,

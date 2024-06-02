@@ -306,7 +306,6 @@ def load_to_anomaly_base(data, model):
             status_check(response)
 
 
-
 def get_OID(ra, dec):
     '''
     Notes
