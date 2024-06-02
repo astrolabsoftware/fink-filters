@@ -28,7 +28,7 @@ def anomaly_notification_(
         df_proc, threshold=10,
         send_to_tg=False, channel_id=None,
         send_to_slack=False, channel_name=None,
-        trick_par=10, cut_coords=False, history_period=90, model=''):
+        trick_par=10, cut_coords=False, history_period=90, send_to_anomaly_base=False,  model=''):
     """ Create event notifications with a high `anomaly_score` value
 
     Notes
@@ -72,6 +72,11 @@ def anomaly_notification_(
         Name of the model used.
         Name must start with a ‘_’ and be ‘_{user_name}’,
         where user_name is the user name of the model at https://anomaly.fink-portal.org/.
+    send_to_anomaly_base: bool
+        If True, notifications are uploaded to
+        https://anomaly.fink-portal.org/ in the selected model's
+        account. Only works for model != ‘’
+
 
     Returns
     ----------
@@ -114,7 +119,8 @@ def anomaly_notification_(
     ...         'objectId', 'candidate.ra',
     ...         'candidate.dec', 'candidate.rb',
     ...         f'anomaly_score{model}', 'timestamp')
-    ...     df_out = anomaly_notification_(df_proc, send_to_tg=False, send_to_slack=False, model=model)
+    ...     df_out = anomaly_notification_(df_proc, send_to_tg=False,
+    ...     send_to_slack=False, send_to_anomaly_base=True, model=model)
 
     # Disable communication
     >>> df_proc = df.select(
@@ -162,17 +168,17 @@ def anomaly_notification_(
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
         oid = filter_utils.get_OID(row.ra, row.dec)
-        t1a = f'ID: [{row.objectId}](https://fink-portal.org/{row.objectId})'
+        t1a = f'*ID*: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
-        t_oid_1a = f"DR OID (<1''): [{oid}](https://ztf.snad.space/view/{oid})"
+        t_oid_1a = f"*DR OID (<1'')*: [{oid}](https://ztf.snad.space/view/{oid})"
         t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
-        t2_ = f'GAL coordinates: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
+        t2_ = f'*GAL coordinates*: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t_ = f'''
-EQU: {row.ra},   {row.dec}'''
+*EQU*: {row.ra},   {row.dec}'''
         t2_ += t_
-        t3_ = f'UTC: {str(row.timestamp)[:-3]}'
-        t4_ = f'Real bogus: {round(row.rb, 2)}'
-        t5_ = f'Anomaly score: {round(row[f"anomaly_score{model}"], 2)}'
+        t3_ = f'*UTC*: {str(row.timestamp)[:-3]}'
+        t4_ = f'*Real bogus*: {round(row.rb, 2)}'
+        t5_ = f'*Anomaly score*: {round(row[f"anomaly_score{model}"], 2)}'
         if row.objectId in history_objects:
             t5_ += f'''
 Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}.'''
@@ -212,9 +218,9 @@ Sky area:
 2) alpha ∈ (160°, 240°)
 Total number of objects per night in the area: {cut_count}.
 '''
-    if send_to_slack and model == '':
+    if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
-    if send_to_tg and model == '':
+    if send_to_tg:
         filter_utils.msg_handler_tg(tg_data, channel_id, init_msg)
     if model != '':
         filter_utils.load_to_anomaly_base(base_data, model)
