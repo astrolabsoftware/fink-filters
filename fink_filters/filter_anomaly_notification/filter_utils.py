@@ -55,8 +55,7 @@ def get_an_history(delta_date=90):
     if status_check(history_data):
         res_obj = Counter(pd.read_json(io.BytesIO(history_data.content))['i:objectId'].values)
         return res_obj
-    else:
-        return Counter()
+    return Counter()
 
 
 def get_data_permalink_slack(ztf_id):
@@ -148,6 +147,7 @@ def status_check(res):
         return False
     return True
 
+
 def msg_handler_slack(slack_data, channel_name, init_msg):
     '''
     Notes
@@ -195,13 +195,6 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
                 },
                 timeout=25
             )
-
-
-def get_user_tgid(receiver):
-    result = requests.get(f'http://157.136.253.53:24000/user/{receiver}')
-    if status_check(result):
-        return result.text.strip('"')
-    return None
 
 
 def msg_handler_tg(tg_data, channel_id, init_msg):
@@ -271,9 +264,24 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
         status_check(res)
         time.sleep(10)
 
-def load_to_anomaly_base(data, login):
+def load_to_anomaly_base(data, model):
+    '''
+
+    Parameters
+    ----------
+    data: list
+        A list of tuples of 4 elements each: (ZTF identifier: str,
+        notification text: str, cutout: BytesIO, light curve: BytesIO)
+    model: str
+        Name of the model used.
+        Name must start with a ‘_’ and be ‘_{user_name}’,
+        where user_name is the user name of the model at https://anomaly.fink-portal.org/.
+    Returns
+    -------
+    NONE
+    '''
     res = requests.post('https://anomaly.fink-portal.org:443/user/signin', data={
-        'username': login[1:],
+        'username': model[1:],
         'password': os.environ['ANOMALY_TG_TOKEN']
     })
     if status_check(res):
@@ -293,9 +301,8 @@ def load_to_anomaly_base(data, login):
             headers = {
                 "Authorization": f"Bearer {json.loads(res.text)['access_token']}"
             }
-
             response = requests.post('https://anomaly.fink-portal.org:443/images/upload', files=files, params=params, data=data,
-                                     headers=headers)
+                                     headers=headers, timeout=10)
             status_check(response)
 
 

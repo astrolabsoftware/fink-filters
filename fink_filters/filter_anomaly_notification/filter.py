@@ -69,7 +69,10 @@ def anomaly_notification_(
     history_period: int
             Time period in days for which the number
             of references is calculated
-    model: TODO
+    model: str
+        Name of the model used.
+        Name must start with a ‘_’ and be ‘_{user_name}’,
+        where user_name is the user name of the model at https://anomaly.fink-portal.org/.
 
     Returns
     ----------
@@ -84,7 +87,7 @@ def anomaly_notification_(
     >>> from fink_science.anomaly_detection.processor import anomaly_score
 
     >>> df = spark.read.format('parquet').load('datatest/regular')
-
+    >>> MODELS = ['', '_gamma', '_delta', '_epsilon', '_theta', '_omega'] # '' corresponds to the model for a telegram channel
     >>> what = [
     ...     'jd', 'fid', 'magpsf', 'sigmapsf',
     ...     'magnr', 'sigmagnr', 'isdiffpos', 'distnr']
@@ -104,13 +107,15 @@ def anomaly_notification_(
     ...     'cdistnr', 'cmagnr', 'csigmagnr', 'cisdiffpos']
 
     >>> df = df.withColumn('lc_features', extract_features_ad(*ad_args))
-    >>> df = df.withColumn("anomaly_score", anomaly_score("lc_features"))
+    >>> for model in MODELS:
+    ...     df = df.withColumn(f'anomaly_score{model}', anomaly_score("lc_features", F.lit(model)))
 
-    >>> df_proc = df.select(
-    ...     'objectId', 'candidate.ra',
-    ...     'candidate.dec', 'candidate.rb',
-    ...     'anomaly_score', 'timestamp')
-    >>> df_out = anomaly_notification_(df_proc)
+    >>> for model in MODELS:
+    ...     df_proc = df.select(
+    ...         'objectId', 'candidate.ra',
+    ...         'candidate.dec', 'candidate.rb',
+    ...         f'anomaly_score{model}', 'timestamp')
+    ...     df_out = anomaly_notification_(df_proc, model=model)
 
     # Disable communication
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
