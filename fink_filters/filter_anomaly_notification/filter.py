@@ -172,7 +172,7 @@ EQU: {row.ra},   {row.dec}'''
         t2_ += t_
         t3_ = f'UTC: {str(row.timestamp)[:-3]}'
         t4_ = f'Real bogus: {round(row.rb, 2)}'
-        t5_ = f'Anomaly score: {round(row.anomaly_score, 2)}'
+        t5_ = f'Anomaly score: {round(row[f"anomaly_score{model}"], 2)}'
         if row.objectId in history_objects:
             t5_ += f'''
 Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}.'''

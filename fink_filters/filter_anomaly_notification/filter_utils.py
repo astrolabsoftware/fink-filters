@@ -426,4 +426,5 @@ def get_curve(ztf_id):
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    plt.close()
     return buf
