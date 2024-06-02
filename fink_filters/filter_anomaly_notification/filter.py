@@ -168,17 +168,17 @@ def anomaly_notification_(
     for _, row in pdf_anomalies.iterrows():
         gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
         oid = filter_utils.get_OID(row.ra, row.dec)
-        t1a = f'*ID*: [{row.objectId}](https://fink-portal.org/{row.objectId})'
+        t1a = f'**ID**: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
-        t_oid_1a = f"*DR OID (<1'')*: [{oid}](https://ztf.snad.space/view/{oid})"
+        t_oid_1a = f"**DR OID (<1'')**: [{oid}](https://ztf.snad.space/view/{oid})"
         t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
-        t2_ = f'*GAL coordinates*: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
+        t2_ = f'**GAL coordinates**: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t_ = f'''
 *EQU*: {row.ra},   {row.dec}'''
         t2_ += t_
-        t3_ = f'*UTC*: {str(row.timestamp)[:-3]}'
-        t4_ = f'*Real bogus*: {round(row.rb, 2)}'
-        t5_ = f'*Anomaly score*: {round(row[f"anomaly_score{model}"], 2)}'
+        t3_ = f'**UTC**: {str(row.timestamp)[:-3]}'
+        t4_ = f'**Real bogus**: {round(row.rb, 2)}'
+        t5_ = f'**Anomaly score**: {round(row[f"anomaly_score{model}"], 2)}'
         if row.objectId in history_objects:
             t5_ += f'''
 Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}.'''
