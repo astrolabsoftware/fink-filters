@@ -174,7 +174,7 @@ def anomaly_notification_(
         t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
         t2_ = f'**GAL coordinates**: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
         t_ = f'''
-*EQU*: {row.ra},   {row.dec}'''
+**EQU**: {row.ra},   {row.dec}'''
         t2_ += t_
         t3_ = f'**UTC**: {str(row.timestamp)[:-3]}'
         t4_ = f'**Real bogus**: {round(row.rb, 2)}'
