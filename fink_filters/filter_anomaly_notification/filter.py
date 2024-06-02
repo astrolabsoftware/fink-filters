@@ -114,7 +114,7 @@ def anomaly_notification_(
     ...         'objectId', 'candidate.ra',
     ...         'candidate.dec', 'candidate.rb',
     ...         f'anomaly_score{model}', 'timestamp')
-    ...     df_out = anomaly_notification_(df_proc, model=model)
+    ...     df_out = anomaly_notification_(df_proc, send_to_tg=False, send_to_slack=False, model=model)
 
     # Disable communication
     >>> df_proc = df.select(
