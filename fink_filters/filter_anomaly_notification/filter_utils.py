@@ -280,7 +280,7 @@ def load_to_anomaly_base(data, model):
     -------
     NONE
     '''
-    res = requests.post('https://anomaly.fink-portal.org:443/user/signin', data={
+    res = requests.post('https://fink.matwey.name:443/user/signin', data={
         'username': model[1:],
         'password': os.environ['ANOMALY_TG_TOKEN']
     })
