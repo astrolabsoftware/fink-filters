@@ -301,7 +301,7 @@ def load_to_anomaly_base(data, model):
             headers = {
                 "Authorization": f"Bearer {json.loads(res.text)['access_token']}"
             }
-            response = requests.post('https://anomaly.fink-portal.org:443/images/upload', files=files, params=params, data=data,
+            response = requests.post('https://fink.matwey.name:443/images/upload', files=files, params=params, data=data,
                                      headers=headers, timeout=10)
             status_check(response)
 
