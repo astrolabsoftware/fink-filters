@@ -291,6 +291,7 @@ def load_to_anomaly_base(data, model):
     NONE
     '''
     username = model[1:]
+    time.sleep(3)
     res = requests.post('https://fink.matwey.name:443/user/signin', data={
         'username': username,
         'password': os.environ['ANOMALY_TG_TOKEN']
