@@ -16,7 +16,6 @@ import os
 import io
 import time
 import requests
-from functools import partial
 from datetime import datetime, timedelta
 from collections import Counter
 import pandas as pd
