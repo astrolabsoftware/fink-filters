@@ -324,7 +324,7 @@ def load_to_anomaly_base(data, model):
             status_check(response, 'upload to anomaly base')
             cutout.seek(0)
             curve.seek(0)
-            #send in tg personal
+            # send in tg personal
             if tg_id_data == 'ND':
                 continue
             inline_keyboard = {
