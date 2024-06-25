@@ -328,6 +328,7 @@ def load_to_anomaly_base(data, model):
             # send in tg personal
             if tg_id_data == 'ND':
                 continue
+            tg_id_data = int(tg_id_data)
             inline_keyboard = {
                 "inline_keyboard": [
                     [
