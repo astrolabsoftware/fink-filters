@@ -297,7 +297,7 @@ def load_to_anomaly_base(data, model):
         'password': os.environ['ANOMALY_TG_TOKEN']
     })
     if status_check(res, 'load_to_anomaly_base_login'):
-        # TODO: Загрузка tg_id из базы
+        access_token = json.loads(res.text)['access_token']
         tg_id_data = requests.get(url=f'https://fink.matwey.name:443/user/get_tgid/{username}')
         if status_check(tg_id_data, 'tg_id loading'):
             tg_id_data = tg_id_data.content.decode('utf-8')
@@ -318,7 +318,7 @@ def load_to_anomaly_base(data, model):
                 "ztf_id": ztf_id
             }
             headers = {
-                "Authorization": f"Bearer {json.loads(res.text)['access_token']}"
+                "Authorization": f"Bearer {access_token}"
             }
             response = requests.post('https://fink.matwey.name:443/images/upload', files=files, params=params, data=data,
                                      headers=headers, timeout=10)
