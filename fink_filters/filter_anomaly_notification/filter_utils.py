@@ -397,10 +397,12 @@ def get_OID(ra, dec):
         out: str
             ZTF DR OID
     '''
-
-    r = requests.get(
-        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1'
-    )
+    try:
+        r = requests.get(
+            url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1'
+        )
+    except:
+        return None
     if not status_check(r, 'get cross from snad'):
         return None
     oids = [key for key, _ in r.json().items()]
