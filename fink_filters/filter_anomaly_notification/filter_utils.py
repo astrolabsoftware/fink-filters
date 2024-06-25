@@ -53,7 +53,7 @@ def get_an_history(delta_date=90):
         }
     )
 
-    if status_check(history_data):
+    if status_check(history_data, 'checking history'):
         res_obj = Counter(pd.read_json(io.BytesIO(history_data.content))['i:objectId'].values)
         return res_obj
     return Counter()
@@ -236,7 +236,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
         },
         timeout=25
     )
-    status_check(res)
+    status_check(res, 'sending to tg_channel (init)')
     time.sleep(10)
     inline_keyboard = {
         "inline_keyboard": [
@@ -271,7 +271,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
             },
             timeout=25
         )
-        status_check(res)
+        status_check(res, 'sending to tg_channel (main messages)')
         time.sleep(10)
 
 def load_to_anomaly_base(data, model):
@@ -328,7 +328,7 @@ def load_to_anomaly_base(data, model):
             # send in tg personal
             if tg_id_data == 'ND':
                 continue
-            tg_id_data = int(tg_id_data)
+            tg_id_data = int(tg_id_data.replace('"', ''))
             inline_keyboard = {
                 "inline_keyboard": [
                     [
@@ -398,7 +398,7 @@ def get_OID(ra, dec):
     '''
     r = requests.get(
         url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1')
-    if not status_check(r):
+    if not status_check(r, 'get cross from snad'):
         return None
     oids = [key for key, _ in r.json().items()]
     if oids:
@@ -429,7 +429,7 @@ def get_cutout(ztf_id):
         },
         timeout=25
     )
-    status_check(r)
+    status_check(r, 'get cutouts')
     return io.BytesIO(r.content)
 
 def get_curve(ztf_id):
@@ -452,7 +452,7 @@ def get_curve(ztf_id):
             'withupperlim': 'True'
         }
     )
-    if not status_check(r):
+    if not status_check(r, 'getting curve'):
         return None
 
     # Format output in a DataFrame
