@@ -301,6 +301,7 @@ def load_to_anomaly_base(data, model):
         tg_id_data = requests.get(url=f'https://fink.matwey.name:443/user/get_tgid/{username}')
         if status_check(tg_id_data, 'tg_id loading'):
             tg_id_data = tg_id_data.content.decode('utf-8')
+            tg_id_data = int(tg_id_data.replace('"', ''))
         else:
             tg_id_data = 'ND'
 
@@ -328,7 +329,7 @@ def load_to_anomaly_base(data, model):
             # send in tg personal
             if tg_id_data == 'ND':
                 continue
-            tg_id_data = int(tg_id_data.replace('"', ''))
+
             inline_keyboard = {
                 "inline_keyboard": [
                     [
@@ -397,7 +398,9 @@ def get_OID(ra, dec):
             ZTF DR OID
     '''
     r = requests.get(
-        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1')
+        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1',
+        timeout=5
+    )
     if not status_check(r, 'get cross from snad'):
         return None
     oids = [key for key, _ in r.json().items()]
