@@ -35,8 +35,8 @@ setuptools.setup(
         ],
     },
     classifiers=[
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: Unix",
         "Development Status :: 4 - Beta",
