@@ -30,11 +30,13 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     package_data={
         'fink_filters': [
-            'data/mangrove_filtered.csv'],
+            'data/mangrove_filtered.csv',
+            'data/list_dwarfs_AGN_RADEC.parquet'
+        ],
     },
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: Unix",
         "Development Status :: 4 - Beta",
