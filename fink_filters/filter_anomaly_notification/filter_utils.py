@@ -401,7 +401,7 @@ def get_OID(ra, dec):
         r = requests.get(
             url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1'
         )
-    except:
+    except Exception:
         return None
     if not status_check(r, 'get cross from snad'):
         return None
