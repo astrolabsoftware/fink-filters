@@ -434,14 +434,16 @@ def get_cutout(ztf_id):
         },
         timeout=25
     )
+    status_check(r, 'get cutouts')
+    fig, ax = plt.subplots()
     pdf = pd.read_json(io.BytesIO(r.content))
     data = np.log(np.array(pdf['b:cutoutTemplate_stampData'].to_numpy()[0]))
-    plt.axis('off')
-    image_data = plt.imshow(data, cmap='PuBu_r')
-    status_check(r, 'get cutouts')
+    ax.imshow(data, cmap='PuBu_r')
+    ax.axis('off')
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    plt.close(fig)
     return buf
 
 def get_curve(ztf_id):
