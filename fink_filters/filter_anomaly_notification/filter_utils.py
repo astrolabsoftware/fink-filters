@@ -430,8 +430,7 @@ def get_cutout(ztf_id):
         'https://fink-portal.org/api/v1/cutouts',
         json={
             'objectId': ztf_id,
-            'kind': 'Science',
-            'colormap': 'PuBu_r'
+            'kind': 'Science'
         },
         timeout=25
     )
