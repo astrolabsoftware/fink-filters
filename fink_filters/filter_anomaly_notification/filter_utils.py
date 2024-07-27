@@ -427,27 +427,15 @@ def get_cutout(ztf_id):
 
     '''
     r = requests.post(
-        "https://fink-portal.org/api/v1/objects",
-        json={"objectId": ztf_id, "withcutouts": "True"},
-        timeout=25,
+        'https://fink-portal.org/api/v1/cutouts',
+        json={
+            'objectId': ztf_id,
+            'kind': 'Science'
+        },
+        timeout=25
     )
-    if not status_check(r, 'get cutouts'):
-        return io.BytesIO()
-    fig, ax = plt.subplots()
-    pdf = pd.read_json(io.BytesIO(r.content))
-    data = np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0])
-    try:
-        data[data <= 0] = 1e-10
-        data = np.log(data)
-        ax.imshow(data, cmap='PuBu_r')
-        ax.axis('off')
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        plt.close(fig)
-    except TypeError:
-        return io.BytesIO()
-    return buf
+    status_check(r, 'get cutouts')
+    return io.BytesIO(r.content)
 
 def get_curve(ztf_id):
     '''
