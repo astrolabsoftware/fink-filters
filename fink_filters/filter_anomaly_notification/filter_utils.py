@@ -437,7 +437,7 @@ def get_cutout(ztf_id):
     status_check(r, 'get cutouts')
     fig, ax = plt.subplots()
     pdf = pd.read_json(io.BytesIO(r.content))
-    data = np.log(np.array(pdf['b:cutoutTemplate_stampData'].to_numpy()[0]))
+    data = np.log(np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0]))
     ax.imshow(data, cmap='PuBu_r')
     ax.axis('off')
     buf = io.BytesIO()
