@@ -436,16 +436,17 @@ def get_cutout(ztf_id):
     fig, ax = plt.subplots()
     pdf = pd.read_json(io.BytesIO(r.content))
     data = np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0])
-    if data is None:
+    try:
+        data[data <= 0] = 1e-10
+        data = np.log(data)
+        ax.imshow(data, cmap='PuBu_r')
+        ax.axis('off')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        plt.close(fig)
+    except TypeError:
         return io.BytesIO()
-    data[data <= 0] = 1e-10
-    data = np.log(data)
-    ax.imshow(data, cmap='PuBu_r')
-    ax.axis('off')
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    plt.close(fig)
     return buf
 
 def get_curve(ztf_id):
