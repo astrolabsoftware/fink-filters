@@ -437,7 +437,7 @@ def get_cutout(ztf_id):
     pdf = pd.read_json(io.BytesIO(r.content))
     data = np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0])
     if data is None:
-        return return io.BytesIO()
+        return io.BytesIO()
     data[data <= 0] = 1e-10
     data = np.log(data)
     ax.imshow(data, cmap='PuBu_r')
