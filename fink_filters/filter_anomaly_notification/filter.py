@@ -131,7 +131,7 @@ def anomaly_notification_(
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
     >>> print(sorted(pdf_anomalies['objectId'].values))
-    ['ZTF18aaakhsv', 'ZTF18aabeyfi', 'ZTF18aapgymv', 'ZTF18aapoack', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abzvnya', 'ZTF19aboujyi', 'ZTF19acevxhv', 'ZTF21acoshvy']
+    ['ZTF18aabeyfi', 'ZTF18aapgymv', 'ZTF18aaypnnd', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abjuixy', 'ZTF18abtrvkm', 'ZTF18acaksuq', 'ZTF21acoshvy']
 
     # Check cut_coords
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
@@ -143,7 +143,7 @@ def anomaly_notification_(
     """
     # Filtering by coordinates
     if cut_coords:
-        df_proc = df_proc.filter('dec <= 20 AND (ra >= 160 AND ra <= 240)')
+        df_proc = df_proc.filter("dec <= 20 AND (ra >= 160 AND ra <= 240)")
         # We need to know the total number of objects per night which satisfy the condition on coordinates
         cut_count = df_proc.count()
         if cut_count == 0:
@@ -166,7 +166,9 @@ def anomaly_notification_(
     tg_data, slack_data, base_data = [], [], []
 
     for _, row in pdf_anomalies.iterrows():
-        gal = SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree, frame='icrs').galactic
+        gal = SkyCoord(
+            ra=row.ra * u.degree, dec=row.dec * u.degree, frame="icrs"
+        ).galactic
         oid = filter_utils.get_OID(row.ra, row.dec)
         t1a = f'**ID**: [{row.objectId}](https://fink-portal.org/{row.objectId})'
         t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
@@ -180,9 +182,11 @@ def anomaly_notification_(
         t4_ = f'**Real bogus**: {round(row.rb, 2)}'
         t5_ = f'**Anomaly score**: {round(row[f"anomaly_score{model}"], 2)}'
         if row.objectId in history_objects:
-            t5_ += f'''
-Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}.'''
-        cutout, curve, cutout_perml, curve_perml = filter_utils.get_data_permalink_slack(row.objectId)
+            t5_ += f"""
+Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}."""
+        cutout, curve, cutout_perml, curve_perml = (
+            filter_utils.get_data_permalink_slack(row.objectId)
+        )
         curve.seek(0)
         cutout.seek(0)
         cutout_perml = f"<{cutout_perml}|{' '}>"
@@ -217,7 +221,7 @@ Sky area:
 1) delta <= 20°
 2) alpha ∈ (160°, 240°)
 Total number of objects per night in the area: {cut_count}.
-'''
+"""
     if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
