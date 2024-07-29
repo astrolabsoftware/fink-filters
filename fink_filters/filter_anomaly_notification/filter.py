@@ -215,7 +215,7 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
 
     init_msg = f'Median anomaly score overnight: {med}.'
     if cut_coords and model == '':
-        init_msg += f'''
+        init_msg += f"""
 (of the objects in the sky area)
 Sky area:
 1) delta <= 20°
