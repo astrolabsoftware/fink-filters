@@ -18,6 +18,8 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import StringType
 
 from fink_science.xmatch.utils import cross_match_astropy
+from fink_filters import __file__
+
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 
