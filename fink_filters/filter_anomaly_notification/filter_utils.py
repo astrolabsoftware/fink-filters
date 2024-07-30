@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from collections import Counter
 import pandas as pd
 import numpy as np
+import json
 
 
 import matplotlib.pyplot as plt
@@ -52,11 +53,10 @@ def get_an_history(delta_date=90):
         }
     )
 
-    if status_check(history_data):
+    if status_check(history_data, 'checking history'):
         res_obj = Counter(pd.read_json(io.BytesIO(history_data.content))['i:objectId'].values)
         return res_obj
-    else:
-        return Counter()
+    return Counter()
 
 
 def get_data_permalink_slack(ztf_id):
@@ -117,7 +117,7 @@ def get_data_permalink_slack(ztf_id):
     return cutout, curve, result['files'][0]['permalink'], result['files'][1]['permalink']
 
 
-def status_check(res):
+def status_check(res, source='not defined'):
     '''
     Checks whether the request was successful.
     In case of an error, sends information about the error to the @fink_test telegram channel
@@ -125,7 +125,7 @@ def status_check(res):
     Parameters
     ----------
     res : Response object
-
+    source : source of log
     Returns
     -------
         result : bool
@@ -141,12 +141,13 @@ def status_check(res):
             method,
             data={
                 "chat_id": "@fink_test",
-                "text": str(res.status_code)
+                "text": f'Source: {source}, error: {str(res.status_code)}, description: {res.text}'
             },
             timeout=25
         )
         return False
     return True
+
 
 def msg_handler_slack(slack_data, channel_name, init_msg):
     '''
@@ -196,6 +197,7 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
                 timeout=25
             )
 
+
 def msg_handler_tg(tg_data, channel_id, init_msg):
     '''
     Notes
@@ -234,8 +236,16 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
         },
         timeout=25
     )
-    status_check(res)
+    status_check(res, 'sending to tg_channel (init)')
     time.sleep(10)
+    inline_keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Anomaly", "callback_data": "ANOMALY"},
+                {"text": "Not anomaly", "callback_data": "NOTANOMALY"}
+            ]
+        ]
+    }
     for text_data, cutout, curve in tg_data:
         res = requests.post(
             method,
@@ -252,7 +262,8 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
                         "type" : "photo",
                         "media": "attach://first"
                     }}
-                ]'''
+                ]''',
+                "reply_markup": inline_keyboard
             },
             files={
                 "second": cutout,
@@ -260,8 +271,112 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
             },
             timeout=25
         )
-        status_check(res)
+        status_check(res, 'sending to tg_channel (main messages)')
         time.sleep(10)
+
+def load_to_anomaly_base(data, model):
+    '''
+
+    Parameters
+    ----------
+    data: list
+        A list of tuples of 4 elements each: (ZTF identifier: str,
+        notification text: str, cutout: BytesIO, light curve: BytesIO)
+    model: str
+        Name of the model used.
+        Name must start with a ‘_’ and be ‘_{user_name}’,
+        where user_name is the user name of the model at https://anomaly.fink-portal.org/.
+    Returns
+    -------
+    NONE
+    '''
+    username = model[1:]
+    time.sleep(3)
+    res = requests.post('https://fink.matwey.name:443/user/signin', data={
+        'username': username,
+        'password': os.environ['ANOMALY_TG_TOKEN']
+    })
+    if status_check(res, 'load_to_anomaly_base_login'):
+        access_token = json.loads(res.text)['access_token']
+        tg_id_data = requests.get(url=f'https://fink.matwey.name:443/user/get_tgid/{username}')
+        if status_check(tg_id_data, 'tg_id loading'):
+            tg_id_data = tg_id_data.content.decode('utf-8')
+            tg_id_data = int(tg_id_data.replace('"', ''))
+        else:
+            tg_id_data = 'ND'
+
+        for ztf_id, text_data, cutout, curve in data:
+            cutout.seek(0)
+            curve.seek(0)
+            files = {
+                "image1": cutout,
+                "image2": curve
+            }
+            data = {
+                "description": text_data
+            }
+            params = {
+                "ztf_id": ztf_id
+            }
+            headers = {
+                "Authorization": f"Bearer {access_token}"
+            }
+            response = requests.post('https://fink.matwey.name:443/images/upload', files=files, params=params, data=data,
+                                     headers=headers, timeout=10)
+            status_check(response, 'upload to anomaly base')
+            cutout.seek(0)
+            curve.seek(0)
+            # send in tg personal
+            if tg_id_data == 'ND':
+                continue
+
+            inline_keyboard = {
+                "inline_keyboard": [
+                    [
+                        {"text": "Anomaly", "callback_data": f"A_{ztf_id}"},
+                        {"text": "Not anomaly", "callback_data": f"NA_{ztf_id}"}
+                    ]
+                ]
+            }
+
+            url = "https://api.telegram.org/bot"
+            url += os.environ['ANOMALY_TG_TOKEN']
+            method = url + "/sendMediaGroup"
+
+            res = requests.post(
+                method,
+                params={
+                    "chat_id": tg_id_data,
+                    "media": f'''[
+                            {{
+                                "type" : "photo",
+                                "media": "attach://second",
+                                "caption" : "{text_data}",
+                                "parse_mode": "markdown"
+                            }},
+                            {{
+                                "type" : "photo",
+                                "media": "attach://first"
+                            }}
+                        ]'''
+                },
+                files={
+                    "second": cutout,
+                    "first": curve,
+                },
+                timeout=25
+            )
+            if status_check(res, f'individual sending to {tg_id_data}'):
+                res = requests.post(
+                    f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMessage",
+                    json={
+                        "chat_id": tg_id_data,
+                        "text": f"Feedback for {ztf_id}:",
+                        "reply_markup": inline_keyboard
+                    },
+                    timeout=25
+                )
+                status_check(res, f'button individual sending to {tg_id_data}')
 
 
 def get_OID(ra, dec):
@@ -282,9 +397,13 @@ def get_OID(ra, dec):
         out: str
             ZTF DR OID
     '''
-    r = requests.get(
-        url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1')
-    if not status_check(r):
+    try:
+        r = requests.get(
+            url=f'http://db.ztf.snad.space/api/v3/data/latest/circle/full/json?ra={ra}&dec={dec}&radius_arcsec=1'
+        )
+    except Exception:
+        return None
+    if not status_check(r, 'get cross from snad'):
         return None
     oids = [key for key, _ in r.json().items()]
     if oids:
@@ -311,11 +430,11 @@ def get_cutout(ztf_id):
         'https://fink-portal.org/api/v1/cutouts',
         json={
             'objectId': ztf_id,
-            'kind': 'Difference',
+            'kind': 'Science'
         },
         timeout=25
     )
-    status_check(r)
+    status_check(r, 'get cutouts')
     return io.BytesIO(r.content)
 
 def get_curve(ztf_id):
@@ -338,7 +457,7 @@ def get_curve(ztf_id):
             'withupperlim': 'True'
         }
     )
-    if not status_check(r):
+    if not status_check(r, 'getting curve'):
         return None
 
     # Format output in a DataFrame
@@ -384,4 +503,5 @@ def get_curve(ztf_id):
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    plt.close()
     return buf
