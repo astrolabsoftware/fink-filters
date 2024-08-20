@@ -426,16 +426,25 @@ def get_cutout(ztf_id):
             cutout image in png format
 
     '''
+    # transfer cutout data
     r = requests.post(
-        'https://fink-portal.org/api/v1/cutouts',
-        json={
-            'objectId': ztf_id,
-            'kind': 'Science'
-        },
-        timeout=25
+      'https://fink-portal.org/api/v1/objects',
+      json={
+        'objectId': ztf_id,
+        'withcutouts': 'True'
+      }
     )
-    status_check(r, 'get cutouts')
-    return io.BytesIO(r.content)
+    if not status_check(r, 'get cutouts'):
+        return io.BytesIO()
+    # Format output in a DataFrame
+    pdf = pd.read_json(io.BytesIO(r.content))
+    data = np.log(np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0]))
+    plt.axis('off')
+    _ = plt.imshow(data, cmap='PuBu_r')
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+    buf.seek(0)
+    return buf
 
 def get_curve(ztf_id):
     '''
