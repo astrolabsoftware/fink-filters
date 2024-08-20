@@ -438,7 +438,7 @@ def get_cutout(ztf_id):
         return io.BytesIO()
     # Format output in a DataFrame
     pdf = pd.read_json(io.BytesIO(r.content))
-    data = np.log(np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0]))
+    data = np.log(np.round(np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0])))
     plt.axis('off')
     _ = plt.imshow(data, cmap='PuBu_r')
     buf = io.BytesIO()
