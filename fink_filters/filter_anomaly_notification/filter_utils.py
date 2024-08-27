@@ -428,11 +428,8 @@ def get_cutout(ztf_id):
     '''
     # transfer cutout data
     r = requests.post(
-      'https://fink-portal.org/api/v1/objects',
-      json={
-          'objectId': ztf_id,
-          'withcutouts': 'True'
-      }
+        "https://fink-portal.org/api/v1/objects",
+        json={"objectId": ztf_id, "withcutouts": "True"},
     )
     if not status_check(r, 'get cutouts'):
         return io.BytesIO()
