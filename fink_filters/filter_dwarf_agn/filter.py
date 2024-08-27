@@ -106,4 +106,3 @@ if __name__ == "__main__":
     # Run the test suite
     globs = globals()
     spark_unit_tests(globs)
-
