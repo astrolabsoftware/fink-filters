@@ -1,4 +1,4 @@
-# Copyright 2023 AstroLab Software
+# Copyright 2023-2024 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,27 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
+from pyspark.sql.types import StringType
 
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 from fink_science.xmatch.utils import cross_match_astropy
 
-from fink_filters.filter_anomaly_notification.filter_utils import msg_handler_slack
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 import numpy as np
 import os
 
-def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
-    """ Return alerts matching with known TDEs
+def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
+    """ Return labels for alerts matching with known TDEs
 
     Parameters
     ----------
-    objectId: Pandas series
-        Colujmn containing ZTF object ID
     ra: Pandas series
         Column containing the RA values of alerts
     dec: Pandas series
@@ -43,18 +40,17 @@ def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
 
     Returns
     ----------
-    out: pandas.Series of bool
-        Return a Pandas DataFrame with the appropriate flag:
-        false for bad alert, and true for good alert.
+    out: pandas.Series of str
+        Return a Pandas DataFrame with the appropriate label:
+        Unknown if no match, the name of the TDE otherwise.
 
     Examples
     ----------
     >>> pdf = pd.read_parquet('datatest/tde')
     >>> classification = known_tde_(
-    ...     pdf['objectId'],
     ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']))
-    >>> print(np.sum(classification))
+    >>> print(np.sum([i != "Unknown" for i in classification]))
     1
 
     """
@@ -71,7 +67,6 @@ def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
             'ra': ra,
             'dec': dec,
             'candid': range(len(ra)),
-            'objectId': objectId
         }
     )
 
@@ -84,34 +79,20 @@ def known_tde_(objectId, ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
         pdf, catalog_ztf, catalog_tde, radius_arcsec=radius_arcsec
     )
 
-    pdf_merge['match'] = False
-    pdf_merge.loc[mask, 'match'] = True
-
     pdf_merge['intname'] = 'Unknown'
     pdf_merge.loc[mask, 'intname'] = [
         str(i).strip() for i in tdes['name'].astype(str).values[idx2]
     ]
 
-    if ('ANOMALY_SLACK_TOKEN' in os.environ) and ('GITHUB_ENV' not in os.environ):
-        # send to Slack recursively
-        for _, row in pdf_merge[mask].iterrows():
-            slack_data = []
-            t1 = f'<https://fink-portal.org/{row.objectId}|{row.objectId}> associated with {row.intname}'
-            slack_data.append(f'''{t1}''')
-
-            msg_handler_slack(slack_data, "known_tde_follow_up", init_msg='New TDE association!')
-
-    return pdf_merge['match']
+    return pdf_merge['intname']
 
 
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def known_tde(objectId, ra, dec) -> pd.Series:
-    """ Pandas UDF for early_sn_candidates_
+@pandas_udf(StringType(), PandasUDFType.SCALAR)
+def known_tde(ra, dec) -> pd.Series:
+    """ Pandas UDF for known_tde_
 
     Parameters
     ----------
-    objectId: Pandas series
-        Column containing ZTF object ID
     ra: Pandas series
         Column containing the RA values of alerts
     dec: Pandas series
@@ -119,20 +100,18 @@ def known_tde(objectId, ra, dec) -> pd.Series:
 
     Returns
     ----------
-    out: pandas.Series of bool
-        Return a Pandas DataFrame with the appropriate flag:
-        false for bad alert, and true for good alert.
+    out: pandas.Series of str
+        Return a Pandas DataFrame with the appropriate label:
+        Unknown if no match, the name of the TDE otherwise.
 
     Examples
     ----------
-    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/tde')
-    >>> f = 'fink_filters.filter_known_tde.filter.known_tde'
-    >>> df = apply_user_defined_filter(df, f)
-    >>> print(df.count())
+    >>> df = df.withColumn("tde", known_tde("candidate.ra", "candidate.dec"))
+    >>> print(df.filter(df["tde"] != "Unknown").count())
     1
     """
-    series = known_tde_(objectId, ra, dec)
+    series = known_tde_(ra, dec)
     return series
 
 
