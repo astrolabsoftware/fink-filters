@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Crossmatch utilities for Dwarf AGN"""
+"""Crossmatch utilities for symbiotic and cataclysmic stars"""
 
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import StringType
@@ -29,19 +29,15 @@ import pandas as pd
 
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
-def crossmatch_dwarf_agn(candid, ra, dec):
-    """Crossmatch ZTF alert with dwarfs AGN
+def crossmatch_symbiotic(ra, dec):
+    """Crossmatch ZTF alert with symbiotic and cataclysmic star catalogs
 
     Notes
     -----
     This is not a filter -- it only performs the crossmach.
-    The reason we do not use normal xmatch method is that
-    each source has its own crossmatching radius.
 
     Parameters
     ----------
-    candid: long
-        Candidate ID
     ra: float
         RA coordinates
     dec: float
@@ -54,25 +50,25 @@ def crossmatch_dwarf_agn(candid, ra, dec):
         the name of the source in Manga.
 
     Examples
-    --------
+    --------)
     >>> import pyspark.sql.functions as F
-    >>> df = spark.read.format('parquet').load('datatest/dwarf_agn')
-    >>> args = ['candidate.candid', 'candidate.ra', 'candidate.dec']
+    >>> df = spark.read.format('parquet').load('datatest/symbiotic')
+    >>> args = ['candidate.ra', 'candidate.dec']
     >>> pdf = df\
-    ...     .withColumn('manga', crossmatch_dwarf_agn(*args))\
-    ...     .filter(F.col('manga') != 'Unknown')\
-    ...     .select(['objectId', 'manga'] + args)\
+    ...     .withColumn('symbiotic', crossmatch_symbiotic(*args))\
+    ...     .filter(F.col('symbiotic') != 'Unknown')\
+    ...     .select(['objectId', 'symbiotic'] + args)\
     ...     .toPandas()
     >>> assert len(pdf) == 1, len(pdf)
     """
     curdir = os.path.dirname(os.path.abspath(__file__))
-    pdf_lsb = pd.read_parquet(curdir + "/data/list_dwarfs_AGN_RADEC.parquet")
+    pdf_sym = pd.read_parquet(curdir + "/data/symbiotic_and_cataclysmic.parquet")
 
     pdf = pd.DataFrame(
         {
             "ra": ra.to_numpy(),
             "dec": dec.to_numpy(),
-            "candid": candid.to_numpy(),
+            "candid": range(len(ra))
         }
     )
 
@@ -82,20 +78,21 @@ def crossmatch_dwarf_agn(candid, ra, dec):
         dec=np.array(dec.to_numpy(), dtype=float) * u.degree,
     )
 
-    out = np.array(["Unknown"] * len(pdf), dtype=object)
-    for _, source in pdf_lsb.iterrows():
-        catalog_other = SkyCoord(
-            ra=np.array([source["RA"]], dtype=float) * u.degree,
-            dec=np.array([source["DEC"]], dtype=float) * u.degree,
-        )
+    catalog_other = SkyCoord(
+        ra=pdf_sym["RA(J2000)"].to_numpy(),
+        dec=pdf_sym["DEC(J2000)"].to_numpy(),
+        unit=(u.hourangle, u.deg)
+    )
 
-        pdf_merge, mask, idx2 = cross_match_astropy(
-            pdf, catalog_ztf, catalog_other, radius_arcsec=pd.Series([source["Re_arc"]])
-        )
+    pdf_merge, mask, idx2 = cross_match_astropy(
+        pdf, catalog_ztf, catalog_other, radius_arcsec=pdf_sym["Radius"].astype(float)
+    )
 
-        out[mask] = source["MaNGAID"]
+    pdf_sym_conc = np.array(["{},{}".format(i, j) for i, j in zip(pdf_sym["Name"], pdf_sym["source"])])
+    pdf_merge['Type'] = 'Unknown'
+    pdf_merge.loc[mask, 'Type'] = pdf_sym_conc[idx2]
 
-    return pd.Series(out)
+    return pdf_merge['Type']
 
 
 if __name__ == "__main__":
