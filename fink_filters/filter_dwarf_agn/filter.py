@@ -27,6 +27,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from fink_filters.tester import spark_unit_tests
+
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def crossmatch_dwarf_agn(candid, ra, dec):
