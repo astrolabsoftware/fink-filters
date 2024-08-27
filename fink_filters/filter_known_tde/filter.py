@@ -20,7 +20,6 @@ from astropy import units as u
 
 from fink_science.xmatch.utils import cross_match_astropy
 
-from fink_filters.filter_anomaly_notification.filter_utils import msg_handler_slack
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
