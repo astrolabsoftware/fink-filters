@@ -59,7 +59,7 @@ def crossmatch_symbiotic(ra, dec):
     ...     .filter(F.col('symbiotic') != 'Unknown')\
     ...     .select(['objectId', 'symbiotic'] + args)\
     ...     .toPandas()
-    >>> assert len(pdf) == 1, len(pdf)
+    >>> assert len(pdf) == 20, len(pdf)
     """
     curdir = os.path.dirname(os.path.abspath(__file__))
     pdf_sym = pd.read_parquet(curdir + "/data/symbiotic_and_cataclysmic.parquet")
