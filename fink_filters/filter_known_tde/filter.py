@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
+from pyspark.sql.types import StringType
 
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -40,7 +40,7 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
 
     Returns
     ----------
-    out: pandas.Series of bool
+    out: pandas.Series of str
         Return a Pandas DataFrame with the appropriate label:
         Unknown if no match, the name of the TDE otherwise.
 
@@ -87,9 +87,9 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
     return pdf_merge['intname']
 
 
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
+@pandas_udf(StringType(), PandasUDFType.SCALAR)
 def known_tde(ra, dec) -> pd.Series:
-    """ Pandas UDF for early_sn_candidates_
+    """ Pandas UDF for known_tde_
 
     Parameters
     ----------
@@ -100,13 +100,12 @@ def known_tde(ra, dec) -> pd.Series:
 
     Returns
     ----------
-    out: pandas.Series of bool
+    out: pandas.Series of str
         Return a Pandas DataFrame with the appropriate label:
         Unknown if no match, the name of the TDE otherwise.
 
     Examples
     ----------
-    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/tde')
     >>> df = df.withColumn("tde", known_tde("candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["tde"] != "Unknown").count())
