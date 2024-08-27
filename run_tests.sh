@@ -19,7 +19,7 @@ set -e
 message_help="""
 Run the test suite of the modules\n\n
 Usage:\n
-    \t./run_tests.sh\n\n
+    \t./run_tests.sh [--single_module]\n\n
 
 Note you need Spark 3.1.3+ installed to fully test the modules.
 """
@@ -29,15 +29,37 @@ NO_SPARK=false
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -h)
-        echo -e $message_help
-        exit
-        ;;
+      echo -e $message_help
+      exit
+      ;;
+    --single_module)
+      SINGLE_MODULE_PATH=$2
+      shift 2
+      ;;
   esac
 done
 
 # Add coverage_daemon to the pythonpath.
 export PYTHONPATH="${SPARK_HOME}/python/test_coverage:$PYTHONPATH"
 export COVERAGE_PROCESS_START="${ROOTPATH}/.coveragerc"
+
+# single module testing
+if [[ -n "${SINGLE_MODULE_PATH}" ]]; then
+  coverage run \
+   --source=${ROOTPATH} \
+   --rcfile ${ROOTPATH}/.coveragerc ${SINGLE_MODULE_PATH}
+
+  # Combine individual reports in one
+  coverage combine
+
+  unset COVERAGE_PROCESS_START
+
+  coverage report -m
+  coverage html
+
+  exit 0
+
+fi
 
 # Run the test suite on the utilities
 for filename in fink_filters/*.py
