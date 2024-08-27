@@ -19,7 +19,7 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
-def microlensing_candidates_(mulens) -> pd.Series:
+def microlensing_candidates_(mulens, ra, dec) -> pd.Series:
     """ Return alerts considered as microlensing candidates
 
     Parameters
@@ -28,6 +28,10 @@ def microlensing_candidates_(mulens) -> pd.Series:
         Probability of an event to be a microlensing event from LIA.
         The number is the mean of the per-band probabilities, and it is
         non-zero only for events favoured as microlensing by both bands.
+    ra: Pandas series
+        RA coordinates
+    dec: Pandas series
+        Dec coordinates
 
     Returns
     ----------
@@ -38,17 +42,21 @@ def microlensing_candidates_(mulens) -> pd.Series:
     Examples
     ----------
     >>> pdf = pd.read_parquet('datatest/regular')
-    >>> classification = microlensing_candidates_(pdf['mulens'])
+    >>> classification = microlensing_candidates_(pdf['mulens'], pdf['candidate.ra'], pdf['candidate.dec'])
     >>> print(pdf[classification]['objectId'].values)
     []
     """
+    # +/- 15 deg from the galactic plane
+    gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
+    f_b = abs(gal.b.degree) <= 15
+
     f_mulens = mulens > 0.0
 
-    return f_mulens
+    return f_mulens & f_b
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def microlensing_candidates(mulens) -> pd.Series:
+def microlensing_candidates(mulens, ra, dec) -> pd.Series:
     """ Return alerts considered as microlensing candidates
 
     Parameters
@@ -57,6 +65,10 @@ def microlensing_candidates(mulens) -> pd.Series:
         Probability of an event to be a microlensing event from LIA.
         The number is the mean of the per-band probabilities, and it is
         non-zero only for events favoured as microlensing by both bands.
+    ra: Spark DataFrame Column
+        RA coordinates
+    dec: Spark DataFrame Column
+        Dec coordinates
 
     Returns
     ----------
@@ -74,7 +86,7 @@ def microlensing_candidates(mulens) -> pd.Series:
     0
     """
     f_mulens = microlensing_candidates_(
-        mulens
+        mulens, ra, dec
     )
 
     return f_mulens
