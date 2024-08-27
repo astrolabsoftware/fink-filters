@@ -60,11 +60,7 @@ def crossmatch_dwarf_agn(candid, ra, dec):
     >>> import pyspark.sql.functions as F
     >>> df = spark.read.format('parquet').load('datatest/dwarf_agn')
     >>> args = ['candidate.candid', 'candidate.ra', 'candidate.dec']
-    >>> pdf = df\
-    ...     .withColumn('manga', crossmatch_dwarf_agn(*args))\
-    ...     .filter(F.col('manga') != 'Unknown')\
-    ...     .select(['objectId', 'manga'] + args)\
-    ...     .toPandas()
+    >>> pdf = df.withColumn('manga', crossmatch_dwarf_agn(*args)).filter(F.col('manga') != 'Unknown').select(['objectId', 'manga'] + args).toPandas()
     >>> assert len(pdf) == 1, len(pdf)
     """
     curdir = os.path.dirname(os.path.abspath(__file__))

@@ -56,11 +56,7 @@ def crossmatch_symbiotic(ra, dec):
     >>> import pyspark.sql.functions as F
     >>> df = spark.read.format('parquet').load('datatest/symbiotic')
     >>> args = ['candidate.ra', 'candidate.dec']
-    >>> pdf = df\
-    ...     .withColumn('symbiotic', crossmatch_symbiotic(*args))\
-    ...     .filter(F.col('symbiotic') != 'Unknown')\
-    ...     .select(['objectId', 'symbiotic'] + args)\
-    ...     .toPandas()
+    >>> pdf = df.withColumn('symbiotic', crossmatch_symbiotic(*args)).filter(F.col('symbiotic') != 'Unknown').select(['objectId', 'symbiotic'] + args).toPandas()
     >>> assert len(pdf) == 20, len(pdf)
     """
     curdir = os.path.dirname(os.path.abspath(__file__))
