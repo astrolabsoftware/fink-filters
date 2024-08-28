@@ -429,15 +429,13 @@ def get_cutout(ztf_id):
     # transfer cutout data
     r = requests.post(
         "https://fink-portal.org/api/v1/objects",
-        json={"objectId": ztf_id, "withcutouts": "True"},
+        json={"objectId": ztf_id, "withcutouts": "True", "cols": "b:cutoutScience_stampData"},
     )
     if not status_check(r, 'get cutouts'):
         return io.BytesIO()
-    # Format output in a DataFrame
-    pdf = pd.read_json(io.BytesIO(r.content))
-    data = np.log(np.array(pdf['b:cutoutScience_stampData'].to_numpy()[0], dtype=float))
+    data = np.log(np.array(r.json()[0]['b:cutoutScience_stampData'], dtype=float))
     plt.axis('off')
-    _ = plt.imshow(data, cmap='PuBu_r')
+    plt.imshow(data, cmap='PuBu_r')
     buf = io.BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
     buf.seek(0)
