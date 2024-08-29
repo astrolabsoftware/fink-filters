@@ -69,7 +69,7 @@ def crossmatch_symbiotic(ra, dec):
     # If I set candid = 1 for all, then I retrieve 20 matches... WTF?
     # Note that this is an artifact of re-processing data, as in real-time
     # two alerts from the same exposure cannot be separated by 0.5 arcseconds
-    # ./run_tests.sh --single_module fink_filters/filter_symbiotic_stars/filter.py 
+    # ./run_tests.sh --single_module fink_filters/filter_symbiotic_stars/filter.py
     pdf = pd.DataFrame(
         {
             "ra": ra.to_numpy(),
