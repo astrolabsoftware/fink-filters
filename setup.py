@@ -32,7 +32,8 @@ setuptools.setup(
         'fink_filters': [
             'data/mangrove_filtered.csv',
             'data/list_dwarfs_AGN_RADEC.parquet',
-            'data/symbiotic_and_cataclysmic.parquet'
+            'data/symbiotic_and_cataclysmic.parquet',
+            'data/tde.parquet'
         ],
     },
     classifiers=[

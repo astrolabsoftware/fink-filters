@@ -19,6 +19,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 from fink_science.xmatch.utils import cross_match_astropy
+from fink_filters import __file__
 
 from fink_filters.tester import spark_unit_tests
 
