@@ -95,7 +95,7 @@ def known_tde(isdiffpos, ra, dec) -> pd.Series:
     Parameters
     ----------
     isdiffpos: Pandas series of str
-        Column containing positiveness flag 
+        Column containing positiveness flag
     ra: Pandas series of float
         Column containing the RA values of alerts
     dec: Pandas series of float
