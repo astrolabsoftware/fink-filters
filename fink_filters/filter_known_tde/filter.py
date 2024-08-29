@@ -115,7 +115,7 @@ def known_tde(isdiffpos, ra, dec) -> pd.Series:
     1
     """
     # Keep only positive alerts
-    valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'):)
+    valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'))
 
     # perform crossmatch
     series = known_tde_(ra[valid], dec[valid])
