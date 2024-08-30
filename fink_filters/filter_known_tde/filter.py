@@ -89,14 +89,16 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
 
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
-def known_tde(ra, dec) -> pd.Series:
+def known_tde(isdiffpos, ra, dec) -> pd.Series:
     """ Pandas UDF for known_tde_
 
     Parameters
     ----------
-    ra: Pandas series
+    isdiffpos: Pandas series of str
+        Column containing positiveness flag
+    ra: Pandas series of float
         Column containing the RA values of alerts
-    dec: Pandas series
+    dec: Pandas series of float
         Column containing the DEC values of alerts
 
     Returns
@@ -108,12 +110,21 @@ def known_tde(ra, dec) -> pd.Series:
     Examples
     ----------
     >>> df = spark.read.format('parquet').load('datatest/tde')
-    >>> df = df.withColumn("tde", known_tde("candidate.ra", "candidate.dec"))
+    >>> df = df.withColumn("tde", known_tde("candidate.isdiffpos", "candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["tde"] != "Unknown").count())
     1
     """
-    series = known_tde_(ra, dec)
-    return series
+    # Keep only positive alerts
+    valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'))
+
+    # perform crossmatch
+    series = known_tde_(ra[valid], dec[valid])
+
+    # Default values are Unknown
+    to_return = pd.Series(["Unknown"] * len(ra))
+    to_return[valid] = series.to_numpy()
+
+    return to_return
 
 
 if __name__ == "__main__":
