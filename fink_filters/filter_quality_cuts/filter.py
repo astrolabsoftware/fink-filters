@@ -18,7 +18,6 @@ from pyspark.sql.types import BooleanType
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
-import os
 
 
 def ztf_quality_cuts_(
