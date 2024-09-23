@@ -473,6 +473,8 @@ def get_curve(ztf_id):
     filter_dict = {1: 'g band', 2: 'r band'}
 
     for filt in np.unique(pdf['i:fid']):
+        if filt == 3:
+            continue
         maskFilt = pdf['i:fid'] == filt
 
         # The column `d:tag` is used to check data type
