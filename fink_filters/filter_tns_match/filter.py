@@ -22,7 +22,6 @@ from fink_utils.tg_bot.utils import msg_handler_tg
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
-import time
 import os
 
 
@@ -170,12 +169,8 @@ def tns_match(
                 objectId=alert["objectId"],
                 origin="API",
             )
-            
-            time.sleep(1)
 
             cutout = get_cutout(ztf_id=alert["objectId"], kind="Science", origin="API")
-
-            time.sleep(2)
 
             text = """
 Appeared {:.0f} days ago!
