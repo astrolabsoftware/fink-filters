@@ -21,6 +21,7 @@ from fink_utils.tg_bot.utils import msg_handler_tg
 
 from fink_filters.tester import spark_unit_tests
 
+from astropy.coordinates import SkyCoord, get_constellation
 import pandas as pd
 import os
 
@@ -95,15 +96,14 @@ def tns_match_(
     Examples
     ----------
     >>> pdf = pd.read_parquet('datatest/regular')
-    >>> fake_tns = ["" for i in range(len(pdf))]
-    >>> fake_tns[0] = "SN Ia"
+    >>> fake_tns = ["SN Ia" for i in range(len(pdf))]
     >>> pdf["tns"] = fake_tns
     >>> classification = tns_match_(
     ...     pdf['tns'],
-    ...     pdf['candidate'].apply(lambda x: x['jd'])
+    ...     pdf['candidate'].apply(lambda x: x['jd']),
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']))
-    >>> print(len(classification['objectId'].values))
-    1
+    >>> print(classification.sum())
+    16
     """
     is_in_tns = tns != ""
     is_young = jd.astype(float) - jdstarthist.astype(float) <= 30
@@ -114,6 +114,8 @@ def tns_match_(
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def tns_match(
     objectId,
+    ra,
+    dec,
     jd,
     jdstarthist,
     tns,
@@ -124,6 +126,10 @@ def tns_match(
     ----------
     objectId: Pandas series
         Column with ZTF objectId
+    ra: Pandas series
+        Column with RA coordinate
+    dec: Pandas series
+        Column with Dec coordinate
     jd: Pandas series
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Pandas series
@@ -142,6 +148,7 @@ def tns_match(
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> import pyspark.sql.functions as F
     >>> df = spark.read.format('parquet').load('datatest/regular')
+    >>> df = df.filter(df["candidate.jd"] - df["candidate.jdstarthist"] <= 30).limit(2)
 
     # Add a fake column
     >>> df = df.withColumn("tns", F.lit("SN Ia"))
@@ -149,13 +156,15 @@ def tns_match(
     >>> f = 'fink_filters.filter_tns_match.filter.tns_match'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    16
+    2
     """
     series = tns_match_(tns, jd, jdstarthist)
 
     pdf = pd.DataFrame(
         {
             "objectId": objectId,
+            "ra": ra,
+            "dec": dec,
             "tns": tns,
             "dt": jd - jdstarthist,
         }
@@ -172,16 +181,20 @@ def tns_match(
 
             cutout = get_cutout(ztf_id=alert["objectId"], kind="Science", origin="API")
 
+            constellation = get_constellation(SkyCoord(alert["ra"], alert["dec"], unit="deg"))
             text = """
-Appeared {:.0f} days ago!
-*Object ID*: [{}](https://fink-portal.org/{})
-*Class*: [{}]({})
+🔭 Appeared {:.0f} days ago
+
+*Object name*: {} (inspect it on the [portal](https://fink-portal.org/{}))
+*Classification*: [{}]({})
+*Constellation*: {}
             """.format(
                 alert["dt"],
                 alert["objectId"],
                 alert["objectId"],
-                alert["tns"],
-                extract_url_from_class(alert["tns"])
+                alert["tns"].replace("SN", "Supernova"),
+                extract_url_from_class(alert["tns"]),
+                constellation
             )
 
             payloads.append((text, curve_png, cutout))
