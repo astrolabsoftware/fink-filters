@@ -91,7 +91,7 @@ def anomaly_notification_(
     >>> from fink_science.anomaly_detection.processor import anomaly_score
 
     >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> MODELS = ['', '_beta'] # '' corresponds to the model for a telegram channel
+    >>> MODELS = ['_beta', ''] # '' corresponds to the model for a telegram channel
     >>> what = [
     ...     'jd', 'fid', 'magpsf', 'sigmapsf',
     ...     'magnr', 'sigmagnr', 'isdiffpos', 'distnr']
@@ -131,7 +131,7 @@ def anomaly_notification_(
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
     >>> print(sorted(pdf_anomalies['objectId'].values))
-    ['ZTF18aabeyfi', 'ZTF18aapgymv', 'ZTF18aaypnnd', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abjuixy', 'ZTF18abtrvkm', 'ZTF18acaksuq', 'ZTF21acoshvy']
+    ['ZTF17aaabbbp', 'ZTF18aaakhsv', 'ZTF18aabeyfi', 'ZTF18aaypnnd', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abjuixy', 'ZTF19aboujyi', 'ZTF21acobels', 'ZTF21acoshvy']
 
     # Check cut_coords
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
