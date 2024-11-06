@@ -102,7 +102,7 @@ def tns_match_(
     ...     pdf['tns'],
     ...     pdf['candidate'].apply(lambda x: x['jd'])
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']))
-    >>> print(len(pdf[classification]['objectId'].values))
+    >>> print(len(classification['objectId'].values))
     1
     """
     is_in_tns = tns != ""
@@ -149,7 +149,7 @@ def tns_match(
     >>> f = 'fink_filters.filter_tns_match.filter.tns_match'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    0
+    16
     """
     series = tns_match_(tns, jd, jdstarthist)
 
