@@ -300,11 +300,11 @@ def load_to_anomaly_base(data, model):
         access_token = json.loads(res.text)['access_token']
         tg_id_data = requests.get(url=f'https://anomaly.fink-broker.org:443/user/get_tgid/{username}')
         if status_check(tg_id_data, 'tg_id loading'):
-            if 'ND' not in tg_id_data:
+            try:
                 tg_id_data = tg_id_data.content.decode('utf-8')
                 tg_id_data = int(tg_id_data.replace('"', ''))
-        else:
-            tg_id_data = 'ND'
+            except ValueError:
+                tg_id_data = 'ND'           
 
         for ztf_id, text_data, cutout, curve in data:
             cutout.seek(0)
