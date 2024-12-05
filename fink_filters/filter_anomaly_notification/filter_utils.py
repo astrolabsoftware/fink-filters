@@ -304,8 +304,7 @@ def load_to_anomaly_base(data, model):
                 tg_id_data = tg_id_data.content.decode('utf-8')
                 tg_id_data = int(tg_id_data.replace('"', ''))
             except ValueError:
-                tg_id_data = 'ND'           
-
+                tg_id_data = 'ND'
         for ztf_id, text_data, cutout, curve in data:
             cutout.seek(0)
             curve.seek(0)
