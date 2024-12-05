@@ -292,13 +292,13 @@ def load_to_anomaly_base(data, model):
     '''
     username = model[1:]
     time.sleep(3)
-    res = requests.post('https://fink.matwey.name:443/user/signin', data={
+    res = requests.post('https://anomaly.fink-broker.org:443/user/signin', data={
         'username': username,
         'password': os.environ['ANOMALY_TG_TOKEN']
     })
     if status_check(res, 'load_to_anomaly_base_login'):
         access_token = json.loads(res.text)['access_token']
-        tg_id_data = requests.get(url=f'https://fink.matwey.name:443/user/get_tgid/{username}')
+        tg_id_data = requests.get(url=f'https://anomaly.fink-broker.org:443/user/get_tgid/{username}')
         if status_check(tg_id_data, 'tg_id loading'):
             tg_id_data = tg_id_data.content.decode('utf-8')
             tg_id_data = int(tg_id_data.replace('"', ''))
@@ -321,7 +321,7 @@ def load_to_anomaly_base(data, model):
             headers = {
                 "Authorization": f"Bearer {access_token}"
             }
-            response = requests.post('https://fink.matwey.name:443/images/upload', files=files, params=params, data=data,
+            response = requests.post('https://anomaly.fink-broker.org:443/images/upload', files=files, params=params, data=data,
                                      headers=headers, timeout=10)
             status_check(response, 'upload to anomaly base')
             cutout.seek(0)
