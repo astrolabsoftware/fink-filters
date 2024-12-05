@@ -300,8 +300,9 @@ def load_to_anomaly_base(data, model):
         access_token = json.loads(res.text)['access_token']
         tg_id_data = requests.get(url=f'https://fink.matwey.name:443/user/get_tgid/{username}')
         if status_check(tg_id_data, 'tg_id loading'):
-            tg_id_data = tg_id_data.content.decode('utf-8')
-            tg_id_data = int(tg_id_data.replace('"', ''))
+            if 'ND' not in tg_id_data:
+                tg_id_data = tg_id_data.content.decode('utf-8')
+                tg_id_data = int(tg_id_data.replace('"', ''))
         else:
             tg_id_data = 'ND'
 
