@@ -8,7 +8,7 @@ from fink_filters.tester import spark_unit_tests
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def low_state_filter(flux_state: Any) -> np.ndarray:
+def low_state_filter(flux_state: pd.Series) -> np.ndarray:
     # Change argument to only flux_state column ?
     """Returns True the alert is considered a low state,
        returns False else.
@@ -21,7 +21,7 @@ def low_state_filter(flux_state: Any) -> np.ndarray:
     Returns
     -------
     check: pd.Series
-        Mask that returns True if the alert is a new low state, 
+        Mask that returns True if the alert is a new low state,
         False else
     """
 
