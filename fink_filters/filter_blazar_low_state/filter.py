@@ -8,15 +8,15 @@ from fink_filters.tester import spark_unit_tests
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def low_state_filter(alerts: pd.core.frame.DataFrame) -> np.ndarray:
+def low_state_filter(flux_state: Any) -> pd.Series:
     # CHange argument to only flux_state column ?
     """Returns True the alert is considered a low state,
        returns False else.
 
     Parameters
     ----------
-    alerts: pd.core.frame.DataFrame
-        DataFrame batch of alerts received by Fink with history available
+    flux_state: Spark DataFrame Column
+        Column containing the 3 ratios computed in the blazar_low_state module
 
     Returns
     -------
@@ -25,10 +25,10 @@ def low_state_filter(alerts: pd.core.frame.DataFrame) -> np.ndarray:
         False else
     """
 
-    tmp = np.array(alerts.select('flux_state').toPandas().values.tolist())
+    tmp = np.array(flux_state.toPandas().values.tolist())
     tmp = tmp.reshape(tmp.shape[0], tmp.shape[-1]).transpose()
     tmp[pd.isnull(tmp)] = np.nan
-    return (tmp[1] < 1) & (tmp[2] < 1)
+    return pd.Series((tmp[1] < 1) & (tmp[2] < 1))
 
 
 if __name__ == "__main__":
