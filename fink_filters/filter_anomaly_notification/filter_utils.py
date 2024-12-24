@@ -296,7 +296,7 @@ def load_to_anomaly_base(data, model):
         'username': username,
         'password': os.environ['ANOMALY_TG_TOKEN']
     })
-    if status_check(res, 'load_to_anomaly_base_login'):
+    if status_check(res, f'load_to_anomaly_base_login_{username}'):
         access_token = json.loads(res.text)['access_token']
         tg_id_data = requests.get(url=f'https://anomaly.fink-broker.org:443/user/get_tgid/{username}')
         if status_check(tg_id_data, 'tg_id loading'):
