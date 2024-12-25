@@ -92,7 +92,7 @@ def anomaly_notification_(
     >>> from fink_science.anomaly_detection.processor import ANOMALY_MODELS
 
     >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> MODELS = ANOMALY_MODELS # ['_beta', ''] # '' corresponds to the model for a telegram channel
+    >>> MODELS = [''] + ANOMALY_MODELS # ['_beta', ''] # '' corresponds to the model for a telegram channel
     >>> what = [
     ...     'jd', 'fid', 'magpsf', 'sigmapsf',
     ...     'magnr', 'sigmagnr', 'isdiffpos', 'distnr']
