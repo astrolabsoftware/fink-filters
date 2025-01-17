@@ -26,7 +26,7 @@ from fink_filters.tester import spark_unit_tests
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 @profile
 def low_state_filter(flux_state) -> pd.Series:
-    """Returns True the alert is considered a low state,
+    """Returns True the alert is considered a quiescent state,
        returns False else.
 
     Parameters
