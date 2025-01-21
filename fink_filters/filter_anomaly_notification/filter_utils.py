@@ -45,7 +45,7 @@ def get_an_history(delta_date=90):
             value : number of top-10 hits for the period
     '''
     history_data = requests.post(
-        'https://fink-portal.org/api/v1/anomaly',
+        'https://api.fink-portal.org/api/v1/anomaly',
         json={
             'n': 100000000,
             'columns': 'i:objectId',
@@ -428,7 +428,7 @@ def get_cutout(ztf_id):
     '''
     # transfer cutout data
     r = requests.post(
-        "https://fink-portal.org/api/v1/cutouts",
+        "https://api.fink-portal.org/api/v1/cutouts",
         json={"objectId": ztf_id, "kind": "Science", "output-format": "array"},
     )
     if not status_check(r, 'get cutouts'):
@@ -455,7 +455,7 @@ def get_curve(ztf_id):
                 light curve picture
     '''
     r = requests.post(
-        'https://fink-portal.org/api/v1/objects',
+        'https://api.fink-portal.org/api/v1/objects',
         json={
             'objectId': ztf_id,
             'withupperlim': 'True'
