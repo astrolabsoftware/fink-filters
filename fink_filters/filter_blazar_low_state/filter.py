@@ -47,6 +47,8 @@ def low_state_filter(flux_state) -> pd.Series:
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
     # Test
+    >>> print(ztf_alerty_sample)
+    'test'
     >>> df = spark.read.parquet(ztf_alert_sample)
     >>> f = 'fink_filters.filter_blazar_low_state.filter.low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
@@ -71,7 +73,6 @@ if __name__ == "__main__":
     path = os.path.join(path_parent, 'datatest/CTAO_blazar')
     filename = 'CTAO_blazar_datatest_v20-12-24.parquet'
     ztf_alert_sample = "file://{}/{}".format(path, filename)
-    print(ztf_alert_sample)
     globs["ztf_alert_sample"] = ztf_alert_sample
 
     # Run the test suite
