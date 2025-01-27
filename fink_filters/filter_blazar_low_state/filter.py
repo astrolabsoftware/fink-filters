@@ -74,7 +74,8 @@ if __name__ == "__main__":
     path = os.path.join(path_parent, 'datatest/CTAO_blazar')
     filename = 'CTAO_blazar_datatest_v20-12-24.parquet'
     ztf_alert_sample = "file://{}/{}".format(path, filename)
-    globs["ztf_alert_sample"] = ztf_alert_sample
+    path_test = os.path.join(path, filename)
+    globs["ztf_alert_sample"] = path_test
 
     # Run the test suite
     spark_unit_tests(globs)
