@@ -47,7 +47,7 @@ def low_state_filter(flux_state) -> pd.Series:
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
     # Test
-    >>> print(parent_path)
+    >>> print(os.listdir(parent_path))
     'test'
     >>> df = spark.read.parquet(ztf_alert_sample)
     >>> f = 'fink_filters.filter_blazar_low_state.filter.low_state_filter'
