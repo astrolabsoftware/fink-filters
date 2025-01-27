@@ -71,6 +71,7 @@ if __name__ == "__main__":
     path = os.path.join(path_parent, 'datatest/CTAO_blazar')
     filename = 'CTAO_blazar_datatest_v20-12-24.parquet'
     ztf_alert_sample = "file://{}/{}".format(path, filename)
+    print(ztf_alert_sample)
     globs["ztf_alert_sample"] = ztf_alert_sample
 
     # Run the test suite
