@@ -46,6 +46,5 @@ jobs:
       run: |
         pip install py4j
         rm -f /tmp/forest_*.onnx
-        ./run_tests.sh --single_module fink_filters/filter_blazar_low_state/filter.py
-        ./run_tests.sh --single_module fink_filters/filter_blazar_new_low_state/filter.py
+        ./run_tests.sh
         curl -s https://codecov.io/bash | bash
