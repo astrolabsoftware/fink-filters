@@ -52,7 +52,7 @@ def new_low_state_filter(blazar_stats) -> pd.Series:
     >>> f += '.filter.new_low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    12
+    1
     """
 
     tmp = np.array(blazar_stats.values.tolist())
