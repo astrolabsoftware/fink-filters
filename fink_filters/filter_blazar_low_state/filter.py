@@ -54,7 +54,7 @@ def low_state_filter(blazar_stats) -> pd.Series:
     1
     """
 
-    tmp = np.array(blazar_stats.toPandas().values.tolist())
+    tmp = np.array(blazar_stats.values.tolist())
     tmp = tmp.reshape(tmp.shape[0], tmp.shape[-1]).transpose()
     tmp[pd.isnull(tmp)] = np.nan
     tmp[tmp < 0] = np.nan
