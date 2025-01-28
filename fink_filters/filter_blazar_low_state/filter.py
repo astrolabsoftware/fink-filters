@@ -26,13 +26,13 @@ from fink_filters.tester import spark_unit_tests
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 @profile
-def low_state_filter(flux_state) -> pd.Series:
+def low_state_filter(blazar_stats) -> pd.Series:
     """Returns True the alert is considered a quiescent state,
        returns False else.
 
     Parameters
     ----------
-    flux_state: Spark DataFrame Column
+    blazar_stats: Spark DataFrame Column
         Column containing the 3 ratios computed in the blazar_low_state module
 
     Returns
@@ -47,8 +47,6 @@ def low_state_filter(flux_state) -> pd.Series:
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
     # Test
-    >>> print(os.listdir(parent_path))
-    'test'
     >>> df = spark.read.parquet(ztf_alert_sample)
     >>> f = 'fink_filters.filter_blazar_low_state.filter.low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
@@ -56,7 +54,7 @@ def low_state_filter(flux_state) -> pd.Series:
     1
     """
 
-    tmp = np.array(flux_state.toPandas().values.tolist())
+    tmp = np.array(blazar_stats.toPandas().values.tolist())
     tmp = tmp.reshape(tmp.shape[0], tmp.shape[-1]).transpose()
     tmp[pd.isnull(tmp)] = np.nan
     tmp[tmp < 0] = np.nan
