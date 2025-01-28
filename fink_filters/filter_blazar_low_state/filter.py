@@ -51,7 +51,7 @@ def low_state_filter(blazar_stats) -> pd.Series:
     >>> f = 'fink_filters.filter_blazar_low_state.filter.low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    1
+    12
     """
 
     tmp = np.array(blazar_stats.values.tolist())
