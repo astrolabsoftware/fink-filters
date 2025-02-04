@@ -1,5 +1,5 @@
-# Copyright 2024 AstroLab Software
-# Author: Julien Peloton
+# Copyright 2025 AstroLab Software
+# Author: Emille Ishida
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

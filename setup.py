@@ -33,7 +33,8 @@ setuptools.setup(
             'data/mangrove_filtered.csv',
             'data/list_dwarfs_AGN_RADEC.parquet',
             'data/symbiotic_and_cataclysmic.parquet',
-            'data/tde.parquet'
+            'data/tde.parquet',
+            'data/magnetic_cataclysmic_variables.csv'
         ],
     },
     classifiers=[
