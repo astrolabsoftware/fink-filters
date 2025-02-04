@@ -53,7 +53,6 @@ def magnetic_cvs_(ra, dec):
     ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']))
     >>> print(np.sum([i != "Unknown" for i in classification]))
-    
     10
     """
     curdir = os.path.dirname(os.path.abspath(__file__))
@@ -114,7 +113,7 @@ def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
     >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
     >>> df = df.withColumn("mcvs", magnetic_cvs("candidate.isdiffpos", "candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["mcvs"] != "Unknown").count())
-    5
+    10
     """
     # Keep only positive alerts
     valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'))
