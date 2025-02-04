@@ -30,7 +30,6 @@ import pandas as pd
 from fink_filters.tester import spark_unit_tests
 
 
-@pandas_udf(StringType(), PandasUDFType.SCALAR)
 def magnetic_cvs_(ra, dec):
     """Return labels for alerts matching the magnetic CVs catalog.
 
@@ -115,7 +114,7 @@ def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
     >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
     >>> df = df.withColumn("mcvs", magnetic_cvs("candidate.isdiffpos", "candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["mcvs"] != "Unknown").count())
-    10
+    5
     """
     # Keep only positive alerts
     valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'))
