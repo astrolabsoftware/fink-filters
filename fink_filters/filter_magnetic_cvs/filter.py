@@ -88,9 +88,9 @@ def magnetic_cvs_(ra, dec):
     pdf_merge.loc[mask, 'intname'] = [
         str(i).strip() for i in pdf_mcvs['Name'].astype(str).values[idx2]
     ]
-    
+
     return pdf_merge['intname']
-    
+
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
     """ Pandas UDF for magnetic_cvs_
