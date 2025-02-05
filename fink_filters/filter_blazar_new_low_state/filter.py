@@ -1,4 +1,4 @@
-# Copyright 2021-2022 AstroLab Software
+# Copyright 2025 AstroLab Software
 # Author: Julian Hamo
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
