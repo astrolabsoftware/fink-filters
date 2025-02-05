@@ -25,14 +25,22 @@ from fink_filters.tester import spark_unit_tests
 
 
 def anomaly_notification_(
-        df_proc, threshold=10,
-        send_to_tg=False, channel_id=None,
-        send_to_slack=False, channel_name=None,
-        trick_par=10, cut_coords=False, history_period=90, send_to_anomaly_base=False, model=''):
-    """ Create event notifications with a high `anomaly_score` value
+    df_proc,
+    threshold=10,
+    send_to_tg=False,
+    channel_id=None,
+    send_to_slack=False,
+    channel_name=None,
+    trick_par=10,
+    cut_coords=False,
+    history_period=90,
+    send_to_anomaly_base=False,
+    model="",
+):
+    """Create event notifications with a high `anomaly_score` value
 
     Notes
-    ----------
+    -----
     Notifications can be sent to a Slack or Telegram channels.
 
     Parameters
@@ -79,12 +87,12 @@ def anomaly_notification_(
 
 
     Returns
-    ----------
+    -------
     out: Pandas DataFrame
         Pandas DataFrame with anomaly information for the selected candidates
 
     Examples
-    ----------
+    --------
     >>> import pyspark.sql.functions as F
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_science.ad_features.processor import extract_features_ad
@@ -130,7 +138,7 @@ def anomaly_notification_(
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=False, channel_id=None,
     ...     send_to_slack=False, channel_name=None)
-    >>> print(sorted(pdf_anomalies['objectId'].values))
+    >>> print(sorted(pdf_anomalies['objectId'].to_numpy()))
     ['ZTF17aaabbbp', 'ZTF18aaakhsv', 'ZTF18aabeyfi', 'ZTF18aaypnnd', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abjuixy', 'ZTF19aboujyi', 'ZTF21acobels', 'ZTF21acoshvy']
 
     # Check cut_coords
@@ -150,16 +158,24 @@ def anomaly_notification_(
             return pd.DataFrame()
 
     # Compute the median for the night
-    buf_df = df_proc.select(f'anomaly_score{model}')
-    med = buf_df.approxQuantile(f'anomaly_score{model}', [0.5], 0.05)
+    buf_df = df_proc.select(f"anomaly_score{model}")
+    med = buf_df.approxQuantile(f"anomaly_score{model}", [0.5], 0.05)
     med = round(med[0], 2)
 
     # Extract anomalous objects
 
-    pdf_anomalies_ext = df_proc.sort([f'anomaly_score{model}'], ascending=True).limit(trick_par * threshold).toPandas()
-    pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(['objectId'])
-    upper_bound = np.max(pdf_anomalies_ext[f'anomaly_score{model}'].values[:threshold])
-    pdf_anomalies = pdf_anomalies_ext[pdf_anomalies_ext[f'anomaly_score{model}'] <= upper_bound].head(10)
+    pdf_anomalies_ext = (
+        df_proc.sort([f"anomaly_score{model}"], ascending=True)
+        .limit(trick_par * threshold)
+        .toPandas()
+    )
+    pdf_anomalies_ext = pdf_anomalies_ext.drop_duplicates(["objectId"])
+    upper_bound = np.max(
+        pdf_anomalies_ext[f"anomaly_score{model}"].to_numpy()[:threshold]
+    )
+    pdf_anomalies = pdf_anomalies_ext[
+        pdf_anomalies_ext[f"anomaly_score{model}"] <= upper_bound
+    ].head(10)
 
     history_objects = filter_utils.get_an_history(history_period)
 
@@ -169,21 +185,21 @@ def anomaly_notification_(
         gal = SkyCoord(
             ra=row.ra * u.degree, dec=row.dec * u.degree, frame="icrs"
         ).galactic
-        oid = filter_utils.get_OID(row.ra, row.dec)
-        t1a = f'**ID**: [{row.objectId}](https://fink-portal.org/{row.objectId})'
-        t1b = f'ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>'
+        oid = filter_utils.get_oid(row.ra, row.dec)
+        t1a = f"**ID**: [{row.objectId}](https://fink-portal.org/{row.objectId})"
+        t1b = f"ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>"
         t_oid_1a = f"**DR OID (<1'')**: [{oid}](https://ztf.snad.space/view/{oid})"
         t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
-        t2_ = f'**GAL coordinates**: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}'
-        t_ = f'''
-**EQU**: {row.ra},   {row.dec}'''
+        t2_ = f"**GAL coordinates**: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}"
+        t_ = f"""
+**EQU**: {row.ra},   {row.dec}"""
         t2_ += t_
-        t3_ = f'**UTC**: {str(row.timestamp)[:-3]}'
-        t4_ = f'**Real bogus**: {round(row.rb, 2)}'
-        t5_ = f'**Anomaly score**: {round(row[f"anomaly_score{model}"], 2)}'
+        t3_ = f"**UTC**: {str(row.timestamp)[:-3]}"
+        t4_ = f"**Real bogus**: {round(row.rb, 2)}"
+        t5_ = f"**Anomaly score**: {round(row[f'anomaly_score{model}'], 2)}"
         if row.objectId in history_objects:
             t5_ += f"""
-Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {'times' if history_objects[row.objectId] > 1 else 'time'}."""
+Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId]} {"times" if history_objects[row.objectId] > 1 else "time"}."""
         cutout, curve, cutout_perml, curve_perml = (
             filter_utils.get_data_permalink_slack(row.objectId)
         )
@@ -191,30 +207,39 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
         cutout.seek(0)
         cutout_perml = f"<{cutout_perml}|{' '}>"
         curve_perml = f"<{curve_perml}|{' '}>"
-        if model == '':
-            tg_data.append((f'''{t1a}
+        if model == "":
+            tg_data.append((
+                f"""{t1a}
 {t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
-{t5_}''', cutout, curve))
-            slack_data.append(f'''==========================
+{t5_}""",
+                cutout,
+                curve,
+            ))
+            slack_data.append(f"""==========================
 {t1b}
 {t_oid_1b}
 {t2_}
 {t3_}
 {t4_}
 {t5_}
-{cutout_perml}{curve_perml}''')
-        base_data.append((row.objectId, f'''{t1a}
+{cutout_perml}{curve_perml}""")
+        base_data.append((
+            row.objectId,
+            f"""{t1a}
 {t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
-{t5_}'''.replace('\n', '  \n'), cutout, curve))
+{t5_}""".replace("\n", "  \n"),
+            cutout,
+            curve,
+        ))
 
-    init_msg = f'Median anomaly score overnight: {med}.'
-    if cut_coords and model == '':
+    init_msg = f"Median anomaly score overnight: {med}."
+    if cut_coords and model == "":
         init_msg += f"""
 (of the objects in the sky area)
 Sky area:
@@ -226,7 +251,7 @@ Total number of objects per night in the area: {cut_count}.
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
         filter_utils.msg_handler_tg(tg_data, channel_id, init_msg)
-    if model != '':
+    if model != "":
         filter_utils.load_to_anomaly_base(base_data, model)
     return pdf_anomalies
 

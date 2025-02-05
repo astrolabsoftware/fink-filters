@@ -34,11 +34,29 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
+
 def perform_classification(
-        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
-        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
-        cisdiffposc) -> pd.Series:
+    objectId,
+    rf_snia_vs_nonia,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    ra,
+    dec,
+    ssdistnr,
+    cjdc,
+    cfidc,
+    cmagpsfc,
+    csigmapsfc,
+    cmagnrc,
+    csigmagnrc,
+    cmagzpscic,
+    cisdiffposc,
+) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
@@ -75,7 +93,7 @@ def perform_classification(
         magzpsci, isdiffpos as arrays
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
@@ -89,11 +107,11 @@ def perform_classification(
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 5
     small_detection_history = ndethist.astype(float) < 20
-    appeared = isdiffpos.astype(str) == 't'
+    appeared = isdiffpos.astype(str) == "t"
     far_from_mpc = (ssdistnr.astype(float) > 10) | (ssdistnr.astype(float) < 0)
 
     # galactic plane
-    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic.b.deg
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit="deg").galactic.b.deg
 
     awaw_from_galactic_plane = np.abs(b) > 10
 
@@ -108,11 +126,11 @@ def perform_classification(
     sigma_rate = np.zeros(len(fid))
     mag = np.zeros(len(fid))
     err_mag = np.zeros(len(fid))
-    index_mask = np.argwhere(f_kn.values)
-    for i, alertID in enumerate(objectId[f_kn]):
+    index_mask = np.argwhere(f_kn.to_numpy())
+    for i, _ in enumerate(objectId[f_kn]):
         # Spark casts None as NaN
-        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
-        maskFilter = np.array(cfidc[f_kn].values[i]) == np.array(fid)[f_kn][i]
+        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].to_numpy()[i]))
+        maskFilter = np.array(cfidc[f_kn].to_numpy()[i]) == np.array(fid)[f_kn][i]
         m = maskNotNone * maskFilter
         if sum(m) < 2:
             continue
@@ -120,11 +138,11 @@ def perform_classification(
         mag_hist, err_hist = np.array([
             dc_mag(k[0], k[1], k[2], k[3], k[4])
             for k in zip(
-                cmagpsfc[f_kn].values[i][m],
-                csigmapsfc[f_kn].values[i][m],
-                cmagnrc[f_kn].values[i][m],
-                csigmagnrc[f_kn].values[i][m],
-                cisdiffposc[f_kn].values[i][m],
+                cmagpsfc[f_kn].to_numpy()[i][m],
+                csigmapsfc[f_kn].to_numpy()[i][m],
+                cmagnrc[f_kn].to_numpy()[i][m],
+                csigmagnrc[f_kn].to_numpy()[i][m],
+                cisdiffposc[f_kn].to_numpy()[i][m],
             )
         ]).T
 
@@ -132,7 +150,7 @@ def perform_classification(
         mask_outliers = mag_hist < 21
         if sum(mask_outliers) < 2:
             continue
-        jd_hist = cjdc[f_kn].values[i][m][mask_outliers]
+        jd_hist = cjdc[f_kn].to_numpy()[i][m][mask_outliers]
 
         if jd_hist[-1] - jd_hist[0] > 0.5:
             # Compute rate
@@ -158,15 +176,14 @@ def perform_classification(
         for i in range(sum(f_kn)):
             pos = SkyCoord(
                 ra=np.array(ra[f_kn])[i] * u.degree,
-                dec=np.array(dec[f_kn])[i] * u.degree
+                dec=np.array(dec[f_kn])[i] * u.degree,
             )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
-            table = SDSS.query_region(pos, fields=['type'],
-                                      radius=5 * u.arcsec)
+            table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
             type_close_objects = []
             if table is not None:
-                type_close_objects = table['type']
+                type_close_objects = table["type"]
             # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
             # 5: SKY, 6: STAR_LATE, 7: GAL_EM
             to_remove_types = [1, 3, 4, 6]
@@ -177,11 +194,29 @@ def perform_classification(
 
     return f_kn, rate, sigma_rate, mag, err_mag
 
+
 def rate_based_kn_candidates_(
-        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
-        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
-        cisdiffposc) -> pd.Series:
+    objectId,
+    rf_snia_vs_nonia,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    ra,
+    dec,
+    ssdistnr,
+    cjdc,
+    cfidc,
+    cmagpsfc,
+    csigmapsfc,
+    cmagnrc,
+    csigmagnrc,
+    cmagzpscic,
+    cisdiffposc,
+) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
@@ -218,26 +253,60 @@ def rate_based_kn_candidates_(
         magzpsci, isdiffpos as arrays
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
     """
     f_kn, _, _, _, _ = perform_classification(
-        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
-        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
-        cisdiffposc
+        objectId,
+        rf_snia_vs_nonia,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        drb,
+        classtar,
+        jdstarthist,
+        ndethist,
+        cdsxmatch,
+        ra,
+        dec,
+        ssdistnr,
+        cjdc,
+        cfidc,
+        cmagpsfc,
+        csigmapsfc,
+        cmagnrc,
+        csigmagnrc,
+        cmagzpscic,
+        cisdiffposc,
     )
 
     return f_kn
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def rate_based_kn_candidates(
-        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
-        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
-        cisdiffposc) -> pd.Series:
+    objectId,
+    rf_snia_vs_nonia,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    ra,
+    dec,
+    ssdistnr,
+    cjdc,
+    cfidc,
+    cmagpsfc,
+    csigmapsfc,
+    cmagnrc,
+    csigmagnrc,
+    cmagzpscic,
+    cisdiffposc,
+) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
@@ -274,13 +343,13 @@ def rate_based_kn_candidates(
         magzpsci, isdiffpos as arrays
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
@@ -301,33 +370,43 @@ def rate_based_kn_candidates(
     0
     """
     f_kn, rate, sigma_rate, mag, err_mag = perform_classification(
-        objectId, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, ra, dec, ssdistnr, cjdc,
-        cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic,
-        cisdiffposc
+        objectId,
+        rf_snia_vs_nonia,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        drb,
+        classtar,
+        jdstarthist,
+        ndethist,
+        cdsxmatch,
+        ra,
+        dec,
+        ssdistnr,
+        cjdc,
+        cfidc,
+        cmagpsfc,
+        csigmapsfc,
+        cmagnrc,
+        csigmagnrc,
+        cmagzpscic,
+        cisdiffposc,
     )
 
     jd = cjdc.apply(lambda x: x[-1])
     fid = cfidc.apply(lambda x: x[-1])
 
     # galactic plane
-    b = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic.b.deg
+    b = SkyCoord(ra.astype(float), dec.astype(float), unit="deg").galactic.b.deg
 
     # Simplify notations
     if f_kn.any():
         # coordinates
         b = np.array(b)[f_kn]
-        ra = Angle(
-            np.array(ra.astype(float)[f_kn]) * u.degree
-        ).deg
-        dec = Angle(
-            np.array(dec.astype(float)[f_kn]) * u.degree
-        ).deg
-        ra_formatted = Angle(ra * u.degree).to_string(
-            precision=2, sep=' ', unit=u.hour
-        )
+        ra = Angle(np.array(ra.astype(float)[f_kn]) * u.degree).deg
+        dec = Angle(np.array(dec.astype(float)[f_kn]) * u.degree).deg
+        ra_formatted = Angle(ra * u.degree).to_string(precision=2, sep=" ", unit=u.hour)
         dec_formatted = Angle(dec * u.degree).to_string(
-            precision=1, sep=' ', alwayssign=True
+            precision=1, sep=" ", alwayssign=True
         )
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
@@ -350,14 +429,13 @@ def rate_based_kn_candidates(
 
     # message for candidates
     for i, alertID in enumerate(objectId[f_kn]):
-
         # Time since last detection (independently of the band)
-        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
+        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].to_numpy()[i]))
         jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
         # information to send
-        dict_filt = {1: 'g', 2: 'r'}
+        dict_filt = {1: "g", 2: "r"}
         alert_text = """
             *Fink Science Portal:* <https://fink-portal.org/{}|{}>
             """.format(alertID, alertID)
@@ -369,7 +447,7 @@ def rate_based_kn_candidates(
             """.format(rf_snia_vs_nonia[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
         time_text = """
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
-            """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
+            """.format(Time(jd[i], format="jd").iso, delta_jd_last, delta_jd_first[i])
         measurements_text = """
             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
             """.format(dict_filt[fid[i]], mag[i], err_mag[i], rate[i], sigma_rate[i])
@@ -379,50 +457,28 @@ def rate_based_kn_candidates(
         galactic_position_text = """
             *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
 
-        tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
+        tns_text = "*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>".format(
+            ra[i], dec[i]
+        )
         # message formatting
         blocks = [
             {
                 "type": "section",
                 "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": alert_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": skyportal_text
-                    },
-                ]
+                    {"type": "mrkdwn", "text": alert_text},
+                    {"type": "mrkdwn", "text": skyportal_text},
+                ],
             },
             {
                 "type": "section",
                 "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": time_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": score_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": radec_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": measurements_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": galactic_position_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": tns_text
-                    },
-                ]
+                    {"type": "mrkdwn", "text": time_text},
+                    {"type": "mrkdwn", "text": score_text},
+                    {"type": "mrkdwn", "text": radec_text},
+                    {"type": "mrkdwn", "text": measurements_text},
+                    {"type": "mrkdwn", "text": galactic_position_text},
+                    {"type": "mrkdwn", "text": tns_text},
+                ],
             },
         ]
 
@@ -431,39 +487,33 @@ def rate_based_kn_candidates(
         if an alert has passed the filter,
         the message has not been sent to Slack
         """
-        for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
-            if (url_name in os.environ):
+        for url_name in ["KNWEBHOOK", "KNWEBHOOK_FINK"]:
+            if url_name in os.environ:
                 requests.post(
                     os.environ[url_name],
-                    json={
-                        'blocks': blocks,
-                        'username': 'Rate-based kilonova bot'
-                    },
-                    headers={'Content-Type': 'application/json'},
+                    json={"blocks": blocks, "username": "Rate-based kilonova bot"},
+                    headers={"Content-Type": "application/json"},
                 )
             else:
-                log = logging.Logger('Kilonova filter')
+                log = logging.Logger("Kilonova filter")
                 log.warning(error_message.format(url_name))
 
-        ama_in_env = ('KNWEBHOOK_AMA_RATE' in os.environ)
+        ama_in_env = "KNWEBHOOK_AMA_RATE" in os.environ
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
 
         # Monday is 1 and Sunday is 7
-        is_friday = (now.isoweekday() == 5)
+        is_friday = now.isoweekday() == 5
 
         if (np.abs(b[i]) > 20) & (mag[i] < 20) & is_friday & ama_in_env:
             requests.post(
-                os.environ['KNWEBHOOK_AMA_RATE'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Rate-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
+                os.environ["KNWEBHOOK_AMA_RATE"],
+                json={"blocks": blocks, "username": "Rate-based kilonova bot"},
+                headers={"Content-Type": "application/json"},
             )
         else:
-            log = logging.Logger('Kilonova filter')
+            log = logging.Logger("Kilonova filter")
             log.warning(error_message.format(url_name))
 
     return f_kn

@@ -19,8 +19,9 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def tracklet_candidates_(tracklet) -> pd.Series:
-    """ Return alerts belonging to a tracklet (likely space debris or satellite glint)
+    """Return alerts belonging to a tracklet (likely space debris or satellite glint)
 
     Parameters
     ----------
@@ -28,27 +29,28 @@ def tracklet_candidates_(tracklet) -> pd.Series:
         Column containing the tracklet label
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = tracklet_candidates_(pdf['tracklet'])
-    >>> print(len(pdf[classification]['objectId'].values))
+    >>> print(len(pdf[classification]['objectId'].to_numpy()))
     2
 
-    >>> assert 'ZTF21acqersq' in pdf[classification]['objectId'].values
+    >>> assert 'ZTF21acqersq' in pdf[classification]['objectId'].to_numpy()
     """
-    f_tracklet = tracklet.apply(lambda x: str(x).startswith('TRCK_'))
+    f_tracklet = tracklet.apply(lambda x: str(x).startswith("TRCK_"))
 
     return f_tracklet
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def tracklet_candidates(tracklet) -> pd.Series:
-    """ Pandas UDF version of tracklet_candidates_ for Spark
+    """Pandas UDF version of tracklet_candidates_ for Spark
 
     Parameters
     ----------
@@ -56,13 +58,13 @@ def tracklet_candidates(tracklet) -> pd.Series:
         Column containing the tracklet label
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_tracklet_candidates.filter.tracklet_candidates'

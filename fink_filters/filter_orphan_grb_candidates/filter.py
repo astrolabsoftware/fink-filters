@@ -20,8 +20,9 @@ from fink_filters.tester import spark_unit_tests
 import pandas as pd
 import numpy as np
 
+
 def get_valid_rate(mag, filt):
-    """ Try to constrain the rate between the 2nd and 3rd measurements
+    """Try to constrain the rate between the 2nd and 3rd measurements
 
     case 1: the measurements are taken with the same filter
         - mag[2] - mag[1] > 0.0 (becomes fainter)
@@ -44,9 +45,10 @@ def get_valid_rate(mag, filt):
         cond = (v(mag, mag)[2] - v(mag, mag)[1]) > 0.0
     return cond
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
-    """ Simple filter to extract orphan GRB candidates.
+    """Simple filter to extract orphan GRB candidates.
 
     The filter has 6 steps:
     1. No more than a month between first and last detection
@@ -75,13 +77,13 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
         Concatenated mag for the object
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
@@ -111,40 +113,43 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
     at_least_3_det = cmagpsfc.apply(lambda lc: len(lc[~np.isnan(lc)]) == 3)
 
     valid_times = lambda mag, time: time[~np.isnan(mag)]
-    tmp1 = np.array(
-        [
-            False if not at_least_3_det.values[n] else (valid_times(i, j)[2] - valid_times(i, j)[0]) < 10.0 for n, i, j in zip(range(len(at_least_3_det)), cmagpsfc.values, cjdc.values)
-        ]
-    )
+    tmp1 = np.array([
+        False
+        if not at_least_3_det.to_numpy()[n]
+        else (valid_times(i, j)[2] - valid_times(i, j)[0]) < 10.0
+        for n, i, j in zip(
+            range(len(at_least_3_det)), cmagpsfc.to_numpy(), cjdc.to_numpy()
+        )
+    ])
 
     # 4 - The last measurement must be lower (increase in mag) than
     # the previous one. /!\ no band info currently
-    tmp2 = np.array(
-        [
-            False if not at_least_3_det.values[n] else get_valid_rate(i, j) for n, i, j in zip(range(len(at_least_3_det)), cmagpsfc.values, cfidc.values)
-        ]
-    )
+    tmp2 = np.array([
+        False if not at_least_3_det.to_numpy()[n] else get_valid_rate(i, j)
+        for n, i, j in zip(
+            range(len(at_least_3_det)), cmagpsfc.to_numpy(), cfidc.to_numpy()
+        )
+    ])
 
     # 5 - The difference between the g-band and
     # r-band must be almost constant and positive
     condg = lambda mag, filt: mag[~np.isnan(mag) & (filt.astype(int) == 1)]
     condr = lambda mag, filt: mag[~np.isnan(mag) & (filt.astype(int) == 2)]
 
-    meang = np.array(
-        [
-            np.mean(condg(i, j)) for i, j in zip(cmagpsfc.values, cfidc.values)
-        ]
-    )
-    meanr = np.array(
-        [
-            np.mean(condr(i, j)) for i, j in zip(cmagpsfc.values, cfidc.values)
-        ]
-    )
+    meang = np.array([
+        np.mean(condg(i, j)) for i, j in zip(cmagpsfc.to_numpy(), cfidc.to_numpy())
+    ])
+    meanr = np.array([
+        np.mean(condr(i, j)) for i, j in zip(cmagpsfc.to_numpy(), cfidc.to_numpy())
+    ])
     tmp3 = (meang - meanr) >= 0
 
     # 6 - The alert should not be an identified Solar System Objects
     v = lambda val, mag: val[~np.isnan(mag)]
-    tmp4 = [np.all([k in [None, 'null'] for k in v(i, j)]) for i, j in zip(cssnamenrc.values, cmagpsfc.values)]
+    tmp4 = [
+        np.all([k in [None, "null"] for k in v(i, j)])
+        for i, j in zip(cssnamenrc.to_numpy(), cmagpsfc.to_numpy())
+    ]
 
     # Final
     tmp = at_most_a_month & above_18 & at_least_3_det & tmp1 & tmp2 & tmp3 & tmp4

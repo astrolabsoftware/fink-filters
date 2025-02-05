@@ -55,13 +55,13 @@ def early_sn_candidates_(
         Column containing the sextractor score
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = early_sn_candidates_(
     ...     pdf['cdsxmatch'],
@@ -71,10 +71,10 @@ def early_sn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['ndethist']),
     ...     pdf['candidate'].apply(lambda x: x['drb']),
     ...     pdf['candidate'].apply(lambda x: x['classtar']))
-    >>> print(len(pdf[classification]['objectId'].values))
+    >>> print(len(pdf[classification]['objectId'].to_numpy()))
     5
 
-    >>> assert 'ZTF21acobels' in pdf[classification]['objectId'].values
+    >>> assert 'ZTF21acobels' in pdf[classification]['objectId'].to_numpy()
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5
@@ -128,13 +128,13 @@ def early_sn_candidates(
         Column containing the sextractor score
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/regular')
@@ -166,25 +166,23 @@ def early_sn_candidates(
         classtar,
     )
 
-    pdf = pd.DataFrame(
-        {
-            "objectId": objectId,
-            "magpsf": cmagpsfc,
-            "sigmapsf": csigmapsfc,
-            "diffmaglim": cdiffmaglimc,
-            "fid": cfidc,
-            "jd": cjdc,
-            "snn_snia_vs_nonia": snn_snia_vs_nonia,
-            "snn_sn_vs_all": snn_sn_vs_all,
-            "rf_snia_vs_nonia": rf_snia_vs_nonia,
-            "cstampDatac": cstampDatac,
-        }
-    )
+    pdf = pd.DataFrame({
+        "objectId": objectId,
+        "magpsf": cmagpsfc,
+        "sigmapsf": csigmapsfc,
+        "diffmaglim": cdiffmaglimc,
+        "fid": cfidc,
+        "jd": cjdc,
+        "snn_snia_vs_nonia": snn_snia_vs_nonia,
+        "snn_sn_vs_all": snn_sn_vs_all,
+        "rf_snia_vs_nonia": rf_snia_vs_nonia,
+        "cstampDatac": cstampDatac,
+    })
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
         payloads = []
-        for _, alert in pdf[series.values].iterrows():
+        for _, alert in pdf[series.to_numpy()].iterrows():
             curve_png = get_curve(
                 jd=alert["jd"],
                 magpsf=alert["magpsf"],

@@ -32,11 +32,22 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
+
 def perform_classification(
-        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, ra, dec, roid):
-    """
-    """
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    fid,
+    magpsf,
+    sigmapsf,
+    ra,
+    dec,
+    roid,
+):
+    """ """
     high_drb = drb.astype(float) > 0.5
     high_classtar = classtar.astype(float) > 0.4
     new_detection = jd.astype(float) - jdstarthist.astype(float) < 0.25
@@ -56,26 +67,26 @@ def perform_classification(
     if f_kn.any():
         # load mangrove catalog
         curdir = os.path.dirname(os.path.abspath(__file__))
-        mangrove_path = curdir + '/../data/mangrove_filtered.csv'
+        mangrove_path = curdir + "/../data/mangrove_filtered.csv"
         pdf_mangrove = pd.read_csv(mangrove_path)
 
         catalog_mangrove = SkyCoord(
             ra=np.array(pdf_mangrove.ra, dtype=float) * u.degree,
-            dec=np.array(pdf_mangrove.dec, dtype=float) * u.degree
+            dec=np.array(pdf_mangrove.dec, dtype=float) * u.degree,
         )
 
-        pdf = pd.DataFrame.from_dict(
-            {
-                'fid': fid[f_kn], 'ra': ra[f_kn],
-                'dec': dec[f_kn], 'mag': magpsf[f_kn],
-                'err_mag': sigmapsf[f_kn]
-            }
-        )
+        pdf = pd.DataFrame.from_dict({
+            "fid": fid[f_kn],
+            "ra": ra[f_kn],
+            "dec": dec[f_kn],
+            "mag": magpsf[f_kn],
+            "err_mag": sigmapsf[f_kn],
+        })
 
         # identify galaxy somehow close to each alert. Distances are in Mpc
         idx_mangrove, idxself, _, _ = SkyCoord(
             ra=np.array(pdf.ra, dtype=float) * u.degree,
-            dec=np.array(pdf.dec, dtype=float) * u.degree
+            dec=np.array(pdf.dec, dtype=float) * u.degree,
         ).search_around_sky(catalog_mangrove, 2 * u.degree)
 
         # cross match
@@ -86,17 +97,20 @@ def perform_classification(
         for i, row in enumerate(pdf.itertuples()):
             # SkyCoord didn't keep the original indexes
             idx_reduced = idx_mangrove[idxself == i]
-            abs_mag = np.array(row.mag - 25 - 5 * np.log10(
-                pdf_mangrove.loc[idx_reduced, :].lum_dist))
+            abs_mag = np.array(
+                row.mag - 25 - 5 * np.log10(pdf_mangrove.loc[idx_reduced, :].lum_dist)
+            )
 
             candidates_number = np.argwhere(
                 np.array(
                     (
-                        SkyCoord(
-                            ra=row.ra * u.degree,
-                            dec=row.dec * u.degree
-                        ).separation(catalog_mangrove[idx_reduced]).radian < 0.01 / pdf_mangrove.loc[idx_reduced, :].ang_dist
-                    ) & (abs_mag > -17) & (abs_mag < -15)
+                        SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree)
+                        .separation(catalog_mangrove[idx_reduced])
+                        .radian
+                        < 0.01 / pdf_mangrove.loc[idx_reduced, :].ang_dist
+                    )
+                    & (abs_mag > -17)
+                    & (abs_mag < -15)
                 )
             )
             galaxy_matching.append(len(candidates_number) > 0)
@@ -106,12 +120,9 @@ def perform_classification(
                 host_galaxies.append(idx_reduced[candidates_number[0][0]])
                 abs_mag_candidate.append(abs_mag[candidates_number[0][0]])
                 host_alert_separation.append(
-                    SkyCoord(
-                        ra=row.ra * u.degree,
-                        dec=row.dec * u.degree
-                    ).separation(
-                        catalog_mangrove[idx_reduced[candidates_number[0][0]]]
-                    ).radian
+                    SkyCoord(ra=row.ra * u.degree, dec=row.dec * u.degree)
+                    .separation(catalog_mangrove[idx_reduced[candidates_number[0][0]]])
+                    .radian
                 )
                 # There are sometimes 2 hosts, we currently take the closest
                 # to earth.
@@ -126,17 +137,14 @@ def perform_classification(
         for i in range(sum(f_kn)):
             pos = SkyCoord(
                 ra=np.array(ra[f_kn])[i] * u.degree,
-                dec=np.array(dec[f_kn])[i] * u.degree
+                dec=np.array(dec[f_kn])[i] * u.degree,
             )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
-            table = SDSS.query_region(
-                pos, fields=['type'],
-                radius=5 * u.arcsec
-            )
+            table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
             type_close_objects = []
             if table is not None:
-                type_close_objects = table['type']
+                type_close_objects = table["type"]
             # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
             # 5: SKY, 6: STAR_LATE, 7: GAL_EM
             to_remove_types = [1, 3, 4, 6]
@@ -147,10 +155,22 @@ def perform_classification(
 
     return f_kn, pdf_mangrove, host_galaxies, host_alert_separation, abs_mag_candidate
 
+
 def early_kn_candidates_(
-        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, ra, dec, roid) -> pd.Series:
-    """ Return alerts considered as KN candidates from the xmatch with Mangrove
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    fid,
+    magpsf,
+    sigmapsf,
+    ra,
+    dec,
+    roid,
+) -> pd.Series:
+    """Return alerts considered as KN candidates from the xmatch with Mangrove
 
     Note the default `data/mangrove_filtered.csv` catalog is loaded.
 
@@ -188,7 +208,7 @@ def early_kn_candidates_(
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['drb']),
@@ -203,21 +223,44 @@ def early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']),
     ...     pdf['roid'])
-    >>> print(pdf[classification]['objectId'].values)
+    >>> print(pdf[classification]['objectId'].to_numpy())
     []
     """
     f_kn, _, _, _, _ = perform_classification(
-        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, ra, dec, roid
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        ndethist,
+        cdsxmatch,
+        fid,
+        magpsf,
+        sigmapsf,
+        ra,
+        dec,
+        roid,
     )
 
     return f_kn
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def early_kn_candidates(
-        objectId, drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, ra, dec, roid,
-        field) -> pd.Series:
+    objectId,
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    fid,
+    magpsf,
+    sigmapsf,
+    ra,
+    dec,
+    roid,
+    field,
+) -> pd.Series:
     """
     Return alerts considered as KN candidates.
 
@@ -265,7 +308,7 @@ def early_kn_candidates(
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_early_kn_candidates.filter.early_kn_candidates'
@@ -274,45 +317,46 @@ def early_kn_candidates(
     0
     """
     # galactic plane
-    gal = SkyCoord(ra.astype(float), dec.astype(float), unit='deg').galactic
+    gal = SkyCoord(ra.astype(float), dec.astype(float), unit="deg").galactic
 
     out = perform_classification(
-        drb, classtar, jd, jdstarthist, ndethist, cdsxmatch, fid,
-        magpsf, sigmapsf, ra, dec, roid
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        ndethist,
+        cdsxmatch,
+        fid,
+        magpsf,
+        sigmapsf,
+        ra,
+        dec,
+        roid,
     )
 
-    f_kn, pdf_mangrove, host_galaxies, host_alert_separation, \
-        abs_mag_candidate = out
+    f_kn, pdf_mangrove, host_galaxies, host_alert_separation, abs_mag_candidate = out
 
     if f_kn.any():
         # Simplify notations
         b = gal.b.degree[f_kn]
-        ra = Angle(
-            np.array(ra.astype(float)[f_kn]) * u.degree
-        ).deg
-        dec = Angle(
-            np.array(dec.astype(float)[f_kn]) * u.degree
-        ).deg
-        ra_formatted = Angle(ra * u.degree).to_string(
-            precision=2, sep=' ',
-            unit=u.hour
-        )
+        ra = Angle(np.array(ra.astype(float)[f_kn]) * u.degree).deg
+        dec = Angle(np.array(dec.astype(float)[f_kn]) * u.degree).deg
+        ra_formatted = Angle(ra * u.degree).to_string(precision=2, sep=" ", unit=u.hour)
         dec_formatted = Angle(dec * u.degree).to_string(
-            precision=1, sep=' ',
-            alwayssign=True
+            precision=1, sep=" ", alwayssign=True
         )
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
         )
         # Redefine notations relative to candidates
-        fid = np.array(fid.values)[f_kn]
-        jd = np.array(jd.values)[f_kn]
-        mag = magpsf.values[f_kn]
-        err_mag = sigmapsf.values[f_kn]
-        field = field.values[f_kn]
+        fid = np.array(fid.to_numpy())[f_kn]
+        jd = np.array(jd.to_numpy())[f_kn]
+        mag = magpsf.to_numpy()[f_kn]
+        err_mag = sigmapsf.to_numpy()[f_kn]
+        field = field.to_numpy()[f_kn]
 
-    dict_filt = {1: 'g', 2: 'r'}
-    for i, alertID in enumerate(objectId[f_kn].values):
+    dict_filt = {1: "g", 2: "r"}
+    for i, alertID in enumerate(objectId[f_kn].to_numpy()):
         # information to send
         alert_text = """
             *Fink Science Portal:* <https://fink-portal.org/{}|{}>
@@ -322,26 +366,27 @@ def early_kn_candidates(
             """.format(alertID, alertID)
         time_text = """
             *Time:*\n- {} UTC\n - Time since first detection: {:.1f} hours
-            """.format(Time(jd[i], format='jd').iso, delta_jd_first[i] * 24)
+            """.format(Time(jd[i], format="jd").iso, delta_jd_first[i] * 24)
         measurements_text = """
             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f}
             """.format(dict_filt[fid[i]], mag[i], err_mag[i])
         host_text = """
             *Presumed host galaxy:*\n- HyperLEDA Name: {:s}\n- 2MASS XSC Name: {:s}\n- Luminosity distance: ({:.2f} ± {:.2f}) Mpc\n- RA/Dec: {:.7f} {:+.7f}\n- log10(Stellar mass/Ms): {:.2f}
             """.format(
-            pdf_mangrove.loc[host_galaxies[i], 'HyperLEDA_name'][2:-1],
-            pdf_mangrove.loc[host_galaxies[i], '2MASS_name'][2:-1],
-            pdf_mangrove.loc[host_galaxies[i], 'lum_dist'],
-            pdf_mangrove.loc[host_galaxies[i], 'dist_err'],
-            pdf_mangrove.loc[host_galaxies[i], 'ra'],
-            pdf_mangrove.loc[host_galaxies[i], 'dec'],
-            pdf_mangrove.loc[host_galaxies[i], 'stellarmass'],
+            pdf_mangrove.loc[host_galaxies[i], "HyperLEDA_name"][2:-1],
+            pdf_mangrove.loc[host_galaxies[i], "2MASS_name"][2:-1],
+            pdf_mangrove.loc[host_galaxies[i], "lum_dist"],
+            pdf_mangrove.loc[host_galaxies[i], "dist_err"],
+            pdf_mangrove.loc[host_galaxies[i], "ra"],
+            pdf_mangrove.loc[host_galaxies[i], "dec"],
+            pdf_mangrove.loc[host_galaxies[i], "stellarmass"],
         )
         crossmatch_text = """
         *Cross-match: *\n- Alert-host distance: {:.2f} kpc\n- Absolute magnitude: {:.2f}
         """.format(
-            host_alert_separation[i] * pdf_mangrove.loc[
-                host_galaxies[i], 'ang_dist'] * 1000,
+            host_alert_separation[i]
+            * pdf_mangrove.loc[host_galaxies[i], "ang_dist"]
+            * 1000,
             abs_mag_candidate[i],
         )
         radec_text = """
@@ -349,54 +394,29 @@ def early_kn_candidates(
         """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
         galactic_position_text = """
             *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
-        tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
+        tns_text = "*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>".format(
+            ra[i], dec[i]
+        )
         # message formatting
         blocks = [
             {
                 "type": "section",
                 "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": alert_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": skyportal_text
-                    },
-                ]
+                    {"type": "mrkdwn", "text": alert_text},
+                    {"type": "mrkdwn", "text": skyportal_text},
+                ],
             },
             {
                 "type": "section",
                 "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": time_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": host_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": radec_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": crossmatch_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": galactic_position_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": measurements_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": tns_text
-                    },
-                ]
+                    {"type": "mrkdwn", "text": time_text},
+                    {"type": "mrkdwn", "text": host_text},
+                    {"type": "mrkdwn", "text": radec_text},
+                    {"type": "mrkdwn", "text": crossmatch_text},
+                    {"type": "mrkdwn", "text": galactic_position_text},
+                    {"type": "mrkdwn", "text": measurements_text},
+                    {"type": "mrkdwn", "text": tns_text},
+                ],
             },
         ]
 
@@ -406,57 +426,55 @@ def early_kn_candidates(
         if an alert has passed the filter,
         the message has not been sent to Slack
         """
-        for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
-            if (url_name in os.environ) and os.environ[url_name] != '':
+        for url_name in ["KNWEBHOOK", "KNWEBHOOK_FINK"]:
+            if (url_name in os.environ) and os.environ[url_name] != "":
                 requests.post(
                     os.environ[url_name],
                     json={
-                        'blocks': blocks,
-                        'username': 'Cross-match-based kilonova bot'
+                        "blocks": blocks,
+                        "username": "Cross-match-based kilonova bot",
                     },
-                    headers={'Content-Type': 'application/json'},
+                    headers={"Content-Type": "application/json"},
                 )
             else:
-                log = logging.Logger('Kilonova filter')
+                log = logging.Logger("Kilonova filter")
                 log.warning(error_message.format(url_name))
 
         # Grandma amateur channel
-        ama_in_env = ('KNWEBHOOK_AMA_GALAXIES' in os.environ) and os.environ['KNWEBHOOK_AMA_GALAXIES'] != ''
+        ama_in_env = ("KNWEBHOOK_AMA_GALAXIES" in os.environ) and os.environ[
+            "KNWEBHOOK_AMA_GALAXIES"
+        ] != ""
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
 
         # Monday is 1 and Sunday is 7
-        is_friday = (now.isoweekday() == 5)
+        is_friday = now.isoweekday() == 5
 
         if (np.abs(b[i]) > 20) & (mag[i] < 20) & is_friday & ama_in_env:
             requests.post(
-                os.environ['KNWEBHOOK_AMA_GALAXIES'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Cross-match-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
+                os.environ["KNWEBHOOK_AMA_GALAXIES"],
+                json={"blocks": blocks, "username": "Cross-match-based kilonova bot"},
+                headers={"Content-Type": "application/json"},
             )
         else:
-            log = logging.Logger('Kilonova filter')
-            log.warning(error_message.format('KNWEBHOOK_AMA_GALAXIES'))
+            log = logging.Logger("Kilonova filter")
+            log.warning(error_message.format("KNWEBHOOK_AMA_GALAXIES"))
 
         # DWF channel and requirements
         dwf_ztf_fields = [1525, 530, 482, 1476, 388, 1433]
-        dwf_in_env = ('KNWEBHOOK_DWF' in os.environ) and (os.environ['KNWEBHOOK_DWF'] != '')
+        dwf_in_env = ("KNWEBHOOK_DWF" in os.environ) and (
+            os.environ["KNWEBHOOK_DWF"] != ""
+        )
         if (int(field[i]) in dwf_ztf_fields) and dwf_in_env:
             requests.post(
-                os.environ['KNWEBHOOK_DWF'],
-                json={
-                    'blocks': blocks,
-                    'username': 'kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
+                os.environ["KNWEBHOOK_DWF"],
+                json={"blocks": blocks, "username": "kilonova bot"},
+                headers={"Content-Type": "application/json"},
             )
         else:
-            log = logging.Logger('Kilonova filter')
-            log.warning(error_message.format('KNWEBHOOK_DWF'))
+            log = logging.Logger("Kilonova filter")
+            log.warning(error_message.format("KNWEBHOOK_DWF"))
 
     return f_kn
 

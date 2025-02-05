@@ -36,13 +36,13 @@ def yso_spicy_candidates(
         -1 if no match, otherwise > 0
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/spicy_yso')
@@ -62,20 +62,18 @@ def yso_spicy_candidates(
     >>> print(df.count())
     10
     """
-    mask = spicy_id.values != -1
+    mask = spicy_id.to_numpy() != -1
 
-    pdf = pd.DataFrame(
-        {
-            "objectId": objectId,
-            "magpsf": cmagpsfc,
-            "sigmapsf": csigmapsfc,
-            "diffmaglim": cdiffmaglimc,
-            "fid": cfidc,
-            "jd": cjdc,
-            "spicy_id": spicy_id,
-            "spicy_class": spicy_class,
-        }
-    )
+    pdf = pd.DataFrame({
+        "objectId": objectId,
+        "magpsf": cmagpsfc,
+        "sigmapsf": csigmapsfc,
+        "diffmaglim": cdiffmaglimc,
+        "fid": cfidc,
+        "jd": cjdc,
+        "spicy_id": spicy_id,
+        "spicy_class": spicy_class,
+    })
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
