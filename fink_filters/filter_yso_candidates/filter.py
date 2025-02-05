@@ -21,10 +21,10 @@ import pandas as pd
 
 from typing import Any
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def yso_candidates(cdsxmatch: Any) -> pd.Series:
-    """ Return alerts identified as Candidate_YSO and Candidate_TTau* by the
-    xmatch module.
+    """Return alerts identified as Candidate_YSO and Candidate_TTau* by the xmatch module.
 
     Parameters
     ----------
@@ -32,13 +32,13 @@ def yso_candidates(cdsxmatch: Any) -> pd.Series:
         Column containing the cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_yso_candidates.filter.yso_candidates'
@@ -46,12 +46,12 @@ def yso_candidates(cdsxmatch: Any) -> pd.Series:
     >>> print(df.count())
     8
     """
-    f1 = cdsxmatch.values == "Candidate_YSO"
-    f2 = cdsxmatch.values == "Candidate_TTau*"
+    f1 = cdsxmatch.to_numpy() == "Candidate_YSO"
+    f2 = cdsxmatch.to_numpy() == "Candidate_TTau*"
 
     # New taxonomy
-    f3 = cdsxmatch.values == "YSO_Candidate"
-    f4 = cdsxmatch.values == "TTau*_Candidate"
+    f3 = cdsxmatch.to_numpy() == "YSO_Candidate"
+    f4 = cdsxmatch.to_numpy() == "TTau*_Candidate"
 
     mask = f1 | f2 | f3 | f4
 

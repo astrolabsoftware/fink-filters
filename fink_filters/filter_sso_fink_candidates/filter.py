@@ -19,8 +19,9 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def sso_fink_candidates_(roid) -> pd.Series:
-    """ Return alerts considered as Solar System Object candidates by Fink
+    """Return alerts considered as Solar System Object candidates by Fink
 
     Parameters
     ----------
@@ -28,27 +29,28 @@ def sso_fink_candidates_(roid) -> pd.Series:
         Column containing the Solar System label
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = sso_fink_candidates_(pdf['roid'])
-    >>> print(len(pdf[classification]['objectId'].values))
+    >>> print(len(pdf[classification]['objectId'].to_numpy()))
     3
 
-    >>> assert 'ZTF21acqeepb' in pdf[classification]['objectId'].values
+    >>> assert 'ZTF21acqeepb' in pdf[classification]['objectId'].to_numpy()
     """
     f_roid = roid.astype(int) == 2
 
     return f_roid
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sso_fink_candidates(roid) -> pd.Series:
-    """ Pandas UDF version of sso_fink_candidates_ for Spark
+    """Pandas UDF version of sso_fink_candidates_ for Spark
 
     Parameters
     ----------
@@ -56,13 +58,13 @@ def sso_fink_candidates(roid) -> pd.Series:
         Column containing the Solar System label
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_sso_fink_candidates.filter.sso_fink_candidates'

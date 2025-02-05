@@ -27,8 +27,9 @@ import pandas as pd
 import numpy as np
 import os
 
-def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
-    """ Return labels for alerts matching with known TDEs
+
+def known_tde_(ra, dec, radius_arcsec=None) -> pd.Series:
+    """Return labels for alerts matching with known TDEs
 
     Parameters
     ----------
@@ -37,16 +38,16 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
     dec: Pandas series
         Column containing the DEC values of alerts
     radius_arcsec: series
-        Radius for crossmatch, in arcsecond
+        Radius for crossmatch, in arcsecond. Default is 5.
 
     Returns
-    ----------
+    -------
     out: pandas.Series of str
         Return a Pandas DataFrame with the appropriate label:
         Unknown if no match, the name of the TDE otherwise.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/tde')
     >>> classification = known_tde_(
     ...     pdf['candidate'].apply(lambda x: x['ra']),
@@ -55,42 +56,43 @@ def known_tde_(ra, dec, radius_arcsec=pd.Series([5])) -> pd.Series:
     1
 
     """
+    if radius_arcsec is None:
+        radius_arcsec = pd.Series([5])
+
     curdir = os.path.dirname(os.path.abspath(__file__))
-    tdes = pd.read_parquet(curdir + '/data/tde.parquet')
+    tdes = pd.read_parquet(curdir + "/data/tde.parquet")
 
     catalog_tde = SkyCoord(
         ra=np.array(tdes.ra, dtype=float) * u.degree,
-        dec=np.array(tdes.dec, dtype=float) * u.degree
+        dec=np.array(tdes.dec, dtype=float) * u.degree,
     )
 
-    pdf = pd.DataFrame(
-        {
-            'ra': ra,
-            'dec': dec,
-            'candid': range(len(ra)),
-        }
-    )
+    pdf = pd.DataFrame({
+        "ra": ra,
+        "dec": dec,
+        "candid": range(len(ra)),
+    })
 
     catalog_ztf = SkyCoord(
-        ra=np.array(ra.values, dtype=float) * u.degree,
-        dec=np.array(dec.values, dtype=float) * u.degree
+        ra=np.array(ra.to_numpy(), dtype=float) * u.degree,
+        dec=np.array(dec.to_numpy(), dtype=float) * u.degree,
     )
 
     pdf_merge, mask, idx2 = cross_match_astropy(
         pdf, catalog_ztf, catalog_tde, radius_arcsec=radius_arcsec
     )
 
-    pdf_merge['intname'] = 'Unknown'
-    pdf_merge.loc[mask, 'intname'] = [
-        str(i).strip() for i in tdes['name'].astype(str).values[idx2]
+    pdf_merge["intname"] = "Unknown"
+    pdf_merge.loc[mask, "intname"] = [
+        str(i).strip() for i in tdes["name"].astype(str).to_numpy()[idx2]
     ]
 
-    return pdf_merge['intname']
+    return pdf_merge["intname"]
 
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def known_tde(isdiffpos, ra, dec) -> pd.Series:
-    """ Pandas UDF for known_tde_
+    """Pandas UDF for known_tde_
 
     Parameters
     ----------
@@ -102,20 +104,20 @@ def known_tde(isdiffpos, ra, dec) -> pd.Series:
         Column containing the DEC values of alerts
 
     Returns
-    ----------
+    -------
     out: pandas.Series of str
         Return a Pandas DataFrame with the appropriate label:
         Unknown if no match, the name of the TDE otherwise.
 
     Examples
-    ----------
+    --------
     >>> df = spark.read.format('parquet').load('datatest/tde')
     >>> df = df.withColumn("tde", known_tde("candidate.isdiffpos", "candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["tde"] != "Unknown").count())
     1
     """
     # Keep only positive alerts
-    valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'))
+    valid = isdiffpos.apply(lambda x: (x == "t") or (x == "1"))
 
     # perform crossmatch
     series = known_tde_(ra[valid], dec[valid])

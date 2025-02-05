@@ -49,7 +49,12 @@ def generic_bronze_filter(fink_class, observatory, rb, obs_filter):
     f_bogus = rb >= 0.7
 
     base_extragalactic = return_list_of_eg_host()  # include Unknown and Fail as well
-    fink_extragalactic = ["Kilonova candidate", "SN candidate", "Early SN Ia candidate", "Ambiguous"]
+    fink_extragalactic = [
+        "Kilonova candidate",
+        "SN candidate",
+        "Early SN Ia candidate",
+        "Ambiguous",
+    ]
     extragalactic = list(base_extragalactic) + list(fink_extragalactic)
     f_class = fink_class.isin(extragalactic)
 
@@ -58,8 +63,10 @@ def generic_bronze_filter(fink_class, observatory, rb, obs_filter):
 
 
 def grb_bronze_events(fink_class, observatory, rb):
-    """
-    Return alerts spatially and temporally consistent with a gcn alerts
+    """Return alerts spatially and temporally consistent with a gcn alerts
+
+    Notes
+    -----
     Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
 
@@ -89,7 +96,7 @@ def grb_bronze_events(fink_class, observatory, rb):
 @pandas_udf(BooleanType())
 def f_grb_bronze_events(fink_class, observatory, rb):
     """
-    see bronze_events documentation
+    See bronze_events documentation
 
     Examples
     --------
@@ -103,8 +110,10 @@ def f_grb_bronze_events(fink_class, observatory, rb):
 
 
 def grb_silver_events(fink_class, observatory, rb, grb_proba):
-    """
-    Return alerts spatially and temporally consistent with a gcn alerts
+    """Return alerts spatially and temporally consistent with a gcn alerts
+
+    Notes
+    -----
     Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
     and the alerts with a proba > 5 sigma
@@ -141,7 +150,7 @@ def grb_silver_events(fink_class, observatory, rb, grb_proba):
 @pandas_udf(BooleanType())
 def f_grb_silver_events(fink_class, observatory, rb, grb_proba):
     """
-    see silver_events documentation
+    See silver_events documentation
 
     Examples
     --------
@@ -155,8 +164,10 @@ def f_grb_silver_events(fink_class, observatory, rb, grb_proba):
 
 
 def grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
-    """
-    Return alerts spatially and temporally consistent with a gcn alerts
+    """Return alerts spatially and temporally consistent with a gcn alerts
+
+    Notes
+    -----
     Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
     and the alerts with a proba > 5 sigma
@@ -200,7 +211,7 @@ def grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate)
 @pandas_udf(BooleanType())
 def f_grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate):
     """
-    see gold_events documentation
+    See gold_events documentation
 
     Examples
     --------
@@ -209,7 +220,9 @@ def f_grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rat
     >>> df.count()
     1
     """
-    f_gold = grb_gold_events(fink_class, observatory, rb, grb_loc_error, grb_proba, rate)
+    f_gold = grb_gold_events(
+        fink_class, observatory, rb, grb_loc_error, grb_proba, rate
+    )
     return f_gold
 
 
@@ -218,8 +231,10 @@ GW_OBSERVATORY = ["LVK"]
 
 
 def gw_bronze_events(fink_class, observatory, rb):
-    """
-    Return alerts spatially and temporally consistent with a gcn alerts
+    """Return alerts spatially and temporally consistent with a gcn alerts
+
+    Notes
+    -----
     Keep alerts with real bogus score higher than 0.9
     and the alerts classified as "SN candidates", "Unknown", "Ambiguous"
 
@@ -249,7 +264,7 @@ def gw_bronze_events(fink_class, observatory, rb):
 @pandas_udf(BooleanType())
 def f_gw_bronze_events(fink_class, observatory, rb):
     """
-    see bronze_events documentation
+    See bronze_events documentation
 
     Examples
     --------

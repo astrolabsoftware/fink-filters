@@ -19,8 +19,9 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def simbad_grav_candidates_(cdsxmatch) -> pd.Series:
-    """ Return alerts with Gravitational counterpart in the SIMBAD database
+    """Return alerts with Gravitational counterpart in the SIMBAD database
 
     Parameters
     ----------
@@ -28,13 +29,13 @@ def simbad_grav_candidates_(cdsxmatch) -> pd.Series:
         Column containing the SIMBAD cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = simbad_grav_candidates_(pdf['cdsxmatch'])
     >>> nalerts = len(pdf[classification]['objectId'])
@@ -46,25 +47,24 @@ def simbad_grav_candidates_(cdsxmatch) -> pd.Series:
     LensedImage    1
     Name: objectId, dtype: int64
     """
-    f_simbad = cdsxmatch.isin(
-        [
-            'Gravitation',
-            'LensingEv',
-            'GravLensSystem',
-            'GravLens',
-            'LensedImage',
-            'LensedG',
-            'LensedQ',
-            'BlackHole',
-            'GravWaveEvent'
-        ]
-    )
+    f_simbad = cdsxmatch.isin([
+        "Gravitation",
+        "LensingEv",
+        "GravLensSystem",
+        "GravLens",
+        "LensedImage",
+        "LensedG",
+        "LensedQ",
+        "BlackHole",
+        "GravWaveEvent",
+    ])
 
     return f_simbad
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def simbad_grav_candidates(cdsxmatch) -> pd.Series:
-    """ Pandas UDF version of simbad_grav_candidates_ for Spark
+    """Pandas UDF version of simbad_grav_candidates_ for Spark
 
     Parameters
     ----------
@@ -72,13 +72,13 @@ def simbad_grav_candidates(cdsxmatch) -> pd.Series:
         Column containing the SIMBAD cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_simbad_grav_candidates.filter.simbad_grav_candidates'

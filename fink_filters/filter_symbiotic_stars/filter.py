@@ -52,6 +52,7 @@ def crossmatch_symbiotic(ra, dec):
         the name of the source in Manga.
 
     Examples
+    --------
     --------)
     >>> import pyspark.sql.functions as F
     >>> df = spark.read.format('parquet').load('datatest/symbiotic')
@@ -70,13 +71,11 @@ def crossmatch_symbiotic(ra, dec):
     # Note that this is an artifact of re-processing data, as in real-time
     # two alerts from the same exposure cannot be separated by 0.5 arcseconds
     # ./run_tests.sh --single_module fink_filters/filter_symbiotic_stars/filter.py
-    pdf = pd.DataFrame(
-        {
-            "ra": ra.to_numpy(),
-            "dec": dec.to_numpy(),
-            "candid": range(len(ra))
-        }
-    )
+    pdf = pd.DataFrame({
+        "ra": ra.to_numpy(),
+        "dec": dec.to_numpy(),
+        "candid": range(len(ra)),
+    })
 
     # create catalogs
     catalog_ztf = SkyCoord(
@@ -87,18 +86,20 @@ def crossmatch_symbiotic(ra, dec):
     catalog_other = SkyCoord(
         ra=pdf_sym["RA(J2000)"].to_numpy(),
         dec=pdf_sym["DEC(J2000)"].to_numpy(),
-        unit=(u.hourangle, u.deg)
+        unit=(u.hourangle, u.deg),
     )
 
     pdf_merge, mask, idx2 = cross_match_astropy(
         pdf, catalog_ztf, catalog_other, radius_arcsec=pdf_sym["Radius"].astype(float)
     )
 
-    pdf_sym_conc = np.array(["{},{}".format(i, j) for i, j in zip(pdf_sym["Name"], pdf_sym["source"])])
-    pdf_merge['Type'] = 'Unknown'
-    pdf_merge.loc[mask, 'Type'] = pdf_sym_conc[idx2]
+    pdf_sym_conc = np.array([
+        "{},{}".format(i, j) for i, j in zip(pdf_sym["Name"], pdf_sym["source"])
+    ])
+    pdf_merge["Type"] = "Unknown"
+    pdf_merge.loc[mask, "Type"] = pdf_sym_conc[idx2]
 
-    return pdf_merge['Type']
+    return pdf_merge["Type"]
 
 
 if __name__ == "__main__":

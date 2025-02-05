@@ -21,10 +21,19 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        drb, classtar, jd, jdstarthist, roid, ndethist) -> pd.Series:
-    """ Return alerts considered as SN-Ia candidates
+    cdsxmatch,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    roid,
+    ndethist,
+) -> pd.Series:
+    """Return alerts considered as SN-Ia candidates
 
     Parameters
     ----------
@@ -49,13 +58,13 @@ def sn_candidates_(
         beginning of the survey
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = sn_candidates_(
     ...     pdf['cdsxmatch'],
@@ -67,10 +76,10 @@ def sn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
     ...     pdf['roid'],
     ...     pdf['candidate'].apply(lambda x: x['ndethist']))
-    >>> print(len(pdf[classification]['objectId'].values))
+    >>> print(len(pdf[classification]['objectId'].to_numpy()))
     9
 
-    >>> assert 'ZTF21acoqgmy' in pdf[classification]['objectId'].values
+    >>> assert 'ZTF21acoqgmy' in pdf[classification]['objectId'].to_numpy()
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5
@@ -82,18 +91,35 @@ def sn_candidates_(
 
     keep_cds = return_list_of_eg_host()
 
-    f_sn = (snn1 | snn2) & cdsxmatch.isin(keep_cds) & sn_history & high_drb & high_classtar & no_first_det & no_mpc
+    f_sn = (
+        (snn1 | snn2)
+        & cdsxmatch.isin(keep_cds)
+        & sn_history
+        & high_drb
+        & high_classtar
+        & no_first_det
+        & no_mpc
+    )
 
     return f_sn
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def sn_candidates(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        drb, classtar, jd, jdstarthist, roid, ndethist) -> pd.Series:
-    """ Pandas UDF for sn_candidates_
+    cdsxmatch,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    roid,
+    ndethist,
+) -> pd.Series:
+    """Pandas UDF for sn_candidates_
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_sn_candidates.filter.sn_candidates'
@@ -102,8 +128,15 @@ def sn_candidates(
     9
     """
     series = sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        drb, classtar, jd, jdstarthist, roid, ndethist
+        cdsxmatch,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        roid,
+        ndethist,
     )
     return series
 

@@ -17,9 +17,10 @@ from pyspark.sql.types import BooleanType
 
 import pandas as pd
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def snialike(rfscore, cdsxmatch, neargaia, distpsnr1) -> pd.Series:
-    """ Return alerts considered as SN-Ia like
+    """Return alerts considered as SN-Ia like
 
     Parameters
     ----------
@@ -33,15 +34,15 @@ def snialike(rfscore, cdsxmatch, neargaia, distpsnr1) -> pd.Series:
         Column containing the distance to closest PS1 object
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     """
-    mask = rfscore.values > 0.0
-    mask *= cdsxmatch.values == "Unknown"
-    mask *= neargaia.values > 5.0
-    mask *= distpsnr1.values > 5.0
+    mask = rfscore.to_numpy() > 0.0
+    mask *= cdsxmatch.to_numpy() == "Unknown"
+    mask *= neargaia.to_numpy() > 5.0
+    mask *= distpsnr1.to_numpy() > 5.0
 
     return pd.Series(mask)

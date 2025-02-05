@@ -19,8 +19,9 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def simbad_candidates_(cdsxmatch) -> pd.Series:
-    """ Return alerts with counterpart in the SIMBAD database
+    """Return alerts with counterpart in the SIMBAD database
 
     Parameters
     ----------
@@ -28,13 +29,13 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
         Column containing the SIMBAD cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = simbad_candidates_(pdf['cdsxmatch'])
     >>> nalerts = len(pdf[classification]['objectId'])
@@ -50,21 +51,22 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     Symbiotic*     5
     Name: objectId, dtype: int64
     """
-    f_simbad = ~cdsxmatch.isin(['Unknown', 'Transient', 'Fail', 'Fail 504'])
+    f_simbad = ~cdsxmatch.isin(["Unknown", "Transient", "Fail", "Fail 504"])
 
     # mask all kind of failures
-    mask = cdsxmatch.apply(lambda x: x.startswith('Fail'))
+    mask = cdsxmatch.apply(lambda x: x.startswith("Fail"))
     f_simbad[mask] = False
 
     # Remove static objects -- https://github.com/astrolabsoftware/fink-filters/issues/120
-    mask_gal = cdsxmatch.apply(lambda x: x.startswith('Galaxy'))
+    mask_gal = cdsxmatch.apply(lambda x: x.startswith("Galaxy"))
     f_simbad[mask_gal] = False
 
     return f_simbad
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def simbad_candidates(cdsxmatch) -> pd.Series:
-    """ Pandas UDF version of simbad_candidates_ for Spark
+    """Pandas UDF version of simbad_candidates_ for Spark
 
     Parameters
     ----------
@@ -72,13 +74,13 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
         Column containing the SIMBAD cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_simbad_candidates.filter.simbad_candidates'

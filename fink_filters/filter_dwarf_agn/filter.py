@@ -66,13 +66,11 @@ def crossmatch_dwarf_agn(candid, ra, dec):
     curdir = os.path.dirname(os.path.abspath(__file__))
     pdf_lsb = pd.read_parquet(curdir + "/data/list_dwarfs_AGN_RADEC.parquet")
 
-    pdf = pd.DataFrame(
-        {
-            "ra": ra.to_numpy(),
-            "dec": dec.to_numpy(),
-            "candid": candid.to_numpy(),
-        }
-    )
+    pdf = pd.DataFrame({
+        "ra": ra.to_numpy(),
+        "dec": dec.to_numpy(),
+        "candid": candid.to_numpy(),
+    })
 
     # create catalogs
     catalog_ztf = SkyCoord(
@@ -87,7 +85,7 @@ def crossmatch_dwarf_agn(candid, ra, dec):
             dec=np.array([source["DEC"]], dtype=float) * u.degree,
         )
 
-        pdf_merge, mask, idx2 = cross_match_astropy(
+        _, mask, _ = cross_match_astropy(
             pdf, catalog_ztf, catalog_other, radius_arcsec=pd.Series([source["Re_arc"]])
         )
 

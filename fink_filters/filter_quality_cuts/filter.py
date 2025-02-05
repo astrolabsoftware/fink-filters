@@ -20,10 +20,7 @@ from fink_filters.tester import spark_unit_tests
 import pandas as pd
 
 
-def ztf_quality_cuts_(
-    rb,
-    nbad
-) -> pd.Series:
+def ztf_quality_cuts_(rb, nbad) -> pd.Series:
     """Return alerts considered as scientifically valid for ZTF
 
     Parameters
@@ -34,18 +31,18 @@ def ztf_quality_cuts_(
         Column containing number of bad pixels
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = ztf_quality_cuts_(
     ...     pdf['candidate'].apply(lambda x: x['rb']),
     ...     pdf['candidate'].apply(lambda x: x['nbad']))
-    >>> print(len(pdf[classification]['objectId'].values))
+    >>> print(len(pdf[classification]['objectId'].to_numpy()))
     320
     """
     high_rb = rb.astype(float) >= 0.55
@@ -69,13 +66,13 @@ def ztf_quality_cuts(
         Column containing the number of bad pixels
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/regular')

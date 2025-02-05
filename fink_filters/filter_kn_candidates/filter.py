@@ -33,10 +33,21 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 
 from fink_filters.tester import spark_unit_tests
 
+
 def kn_candidates_(
-        rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jd, jdstarthist, ndethist, cdsxmatch, roid) -> pd.Series:
-    """ Return alerts considered as KN candidates.
+    rf_kn_vs_nonkn,
+    rf_snia_vs_nonia,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    roid,
+) -> pd.Series:
+    """Return alerts considered as KN candidates.
 
     Parameters
     ----------
@@ -58,13 +69,13 @@ def kn_candidates_(
         Column containing SSO classification
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = kn_candidates_(
     ...     pdf['rf_kn_vs_nonkn'],
@@ -78,7 +89,7 @@ def kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['ndethist']),
     ...     pdf['cdsxmatch'],
     ...     pdf['roid'])
-    >>> print(pdf[classification]['objectId'].values)
+    >>> print(pdf[classification]['objectId'].to_numpy())
     []
     """
     high_knscore = rf_kn_vs_nonkn.astype(float) > 0.5
@@ -98,10 +109,29 @@ def kn_candidates_(
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def kn_candidates(
-        objectId, rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jdstarthist, ndethist, cdsxmatch, roid, ra, dec, cjdc, cfidc,
-        cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic, cisdiffposc) -> pd.Series:
-    """ Pandas UDF of kn_candidates_ for Spark
+    objectId,
+    rf_kn_vs_nonkn,
+    rf_snia_vs_nonia,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    drb,
+    classtar,
+    jdstarthist,
+    ndethist,
+    cdsxmatch,
+    roid,
+    ra,
+    dec,
+    cjdc,
+    cfidc,
+    cmagpsfc,
+    csigmapsfc,
+    cmagnrc,
+    csigmagnrc,
+    cmagzpscic,
+    cisdiffposc,
+) -> pd.Series:
+    """Pandas UDF of kn_candidates_ for Spark
 
     If the environment variable KNWEBHOOK is defined and match a webhook url,
     the alerts that pass the filter will be sent to the matching Slack channel.
@@ -134,13 +164,13 @@ def kn_candidates(
         magzpsci, isdiffpos as arrays
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
@@ -167,8 +197,17 @@ def kn_candidates(
     fid = cfidc.apply(lambda x: x[-1])
 
     f_kn = kn_candidates_(
-        rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jd, jdstarthist, ndethist, cdsxmatch, roid
+        rf_kn_vs_nonkn,
+        rf_snia_vs_nonia,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        ndethist,
+        cdsxmatch,
+        roid,
     )
 
     if f_kn.any():
@@ -176,21 +215,15 @@ def kn_candidates(
         b = SkyCoord(
             np.array(ra[f_kn], dtype=float),
             np.array(dec[f_kn], dtype=float),
-            unit='deg'
+            unit="deg",
         ).galactic.b.deg
 
         # Simplify notations
-        ra = Angle(
-            np.array(ra.astype(float)[f_kn]) * u.degree
-        ).deg
-        dec = Angle(
-            np.array(dec.astype(float)[f_kn]) * u.degree
-        ).deg
-        ra_formatted = Angle(ra * u.degree).to_string(
-            precision=2, sep=' ', unit=u.hour
-        )
+        ra = Angle(np.array(ra.astype(float)[f_kn]) * u.degree).deg
+        dec = Angle(np.array(dec.astype(float)[f_kn]) * u.degree).deg
+        ra_formatted = Angle(ra * u.degree).to_string(precision=2, sep=" ", unit=u.hour)
         dec_formatted = Angle(dec * u.degree).to_string(
-            precision=1, sep=' ', alwayssign=True
+            precision=1, sep=" ", alwayssign=True
         )
         delta_jd_first = np.array(
             jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
@@ -204,17 +237,17 @@ def kn_candidates(
         fid = np.array(fid.astype(int)[f_kn])
         jd = np.array(jd)[f_kn]
 
-    dict_filt = {1: 'g', 2: 'r'}
+    dict_filt = {1: "g", 2: "r"}
     for i, alertID in enumerate(objectId[f_kn]):
         # Careful - Spark casts None as NaN!
-        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].values[i]))
+        maskNotNone = ~np.isnan(np.array(cmagpsfc[f_kn].to_numpy()[i]))
 
         # Time since last detection (independently of the band)
         jd_hist_allbands = np.array(np.array(cjdc[f_kn])[i])[maskNotNone]
         delta_jd_last = jd_hist_allbands[-1] - jd_hist_allbands[-2]
 
         filt = fid[i]
-        maskFilter = np.array(cfidc[f_kn].values[i]) == filt
+        maskFilter = np.array(cfidc[f_kn].to_numpy()[i]) == filt
         m = maskNotNone * maskFilter
         if sum(m) < 2:
             continue
@@ -222,11 +255,11 @@ def kn_candidates(
         mag_hist, err_hist = np.array([
             dc_mag(k[0], k[1], k[2], k[3], k[4])
             for k in zip(
-                cmagpsfc[f_kn].values[i][m][-2:],
-                csigmapsfc[f_kn].values[i][m][-2:],
-                cmagnrc[f_kn].values[i][m][-2:],
-                csigmagnrc[f_kn].values[i][m][-2:],
-                cisdiffposc[f_kn].values[i][m][-2:],
+                cmagpsfc[f_kn].to_numpy()[i][m][-2:],
+                csigmapsfc[f_kn].to_numpy()[i][m][-2:],
+                cmagnrc[f_kn].to_numpy()[i][m][-2:],
+                csigmagnrc[f_kn].to_numpy()[i][m][-2:],
+                cisdiffposc[f_kn].to_numpy()[i][m][-2:],
             )
         ]).T
 
@@ -236,13 +269,13 @@ def kn_candidates(
 
         # Compute rate only if more than 1 measurement available
         if len(mag_hist) > 1:
-            jd_hist = cjdc[f_kn].values[i][m]
+            jd_hist = cjdc[f_kn].to_numpy()[i][m]
 
             # rate is between `last` and `last-1` measurements only
             dmag = mag_hist[-1] - mag_hist[-2]
             dt = jd_hist[-1] - jd_hist[-2]
             rate = dmag / dt
-            error_rate = np.sqrt(err_hist[-1]**2 + err_hist[-2]**2) / dt
+            error_rate = np.sqrt(err_hist[-1] ** 2 + err_hist[-2] ** 2) / dt
 
         # information to send
         alert_text = """
@@ -257,7 +290,7 @@ def kn_candidates(
             """.format(rf_snia_vs_nonia[i], snn_snia_vs_nonia[i], snn_sn_vs_all[i])
         time_text = """
             *Time:*\n- {} UTC\n - Time since last detection: {:.1f} days\n - Time since first detection: {:.1f} days
-            """.format(Time(jd[i], format='jd').iso, delta_jd_last, delta_jd_first[i])
+            """.format(Time(jd[i], format="jd").iso, delta_jd_last, delta_jd_first[i])
         measurements_text = """
             *Measurement (band {}):*\n- Apparent magnitude: {:.2f} ± {:.2f} \n- Rate: ({:.2f} ± {:.2f}) mag/day\n
             """.format(dict_filt[fid[i]], mag, err_mag, rate, error_rate)
@@ -267,54 +300,29 @@ def kn_candidates(
         galactic_position_text = """
             *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
 
-        tns_text = '*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>'.format(ra[i], dec[i])
+        tns_text = "*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>".format(
+            ra[i], dec[i]
+        )
         # message formatting
         blocks = [
             {
                 "type": "section",
                 "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": alert_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": skyportal_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": knscore_text
-                    }
-                ]
+                    {"type": "mrkdwn", "text": alert_text},
+                    {"type": "mrkdwn", "text": skyportal_text},
+                    {"type": "mrkdwn", "text": knscore_text},
+                ],
             },
             {
                 "type": "section",
                 "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": time_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": score_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": radec_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": measurements_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": galactic_position_text
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": tns_text
-                    },
-                ]
+                    {"type": "mrkdwn", "text": time_text},
+                    {"type": "mrkdwn", "text": score_text},
+                    {"type": "mrkdwn", "text": radec_text},
+                    {"type": "mrkdwn", "text": measurements_text},
+                    {"type": "mrkdwn", "text": galactic_position_text},
+                    {"type": "mrkdwn", "text": tns_text},
+                ],
             },
         ]
 
@@ -323,39 +331,38 @@ def kn_candidates(
         if an alert has passed the filter,
         the message has not been sent to Slack
         """
-        for url_name in ['KNWEBHOOK', 'KNWEBHOOK_FINK']:
+        for url_name in ["KNWEBHOOK", "KNWEBHOOK_FINK"]:
             if (url_name in os.environ) and (os.environ[url_name] != ""):
                 requests.post(
                     os.environ[url_name],
                     json={
-                        'blocks': blocks,
-                        'username': 'Classifier-based kilonova bot'
+                        "blocks": blocks,
+                        "username": "Classifier-based kilonova bot",
                     },
-                    headers={'Content-Type': 'application/json'},
+                    headers={"Content-Type": "application/json"},
                 )
             else:
-                log = logging.Logger('Kilonova filter')
+                log = logging.Logger("Kilonova filter")
                 log.warning(error_message.format(url_name))
 
-        ama_in_env = ('KNWEBHOOK_AMA_CL' in os.environ) and (os.environ["KNWEBHOOK_AMA_CL"] != '')
+        ama_in_env = ("KNWEBHOOK_AMA_CL" in os.environ) and (
+            os.environ["KNWEBHOOK_AMA_CL"] != ""
+        )
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
 
         # Monday is 1 and Sunday is 7
-        is_friday = (now.isoweekday() == 5)
+        is_friday = now.isoweekday() == 5
 
         if (np.abs(b[i]) > 20) & (mag < 20) & is_friday & ama_in_env:
             requests.post(
-                os.environ['KNWEBHOOK_AMA_CL'],
-                json={
-                    'blocks': blocks,
-                    'username': 'Classifier-based kilonova bot'
-                },
-                headers={'Content-Type': 'application/json'},
+                os.environ["KNWEBHOOK_AMA_CL"],
+                json={"blocks": blocks, "username": "Classifier-based kilonova bot"},
+                headers={"Content-Type": "application/json"},
             )
         else:
-            log = logging.Logger('Kilonova filter')
+            log = logging.Logger("Kilonova filter")
             log.warning(error_message.format(url_name))
 
     return f_kn

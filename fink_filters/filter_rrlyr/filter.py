@@ -21,9 +21,10 @@ import pandas as pd
 
 from typing import Any
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def rrlyr(cdsxmatch: Any) -> pd.Series:
-    """ Return alerts identified as RRLyr by the xmatch module.
+    """Return alerts identified as RRLyr by the xmatch module.
 
     Parameters
     ----------
@@ -31,13 +32,13 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
         Column containing the cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_rrlyr.filter.rrlyr'
@@ -46,7 +47,7 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
     3
     """
     # Include new taxonomy
-    mask = (cdsxmatch.values == "RRLyr") | (cdsxmatch.values == "RRLyrae")
+    mask = (cdsxmatch.to_numpy() == "RRLyr") | (cdsxmatch.to_numpy() == "RRLyrae")
 
     return pd.Series(mask)
 

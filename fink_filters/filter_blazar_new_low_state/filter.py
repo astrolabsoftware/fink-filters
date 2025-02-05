@@ -27,8 +27,7 @@ from fink_filters.tester import spark_unit_tests
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 @profile
 def new_low_state_filter(blazar_stats) -> pd.Series:
-    """Returns True the alert is considered a quiescent state,
-       returns False else.
+    """Returns True the alert is considered a quiescent state, False else.
 
     Parameters
     ----------
@@ -54,10 +53,9 @@ def new_low_state_filter(blazar_stats) -> pd.Series:
     >>> print(df.count())
     1
     """
-
-    tmp = np.array(blazar_stats.values.tolist())
+    tmp = np.array(blazar_stats.to_numpy().tolist())
     tmp = tmp.reshape(tmp.shape[0], tmp.shape[-1]).transpose()
-    tmp[pd.isnull(tmp)] = np.nan
+    tmp[pd.isna(tmp)] = np.nan
     tmp[tmp < 0] = np.nan
     return pd.Series((tmp[1] < 1) & (tmp[2] < 1) & (tmp[0] >= 1))
 
@@ -67,12 +65,12 @@ if __name__ == "__main__":
 
     # Run the test suite
     globs = globals()
-    path_list = os.path.dirname(__file__).split('/')
-    path_parent = '/'.join(path_list[:-2])
-    path = os.path.join(path_parent, 'datatest/CTAO_blazar')
-    filename = 'CTAO_blazar_datatest_v20-12-24.parquet'
+    path_list = os.path.dirname(__file__).split("/")
+    path_parent = "/".join(path_list[:-2])
+    path = os.path.join(path_parent, "datatest/CTAO_blazar")
+    filename = "CTAO_blazar_datatest_v20-12-24.parquet"
     ztf_alert_sample = "file://{}/{}".format(path, filename)
-    globs['parent_path'] = path
+    globs["parent_path"] = path
     globs["ztf_alert_sample"] = ztf_alert_sample
 
     # Run the test suite

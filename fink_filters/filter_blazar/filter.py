@@ -21,9 +21,10 @@ import pandas as pd
 
 from typing import Any
 
+
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def blazar(cdsxmatch: Any) -> pd.Series:
-    """ Return alerts identified as Blazar or BLLac by the xmatch module.
+    """Return alerts identified as Blazar or BLLac by the xmatch module.
 
     Parameters
     ----------
@@ -31,13 +32,13 @@ def blazar(cdsxmatch: Any) -> pd.Series:
         Column containing the cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_blazar.filter.blazar'
@@ -57,7 +58,7 @@ def blazar(cdsxmatch: Any) -> pd.Series:
 
     """
     # Include new taxonomy
-    classes = ['Blazar', 'Blazar_Candidate', 'BLLac', 'BLLac_Candidate']
+    classes = ["Blazar", "Blazar_Candidate", "BLLac", "BLLac_Candidate"]
     mask = cdsxmatch.isin(classes)
 
     return pd.Series(mask)
