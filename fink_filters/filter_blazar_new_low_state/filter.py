@@ -18,7 +18,6 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import os
-import numpy as np
 import pandas as pd
 
 from fink_filters.tester import spark_unit_tests
@@ -26,7 +25,7 @@ from fink_filters.tester import spark_unit_tests
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 @profile
-def new_low_state_filter(blazar_stats) -> pd.Series:
+def new_low_state_filter(m0, m1, m2) -> pd.Series:
     """Returns True the alert is considered a quiescent state, False else.
 
     Parameters
@@ -42,22 +41,24 @@ def new_low_state_filter(blazar_stats) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_science.blazar_low_state.processor import quiescent_state
+    >>> import pyspark.sql.functions as F
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
     # Test
     >>> df = spark.read.parquet(ztf_alert_sample)
+    >>> df = df.withColumn("m0", F.col('blazar_stats').getItem('m0').alias("m0"))
+    >>> df = df.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
+    >>> df = df.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
     >>> f = 'fink_filters.filter_blazar_new_low_state'
     >>> f += '.filter.new_low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     1
     """
-    tmp = np.array(blazar_stats.to_numpy().tolist())
-    tmp = tmp.reshape(tmp.shape[0], tmp.shape[-1]).transpose()
-    tmp[pd.isna(tmp)] = np.nan
-    tmp[tmp < 0] = np.nan
-    return pd.Series((tmp[1] < 1) & (tmp[2] < 1) & (tmp[0] >= 1))
+    f0 = m0 >= 1
+    f1 = (m1 < 1) & (m1 >= 0)
+    f2 = (m2 < 1) & (m2 >= 0)
+    return pd.Series(f0 & f1 & f2)
 
 
 if __name__ == "__main__":
