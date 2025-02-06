@@ -18,7 +18,6 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
 import os
-import numpy as np
 import pandas as pd
 
 from fink_filters.tester import spark_unit_tests
