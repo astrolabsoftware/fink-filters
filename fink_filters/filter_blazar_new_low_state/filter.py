@@ -57,8 +57,8 @@ def new_low_state_filter(m0, m1, m2) -> pd.Series:
     1
     """
     f0 = m0 >= 1
-    f1 = (m1 < 1) & (m1 != -1)
-    f2 = (m2 < 1) & (m2 != -1)
+    f1 = (m1 < 1) & (m1 >= 0)
+    f2 = (m2 < 1) & (m2 >= 0)
     return pd.Series(f0 & f1 & f2)
 
 

@@ -56,8 +56,8 @@ def low_state_filter(m1, m2) -> pd.Series:
     >>> print(df.count())
     12
     """
-    f1 = (m1 < 1) & (m1 != -1)
-    f2 = (m2 < 1) & (m2 != -1)
+    f1 = (m1 < 1) & (m1 >= 0)
+    f2 = (m2 < 1) & (m2 >= 0)
     return pd.Series(f1 & f2)
 
 
