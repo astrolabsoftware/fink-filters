@@ -33,11 +33,23 @@ import pandas as pd
 import sys
 import doctest
 
+
 def extract_fink_classification_(
-        cdsxmatch, roid, mulens,
-        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet) -> pd.Series:
-    """ Extract the classification of an alert based on module outputs
+    cdsxmatch,
+    roid,
+    mulens,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    rf_snia_vs_nonia,
+    ndethist,
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    rf_kn_vs_nonkn,
+    tracklet,
+) -> pd.Series:
+    """Extract the classification of an alert based on module outputs
 
     Rule of thumb:
 
@@ -78,12 +90,12 @@ def extract_fink_classification_(
         Column containing the tracklet label
 
     Returns
-    ----------
+    -------
     out: pandas.Series of string
         Return a Pandas series with the classification tag
 
     Examples
-    ---------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = extract_fink_classification_(
     ...     pdf['cdsxmatch'],
@@ -114,7 +126,7 @@ def extract_fink_classification_(
     Candidate_CV*             4
     Name: objectId, dtype: int64
     """
-    classification = pd.Series(['Unknown'] * len(cdsxmatch))
+    classification = pd.Series(["Unknown"] * len(cdsxmatch))
     ambiguity = pd.Series([0] * len(cdsxmatch))
 
     # Tracklet ID
@@ -126,14 +138,25 @@ def extract_fink_classification_(
     # Early SN Ia
     f_sn_early = early_sn_candidates_(
         cdsxmatch,
-        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        rf_snia_vs_nonia,
+        ndethist,
+        drb,
+        classtar,
     )
 
     # SN
     f_sn = sn_candidates_(
-        cdsxmatch, snn_snia_vs_nonia, snn_sn_vs_all,
-        drb, classtar, jd, jdstarthist, roid, ndethist
+        cdsxmatch,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        roid,
+        ndethist,
     )
 
     # Microlensing
@@ -141,8 +164,17 @@ def extract_fink_classification_(
 
     # Kilonova (ML)
     f_kn = kn_candidates_(
-        rf_kn_vs_nonkn, rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all, drb,
-        classtar, jd, jdstarthist, ndethist, cdsxmatch, roid
+        rf_kn_vs_nonkn,
+        rf_snia_vs_nonia,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        ndethist,
+        cdsxmatch,
+        roid,
     )
 
     # SSO (MPC)
@@ -151,28 +183,29 @@ def extract_fink_classification_(
     # SSO (candidates)
     f_roid_2 = sso_fink_candidates_(roid)
 
-    classification.mask(f_mulens.values, 'Microlensing candidate', inplace=True)
-    classification.mask(f_sn.values, 'SN candidate', inplace=True)
-    classification.mask(f_sn_early.values, 'Early SN Ia candidate', inplace=True)
-    classification.mask(f_kn.values, 'Kilonova candidate', inplace=True)
-    classification.mask(f_roid_2.values, 'Solar System candidate', inplace=True)
-    classification.mask(f_tracklet.values, 'Tracklet', inplace=True)
-    classification.mask(f_roid_3.values, 'Solar System MPC', inplace=True)
+    classification = classification.mask(f_mulens.to_numpy(), "Microlensing candidate")
+    classification = classification.mask(f_sn.to_numpy(), "SN candidate")
+    classification = classification.mask(f_sn_early.to_numpy(), "Early SN Ia candidate")
+    classification = classification.mask(f_kn.to_numpy(), "Kilonova candidate")
+    classification = classification.mask(f_roid_2.to_numpy(), "Solar System candidate")
+    classification = classification.mask(f_tracklet.to_numpy(), "Tracklet")
+    classification = classification.mask(f_roid_3.to_numpy(), "Solar System MPC")
 
     # If several flags are up, we cannot rely on the classification
-    ambiguity[f_mulens.values] += 1
-    ambiguity[f_sn.values] += 1
-    ambiguity[f_roid_2.values] += 1
-    ambiguity[f_roid_3.values] += 1
+    ambiguity[f_mulens.to_numpy()] += 1
+    ambiguity[f_sn.to_numpy()] += 1
+    ambiguity[f_roid_2.to_numpy()] += 1
+    ambiguity[f_roid_3.to_numpy()] += 1
     f_ambiguity = ambiguity > 1
-    classification.mask(f_ambiguity.values, 'Ambiguous', inplace=True)
+    classification = classification.mask(f_ambiguity.to_numpy(), "Ambiguous")
 
     classification = np.where(f_simbad, cdsxmatch, classification)
 
     return pd.Series(classification)
 
+
 def extract_fink_classification_from_pdf(pdf):
-    """ Extract classification from a DataFrame made of alerts
+    """Extract classification from a DataFrame made of alerts
 
     Parameters
     ----------
@@ -180,7 +213,7 @@ def extract_fink_classification_from_pdf(pdf):
         DataFrame containing alert values (with Fink schema)
 
     Returns
-    ----------
+    -------
     out: pandas.Series of string
         Return a Pandas series with the classification tag
 
@@ -202,29 +235,41 @@ def extract_fink_classification_from_pdf(pdf):
     Name: objectId, dtype: int64
     """
     classification = extract_fink_classification_(
-        pdf['cdsxmatch'],
-        pdf['roid'],
-        pdf['mulens'],
-        pdf['snn_snia_vs_nonia'],
-        pdf['snn_sn_vs_all'],
-        pdf['rf_snia_vs_nonia'],
-        pdf['candidate'].apply(lambda x: x['ndethist']),
-        pdf['candidate'].apply(lambda x: x['drb']),
-        pdf['candidate'].apply(lambda x: x['classtar']),
-        pdf['candidate'].apply(lambda x: x['jd']),
-        pdf['candidate'].apply(lambda x: x['jdstarthist']),
-        pdf['rf_kn_vs_nonkn'],
-        pdf['tracklet']
+        pdf["cdsxmatch"],
+        pdf["roid"],
+        pdf["mulens"],
+        pdf["snn_snia_vs_nonia"],
+        pdf["snn_sn_vs_all"],
+        pdf["rf_snia_vs_nonia"],
+        pdf["candidate"].apply(lambda x: x["ndethist"]),
+        pdf["candidate"].apply(lambda x: x["drb"]),
+        pdf["candidate"].apply(lambda x: x["classtar"]),
+        pdf["candidate"].apply(lambda x: x["jd"]),
+        pdf["candidate"].apply(lambda x: x["jdstarthist"]),
+        pdf["rf_kn_vs_nonkn"],
+        pdf["tracklet"],
     )
 
     return classification
 
+
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def extract_fink_classification(
-        cdsxmatch, roid, mulens,
-        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet) -> pd.Series:
-    """ Pandas UDF version of extract_fink_classification_ for Apache Spark
+    cdsxmatch,
+    roid,
+    mulens,
+    snn_snia_vs_nonia,
+    snn_sn_vs_all,
+    rf_snia_vs_nonia,
+    ndethist,
+    drb,
+    classtar,
+    jd,
+    jdstarthist,
+    rf_kn_vs_nonkn,
+    tracklet,
+) -> pd.Series:
+    """Pandas UDF version of extract_fink_classification_ for Apache Spark
 
     Parameters
     ----------
@@ -258,16 +303,26 @@ def extract_fink_classification(
         Column containing the tracklet label
 
     Returns
-    ----------
+    -------
     out: pandas.Series of string
         Return a Pandas series with the classification tag
 
     See https://arxiv.org/abs/2009.10185 for more information
     """
     series = extract_fink_classification_(
-        cdsxmatch, roid, mulens,
-        snn_snia_vs_nonia, snn_sn_vs_all, rf_snia_vs_nonia,
-        ndethist, drb, classtar, jd, jdstarthist, rf_kn_vs_nonkn, tracklet
+        cdsxmatch,
+        roid,
+        mulens,
+        snn_snia_vs_nonia,
+        snn_sn_vs_all,
+        rf_snia_vs_nonia,
+        ndethist,
+        drb,
+        classtar,
+        jd,
+        jdstarthist,
+        rf_kn_vs_nonkn,
+        tracklet,
     )
 
     return series

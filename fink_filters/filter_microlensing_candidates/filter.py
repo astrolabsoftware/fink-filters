@@ -19,8 +19,9 @@ from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def microlensing_candidates_(mulens) -> pd.Series:
-    """ Return alerts considered as microlensing candidates
+    """Return alerts considered as microlensing candidates
 
     Parameters
     ----------
@@ -30,16 +31,16 @@ def microlensing_candidates_(mulens) -> pd.Series:
         non-zero only for events favoured as microlensing by both bands.
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = microlensing_candidates_(pdf['mulens'])
-    >>> print(pdf[classification]['objectId'].values)
+    >>> print(pdf[classification]['objectId'].to_numpy())
     []
     """
     f_mulens = mulens > 0.0
@@ -49,7 +50,7 @@ def microlensing_candidates_(mulens) -> pd.Series:
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def microlensing_candidates(mulens) -> pd.Series:
-    """ Return alerts considered as microlensing candidates
+    """Return alerts considered as microlensing candidates
 
     Parameters
     ----------
@@ -59,13 +60,13 @@ def microlensing_candidates(mulens) -> pd.Series:
         non-zero only for events favoured as microlensing by both bands.
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.filter_microlensing_candidates.filter.microlensing_candidates'
@@ -73,9 +74,7 @@ def microlensing_candidates(mulens) -> pd.Series:
     >>> print(df.count())
     0
     """
-    f_mulens = microlensing_candidates_(
-        mulens
-    )
+    f_mulens = microlensing_candidates_(mulens)
 
     return f_mulens
 

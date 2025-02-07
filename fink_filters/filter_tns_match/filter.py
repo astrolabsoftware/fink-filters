@@ -27,7 +27,7 @@ import os
 
 
 def extract_url_from_class(tns: str) -> str:
-    """ Wikipedia link based on the TNS tag
+    """Wikipedia link based on the TNS tag
 
     Parameters
     ----------
@@ -88,13 +88,13 @@ def tns_match_(
         Column containing earliest Julian dates corresponding to ndethist
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> fake_tns = ["SN Ia" for i in range(len(pdf))]
     >>> pdf["tns"] = fake_tns
@@ -138,13 +138,13 @@ def tns_match(
         Column containing the TNS cross-match values
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> import pyspark.sql.functions as F
     >>> df = spark.read.format('parquet').load('datatest/regular')
@@ -160,20 +160,18 @@ def tns_match(
     """
     series = tns_match_(tns, jd, jdstarthist)
 
-    pdf = pd.DataFrame(
-        {
-            "objectId": objectId,
-            "ra": ra,
-            "dec": dec,
-            "tns": tns,
-            "dt": jd - jdstarthist,
-        }
-    )
+    pdf = pd.DataFrame({
+        "objectId": objectId,
+        "ra": ra,
+        "dec": dec,
+        "tns": tns,
+        "dt": jd - jdstarthist,
+    })
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
         payloads = []
-        for _, alert in pdf[series.values].iterrows():
+        for _, alert in pdf[series.to_numpy()].iterrows():
             curve_png = get_curve(
                 objectId=alert["objectId"],
                 origin="API",
@@ -181,7 +179,9 @@ def tns_match(
 
             cutout = get_cutout(ztf_id=alert["objectId"], kind="Science", origin="API")
 
-            constellation = get_constellation(SkyCoord(alert["ra"], alert["dec"], unit="deg"))
+            constellation = get_constellation(
+                SkyCoord(alert["ra"], alert["dec"], unit="deg")
+            )
             text = """
 🔭 Appeared {:.0f} days ago
 
@@ -194,7 +194,7 @@ def tns_match(
                 alert["objectId"],
                 alert["tns"].replace("SN", "Supernova"),
                 extract_url_from_class(alert["tns"]),
-                constellation
+                constellation,
             )
 
             payloads.append((text, curve_png, cutout))
