@@ -117,6 +117,9 @@ def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
     # Keep only positive alerts
     valid = isdiffpos.apply(lambda x: (x == "t") or (x == "1"))
 
+    if len(ra[valid]) == 0:
+        return pd.Series(["Unknown"] * len(ra))
+
     # perform crossmatch
     series = magnetic_cvs_(ra[valid], dec[valid])
 
