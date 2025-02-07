@@ -58,13 +58,11 @@ def magnetic_cvs_(ra, dec):
     curdir = os.path.dirname(os.path.abspath(__file__))
     pdf_mcvs = pd.read_csv(curdir + "/data/magnetic_cataclysmic_variables.csv")
 
-    pdf = pd.DataFrame(
-        {
-            "ra": ra.to_numpy(),
-            "dec": dec.to_numpy(),
-            "candid": range(len(ra))
-        }
-    )
+    pdf = pd.DataFrame({
+        "ra": ra.to_numpy(),
+        "dec": dec.to_numpy(),
+        "candid": range(len(ra)),
+    })
 
     # create catalogs
     catalog_ztf = SkyCoord(
@@ -75,23 +73,24 @@ def magnetic_cvs_(ra, dec):
     catalog_other = SkyCoord(
         ra=pdf_mcvs["RA(J2000)"].to_numpy(),
         dec=pdf_mcvs["DEC(J2000)"].to_numpy(),
-        unit=(u.hourangle, u.deg)
+        unit=(u.hourangle, u.deg),
     )
 
     pdf_merge, mask, idx2 = cross_match_astropy(
         pdf, catalog_ztf, catalog_other, radius_arcsec=pdf_mcvs["Radius"].astype(float)
     )
 
-    pdf_merge['intname'] = 'Unknown'
-    pdf_merge.loc[mask, 'intname'] = [
-        str(i).strip() for i in pdf_mcvs['Name'].astype(str).values[idx2]
+    pdf_merge["intname"] = "Unknown"
+    pdf_merge.loc[mask, "intname"] = [
+        str(i).strip() for i in pdf_mcvs["Name"].astype(str).to_numpy()[idx2]
     ]
 
-    return pdf_merge['intname']
+    return pdf_merge["intname"]
+
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
 def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
-    """ Pandas UDF for magnetic_cvs_
+    """Pandas UDF for magnetic_cvs_
 
     Parameters
     ----------
@@ -103,20 +102,20 @@ def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
         Column containing the DEC values of alerts
 
     Returns
-    ----------
+    -------
     out: pandas.Series of str
         Return a Pandas DataFrame with the appropriate label:
         Unknown if no match, the name of the magnetic CV otherwise.
 
     Examples
-    ----------
+    --------
     >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
     >>> df = df.withColumn("mcvs", magnetic_cvs("candidate.isdiffpos", "candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["mcvs"] != "Unknown").count())
     10
     """
     # Keep only positive alerts
-    valid = isdiffpos.apply(lambda x: (x == 't') or (x == '1'))
+    valid = isdiffpos.apply(lambda x: (x == "t") or (x == "1"))
 
     # perform crossmatch
     series = magnetic_cvs_(ra[valid], dec[valid])
