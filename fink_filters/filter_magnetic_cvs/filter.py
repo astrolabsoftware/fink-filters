@@ -20,6 +20,9 @@ from pyspark.sql.types import StringType
 from fink_science.xmatch.utils import cross_match_astropy
 from fink_filters import __file__
 
+from fink_utils.tg_bot.utils import get_curve
+from fink_utils.tg_bot.utils import msg_handler_tg
+
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 
@@ -28,6 +31,38 @@ import numpy as np
 import pandas as pd
 
 from fink_filters.tester import spark_unit_tests
+
+
+def send_to_telegram(pdf, channel):
+    """ """
+    # Loop over matches
+    if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
+        payloads = []
+        for _, alert in pdf.iterrows():
+            curve_png = get_curve(
+                objectId=alert["objectId"],
+                origin="API",
+            )
+
+            text = """
+*Object ID*: [{}](https://fink-portal.org/{})
+*Name*: {}
+*RA/Dec coordinates*: {} {}
+            """.format(
+                alert["objectId"],
+                alert["objectId"],
+                alert["name"],
+                alert["ra"],
+                alert["dec"],
+            )
+
+            payloads.append((text, None, curve_png))
+
+        if len(payloads) > 0:
+            # Send to tg
+            msg_handler_tg(payloads, channel_id=channel, init_msg="")
+    else:
+        print("Telegram token FINK_TG_TOKEN is not set")
 
 
 def magnetic_cvs_(ra, dec):
@@ -89,7 +124,7 @@ def magnetic_cvs_(ra, dec):
 
 
 @pandas_udf(StringType(), PandasUDFType.SCALAR)
-def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
+def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
     """Pandas UDF for magnetic_cvs_
 
     Parameters
@@ -110,7 +145,7 @@ def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
     Examples
     --------
     >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
-    >>> df = df.withColumn("mcvs", magnetic_cvs("candidate.isdiffpos", "candidate.ra", "candidate.dec"))
+    >>> df = df.withColumn("mcvs", magnetic_cvs("objectId", "candidate.isdiffpos", "candidate.ra", "candidate.dec"))
     >>> print(df.filter(df["mcvs"] != "Unknown").count())
     10
     """
@@ -121,13 +156,23 @@ def magnetic_cvs(isdiffpos, ra, dec) -> pd.Series:
         return pd.Series(["Unknown"] * len(ra))
 
     # perform crossmatch
-    series = magnetic_cvs_(ra[valid], dec[valid])
+    out = magnetic_cvs_(ra[valid], dec[valid])
 
     # Default values are Unknown
-    to_return = pd.Series(["Unknown"] * len(ra))
-    to_return[valid] = series.to_numpy()
+    names = pd.Series(["Unknown"] * len(ra))
+    names[valid] = out.to_numpy()
 
-    return to_return
+    mask = names != "Unknown"
+    if len(names[mask]) > 0:
+        pdf = pd.DataFrame({
+            "objectId": objectId[mask],
+            "ra": ra[mask],
+            "dec": dec[mask],
+            "name": names[mask],
+        })
+        send_to_telegram(pdf, channel="@fink_magnetic_cv_stars")
+
+    return names
 
 
 if __name__ == "__main__":
