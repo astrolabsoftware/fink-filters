@@ -85,7 +85,7 @@ def magnetic_cvs_(ra, dec):
     --------
     >>> pdf = pd.read_parquet('datatest/magnetic_cvs/')
     >>> classification = magnetic_cvs_(
-s    ...     pdf['candidate'].apply(lambda x: x['ra']),
+    ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']))
     >>> print(np.sum([i != "Unknown" for i in classification]))
     10
