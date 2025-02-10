@@ -85,7 +85,7 @@ def magnetic_cvs_(ra, dec):
     --------
     >>> pdf = pd.read_parquet('datatest/magnetic_cvs/')
     >>> classification = magnetic_cvs_(
-    ...     pdf['candidate'].apply(lambda x: x['ra']),
+s    ...     pdf['candidate'].apply(lambda x: x['ra']),
     ...     pdf['candidate'].apply(lambda x: x['dec']))
     >>> print(np.sum([i != "Unknown" for i in classification]))
     10
@@ -129,6 +129,8 @@ def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
 
     Parameters
     ----------
+    objectId: Pandas series of str
+        Column containing ZTF objectId
     isdiffpos: Pandas series of str
         Column containing positiveness flag
     ra: Pandas series of float
