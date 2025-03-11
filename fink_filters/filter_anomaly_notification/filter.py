@@ -35,6 +35,7 @@ def anomaly_notification_(
     cut_coords=False,
     history_period=90,
     send_to_anomaly_base=False,
+    timeout=25,
     model="",
 ):
     """Create event notifications with a high `anomaly_score` value
@@ -80,6 +81,8 @@ def anomaly_notification_(
         Name of the model used.
         Name must start with a ‘_’ and be ‘_{user_name}’,
         where user_name is the user name of the model at https://anomaly.fink-portal.org/.
+    timeout: int
+        Timeout for Telegram, in seconds. Default is 25.
     send_to_anomaly_base: bool
         If True, notifications are uploaded to
         https://anomaly.fink-portal.org/ in the selected model's
@@ -250,9 +253,9 @@ Total number of objects per night in the area: {cut_count}.
     if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
-        filter_utils.msg_handler_tg(tg_data, channel_id, init_msg)
+        filter_utils.msg_handler_tg(tg_data, channel_id, init_msg, timeout=timeout)
     if model != "":
-        filter_utils.load_to_anomaly_base(base_data, model)
+        filter_utils.load_to_anomaly_base(base_data, model, timeout=timeout)
     return pdf_anomalies
 
 

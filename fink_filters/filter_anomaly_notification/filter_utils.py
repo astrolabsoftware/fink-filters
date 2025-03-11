@@ -115,7 +115,7 @@ def get_data_permalink_slack(ztf_id):
     )
 
 
-def status_check(res, source="not defined"):
+def status_check(res, source="not defined", timeout=25):
     """Checks whether the request was successful.
 
     Notes
@@ -126,6 +126,8 @@ def status_check(res, source="not defined"):
     ----------
     res : Response object
     source : source of log
+    timeout: int
+        Timeout in second. Default is 25.
 
     Returns
     -------
@@ -144,7 +146,7 @@ def status_check(res, source="not defined"):
                 "chat_id": "@fink_test",
                 "text": f"Source: {source}, error: {str(res.status_code)}, description: {res.text}",
             },
-            timeout=25,
+            timeout=timeout,
         )
         return False
     return True
@@ -193,7 +195,7 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
             )
 
 
-def msg_handler_tg(tg_data, channel_id, init_msg):
+def msg_handler_tg(tg_data, channel_id, init_msg, timeout=25):
     """Telegram handler
 
     Notes
@@ -215,6 +217,8 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
         Channel id in Telegram
     init_msg: str
         Initial message
+    timeout: int
+        Timeout in seconds. Default is 25.
 
     Returns
     -------
@@ -226,7 +230,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
     res = requests.post(
         url + "/sendMessage",
         data={"chat_id": channel_id, "text": init_msg, "parse_mode": "markdown"},
-        timeout=25,
+        timeout=timeout,
     )
     status_check(res, "sending to tg_channel (init)")
     time.sleep(10)
@@ -261,13 +265,13 @@ def msg_handler_tg(tg_data, channel_id, init_msg):
                 "second": cutout,
                 "first": curve,
             },
-            timeout=25,
+            timeout=timeout,
         )
         status_check(res, "sending to tg_channel (main messages)")
         time.sleep(10)
 
 
-def load_to_anomaly_base(data, model):
+def load_to_anomaly_base(data, model, timeout=25):
     """Load anomaly data from user database
 
     Parameters
@@ -279,6 +283,8 @@ def load_to_anomaly_base(data, model):
         Name of the model used.
         Name must start with a ‘_’ and be ‘_{user_name}’,
         where user_name is the user name of the model at https://anomaly.fink-portal.org/.
+    timeout: int
+        Timeout in second. Default is 25
 
     Returns
     -------
@@ -357,7 +363,7 @@ def load_to_anomaly_base(data, model):
                     "second": cutout,
                     "first": curve,
                 },
-                timeout=25,
+                timeout=timeout,
             )
             if status_check(res, f"individual sending to {tg_id_data}"):
                 res = requests.post(
@@ -367,7 +373,7 @@ def load_to_anomaly_base(data, model):
                         "text": f"Feedback for {ztf_id}:",
                         "reply_markup": inline_keyboard,
                     },
-                    timeout=25,
+                    timeout=timeout,
                 )
                 status_check(res, f"button individual sending to {tg_id_data}")
 
