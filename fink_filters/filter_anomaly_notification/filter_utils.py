@@ -30,6 +30,43 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 
+def status_check(res, source="not defined", timeout=60):
+    """Checks whether the request was successful.
+
+    Notes
+    -----
+    In case of an error, sends information about the error to the @fink_test telegram channel
+
+    Parameters
+    ----------
+    res : [Response, None] object
+    source : source of log
+    timeout: int
+        Timeout in second. Default is 25.
+
+    Returns
+    -------
+        result : bool
+            True : The request was successful
+            False: The request was executed with an error
+    """
+    if res is None or res.status_code != 200:
+        url = "https://api.telegram.org/bot"
+        url += os.environ["ANOMALY_TG_TOKEN"]
+        method = url + "/sendMessage"
+        time.sleep(8)
+        requests.post(
+            method,
+            data={
+                "chat_id": "@fink_test",
+                "text": f"Source: {source}, error: {str((res.status_code if res is not None else ''))}, description: {(res.text if res is not None else '')}",
+            },
+            timeout=timeout,
+        )
+        return False
+    return True
+
+
 def send_post_request_with_retry(
     session: requests.Session,
     url: str,
@@ -208,43 +245,6 @@ def get_data_permalink_slack(ztf_id):
         result["files"][0]["permalink"],
         result["files"][1]["permalink"],
     )
-
-
-def status_check(res, source="not defined", timeout=60):
-    """Checks whether the request was successful.
-
-    Notes
-    -----
-    In case of an error, sends information about the error to the @fink_test telegram channel
-
-    Parameters
-    ----------
-    res : [Response, None] object
-    source : source of log
-    timeout: int
-        Timeout in second. Default is 25.
-
-    Returns
-    -------
-        result : bool
-            True : The request was successful
-            False: The request was executed with an error
-    """
-    if res.status_code != 200:
-        url = "https://api.telegram.org/bot"
-        url += os.environ["ANOMALY_TG_TOKEN"]
-        method = url + "/sendMessage"
-        time.sleep(8)
-        requests.post(
-            method,
-            data={
-                "chat_id": "@fink_test",
-                "text": f"Source: {source}, error: {str((res.status_code if res is not None else ''))}, description: {(res.text if res is not None else '')}",
-            },
-            timeout=timeout,
-        )
-        return False
-    return True
 
 
 def msg_handler_slack(slack_data, channel_name, init_msg):
