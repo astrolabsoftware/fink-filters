@@ -121,7 +121,20 @@ def send_post_request_with_retry(
 
 
 def get_an_history(delta_date=90):
-    """Retrieve all anomaly data from Fink database"""
+    """Retrieve all anomaly data from Fink database
+
+    Parameters
+    ----------
+    delta_date : int
+        Time period in days for which objects are considered
+
+    Returns
+    -------
+    res_obj : Counter
+        object Counter of the following content:
+            key : object ID
+            value : number of top-10 hits for the period
+    """
     session = requests.Session()
     history_data = send_post_request_with_retry(
         session=session,
@@ -143,7 +156,25 @@ def get_an_history(delta_date=90):
 
 
 def get_data_permalink_slack(ztf_id):
-    """Loads cutout and light curve via the Fink API and copies them to the Slack server"""
+    """Loads cutout and light curve via the Fink API and copies them to the Slack server
+
+    Parameters
+    ----------
+    ztf_id : str
+        unique identifier for this object
+
+    Returns
+    -------
+    cutout : BytesIO stream
+        cutout image in png format
+    curve : BytesIO stream
+        light curve picture
+    cutout_perml : str
+        Link to the cutout image uploaded to the Slack server
+    curve_perml : str
+        Link to the light curve image uploaded to the Slack server
+
+    """
     cutout = get_cutout(ztf_id)
     curve = get_curve(ztf_id)
     session = requests.Session()
@@ -167,7 +198,7 @@ def get_data_permalink_slack(ztf_id):
                 session=session,
                 url=f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMessage",
                 data={"chat_id": "@fink_test", "text": e.response["error"]},
-                timeout=25,
+                timeout=60,
                 source="slack_api_error"
             )
             return cutout, curve, None, None
@@ -179,7 +210,7 @@ def get_data_permalink_slack(ztf_id):
     )
 
 
-def status_check(res, source="not defined", timeout=25):
+def status_check(res, source="not defined", timeout=60):
     """Checks whether the request was successful.
 
     Notes
@@ -255,12 +286,39 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
                 + os.environ["ANOMALY_TG_TOKEN"]
                 + "/sendMessage",
                 data={"chat_id": "@fink_test", "text": e.response["error"]},
-                timeout=25,
+                timeout=60,
             )
 
 
-def msg_handler_tg(tg_data, channel_id, init_msg, timeout=25):
-    """Telegram handler"""
+def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
+    """Telegram handler
+
+    Notes
+    -----
+    The function sends notifications to the "channel_id" channel of Telegram.
+
+    Parameters
+    ----------
+    tg_data: list
+        List of tuples. Each item is a separate notification.
+        Content of the tuple:
+            text_data : str
+                Notification text
+            cutout : BytesIO stream
+                cutout image in png format
+            curve : BytesIO stream
+                light curve picture
+    channel_id: string
+        Channel id in Telegram
+    init_msg: str
+        Initial message
+    timeout: int
+        Timeout in seconds. Default is 25.
+
+    Returns
+    -------
+        None
+    """
     url = "https://api.telegram.org/bot"
     url += os.environ["ANOMALY_TG_TOKEN"]
     method = url + "/sendMediaGroup"
@@ -316,8 +374,25 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=25):
         time.sleep(10)
 
 
-def load_to_anomaly_base(data, model, timeout=25):
-    """Load anomaly data from user database"""
+def load_to_anomaly_base(data, model, timeout=60):
+    """Load anomaly data from user database
+
+    Parameters
+    ----------
+    data: list
+        A list of tuples of 4 elements each: (ZTF identifier: str,
+        notification text: str, cutout: BytesIO, light curve: BytesIO)
+    model: str
+        Name of the model used.
+        Name must start with a ‘_’ and be ‘_{user_name}’,
+        where user_name is the user name of the model at https://anomaly.fink-portal.org/.
+    timeout: int
+        Timeout in second. Default is 25
+
+    Returns
+    -------
+    NONE
+    """
     username = model[1:]
     session = requests.Session()
     res = send_post_request_with_retry(
