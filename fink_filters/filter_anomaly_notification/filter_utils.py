@@ -75,7 +75,7 @@ def send_post_request_with_retry(
     max_retries=3,
     backoff_factor=2,
     allowed_exceptions=(Timeout, ConnectionError),
-    raise_on_http_error=True,
+    raise_on_http_error=False,
     source="not defined",
     **kwargs,
 ) -> requests.Response:
@@ -130,6 +130,8 @@ def send_post_request_with_retry(
                 )
             if raise_on_http_error:
                 response.raise_for_status()
+            else:
+                status_check(response, source)
             return response
 
         except allowed_exceptions as e:  # noqa: PERF203
