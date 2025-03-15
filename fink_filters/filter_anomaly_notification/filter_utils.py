@@ -128,6 +128,7 @@ def send_post_request_with_retry(
     requests.Response
         The server's response object.
     """
+    # noqa: PERF203
     for attempt in range(max_retries):
         try:
             response = session.post(
