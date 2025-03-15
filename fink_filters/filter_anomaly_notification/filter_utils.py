@@ -128,7 +128,6 @@ def send_post_request_with_retry(
     requests.Response
         The server's response object.
     """
-    # noqa: PERF203
     for attempt in range(max_retries):
         try:
             response = session.post(
@@ -145,7 +144,7 @@ def send_post_request_with_retry(
                 response.raise_for_status()
             return response
 
-        except allowed_exceptions as e:
+        except allowed_exceptions as e:  # noqa: PERF203
             if attempt < max_retries - 1:
                 wait = backoff_factor * (2 ** attempt)
                 status_check(None, f"Error: {e}. Retrying attempt {attempt + 1}/{max_retries} in {wait} seconds. ({source})")
