@@ -134,12 +134,6 @@ def send_post_request_with_retry(
             if method == "POST":
                 response = session.post(
                     url,
-                    data=data,
-                    json=json,
-                    headers=headers,
-                    files=files,
-                    params=params,
-                    timeout=timeout,
                     **kwargs,
                 )
             elif method == "GET":
