@@ -14,6 +14,7 @@
 # limitations under the License.
 import pandas as pd
 import numpy as np
+import os
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -153,6 +154,8 @@ def anomaly_notification_(
     >>> assert not pdf_anomalies.empty
     """
     # Filtering by coordinates
+    if send_to_tg or send_to_slack:
+        assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
     if cut_coords:
         df_proc = df_proc.filter("dec <= 20 AND (ra >= 160 AND ra <= 240)")
         # We need to know the total number of objects per night which satisfy the condition on coordinates
@@ -253,7 +256,6 @@ Total number of objects per night in the area: {cut_count}.
     if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
-        assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
         filter_utils.msg_handler_tg(tg_data, channel_id, init_msg, timeout=timeout)
     if model != "" and send_to_anomaly_base:
         filter_utils.load_to_anomaly_base(base_data, model, timeout=timeout)
