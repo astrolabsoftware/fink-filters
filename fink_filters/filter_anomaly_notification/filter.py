@@ -155,7 +155,7 @@ def anomaly_notification_(
     """
     # Filtering by coordinates
     if send_to_tg or send_to_slack:
-        assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
+        assert os.environ["ANOMALY_TG_TOKEN"], "A Telegram token is required!"
     if cut_coords:
         df_proc = df_proc.filter("dec <= 20 AND (ra >= 160 AND ra <= 240)")
         # We need to know the total number of objects per night which satisfy the condition on coordinates

@@ -81,7 +81,7 @@ def send_post_request_with_retry(
     allowed_exceptions=(Timeout, ConnectionError),
     raise_on_http_error=True,
     source="not defined",
-    **kwargs
+    **kwargs,
 ) -> requests.Response:
     """
     Executes a POST request with automatic retry mechanism using a session.
@@ -138,7 +138,7 @@ def send_post_request_with_retry(
                 files=files,
                 params=params,
                 timeout=timeout,
-                **kwargs
+                **kwargs,
             )
             if raise_on_http_error:
                 response.raise_for_status()
@@ -146,11 +146,17 @@ def send_post_request_with_retry(
 
         except allowed_exceptions as e:  # noqa: PERF203
             if attempt < max_retries - 1:
-                wait = backoff_factor * (2 ** attempt)
-                status_check(None, f"Error: {e}. Retrying attempt {attempt + 1}/{max_retries} in {wait} seconds. ({source})")
+                wait = backoff_factor * (2**attempt)
+                status_check(
+                    None,
+                    f"Error: {e}. Retrying attempt {attempt + 1}/{max_retries} in {wait} seconds. ({source})",
+                )
                 time.sleep(wait)
             else:
-                status_check(None, f"Failed after {max_retries} attempts. Last error: {e} ({source})")
+                status_check(
+                    None,
+                    f"Failed after {max_retries} attempts. Last error: {e} ({source})",
+                )
                 raise
         except Exception as e:
             status_check(None, f"Unexpected error: {e} ({source})")
@@ -182,7 +188,7 @@ def get_an_history(delta_date=90):
             "start_date": str((datetime.now() - timedelta(days=delta_date)).date()),
         },
         timeout=60,
-        source="get_an_history"
+        source="get_an_history",
     )
     if status_check(history_data, "checking history"):
         res_obj = Counter(
@@ -212,7 +218,7 @@ def get_data_permalink_slack(ztf_id):
         Link to the light curve image uploaded to the Slack server
 
     """
-    assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
+    assert os.environ["ANOMALY_TG_TOKEN"], "A Telegram token is required!"
     cutout = get_cutout(ztf_id)
     curve = get_curve(ztf_id)
     session = requests.Session()
@@ -237,7 +243,7 @@ def get_data_permalink_slack(ztf_id):
                 url=f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMessage",
                 data={"chat_id": "@fink_test", "text": e.response["error"]},
                 timeout=60,
-                source="slack_api_error"
+                source="slack_api_error",
             )
             return cutout, curve, None, None
     return (
@@ -330,7 +336,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
         url=url + "/sendMessage",
         data={"chat_id": channel_id, "text": init_msg, "parse_mode": "markdown"},
         timeout=timeout,
-        source="tg_init_message"
+        source="tg_init_message",
     )
     status_check(res, "sending to tg_channel (init)")
     time.sleep(10)
@@ -350,7 +356,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
             url=method,
             params={
                 "chat_id": channel_id,
-                "media": f'''[
+                "media": f"""[
                     {{
                         "type" : "photo",
                         "media": "attach://second",
@@ -361,7 +367,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
                         "type" : "photo",
                         "media": "attach://first"
                     }}
-                ]''',
+                ]""",
                 "reply_markup": inline_keyboard,
             },
             files={
@@ -369,7 +375,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
                 "first": curve,
             },
             timeout=timeout,
-            source="tg_main_messages"
+            source="tg_main_messages",
         )
         status_check(res, "sending to tg_channel (main messages)")
         time.sleep(10)
@@ -401,7 +407,7 @@ def load_to_anomaly_base(data, model, timeout=60):
         url="https://anomaly.fink-broker.org:443/user/signin",
         data={"username": username, "password": os.environ["ANOMALY_TG_TOKEN"]},
         timeout=timeout,
-        source=f"load_to_anomaly_base_login_{username}"
+        source=f"load_to_anomaly_base_login_{username}",
     )
     if status_check(res, f"load_to_anomaly_base_login_{username}"):
         access_token = json.loads(res.text)["access_token"]
@@ -409,7 +415,7 @@ def load_to_anomaly_base(data, model, timeout=60):
             session=session,
             url=f"https://anomaly.fink-broker.org:443/user/get_tgid/{username}",
             timeout=timeout,
-            source="tg_id_loading"
+            source="tg_id_loading",
         )
         if status_check(tg_id_data, "tg_id loading"):
             try:
@@ -432,7 +438,7 @@ def load_to_anomaly_base(data, model, timeout=60):
                 data=data,
                 headers=headers,
                 timeout=timeout,
-                source="upload_to_anomaly_base"
+                source="upload_to_anomaly_base",
             )
             status_check(response, "upload to anomaly base")
             cutout.seek(0)
@@ -452,7 +458,7 @@ def load_to_anomaly_base(data, model, timeout=60):
                 url=f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMediaGroup",
                 params={
                     "chat_id": tg_id_data,
-                    "media": f'''[
+                    "media": f"""[
                             {{
                                 "type" : "photo",
                                 "media": "attach://second",
@@ -463,14 +469,14 @@ def load_to_anomaly_base(data, model, timeout=60):
                                 "type" : "photo",
                                 "media": "attach://first"
                             }}
-                        ]''',
+                        ]""",
                 },
                 files={
                     "second": cutout,
                     "first": curve,
                 },
                 timeout=timeout,
-                source=f"individual_sending_to_{tg_id_data}"
+                source=f"individual_sending_to_{tg_id_data}",
             )
             if status_check(res, f"individual sending to {tg_id_data}"):
                 res = send_post_request_with_retry(
@@ -482,7 +488,7 @@ def load_to_anomaly_base(data, model, timeout=60):
                         "reply_markup": inline_keyboard,
                     },
                     timeout=timeout,
-                    source=f"button_individual_sending_to_{tg_id_data}"
+                    source=f"button_individual_sending_to_{tg_id_data}",
                 )
                 status_check(res, f"button individual sending to {tg_id_data}")
 
