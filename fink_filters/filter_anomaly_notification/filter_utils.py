@@ -131,7 +131,7 @@ def send_post_request_with_retry(
     """
     for attempt in range(max_retries):
         try:
-            if method=="POST":
+            if method == "POST":
                 response = session.post(
                     url,
                     data=data,
@@ -142,7 +142,7 @@ def send_post_request_with_retry(
                     timeout=timeout,
                     **kwargs,
                 )
-            elif method=="GET":
+            elif method == "GET":
                 response = session.get(
                     url,
                     data=data,
