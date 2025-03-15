@@ -70,6 +70,7 @@ def status_check(res, source="not defined", timeout=60):
 def send_post_request_with_retry(
     session: requests.Session,
     url: str,
+    method: str = "POST",
     data=None,
     json=None,
     headers=None,
@@ -130,16 +131,28 @@ def send_post_request_with_retry(
     """
     for attempt in range(max_retries):
         try:
-            response = session.post(
-                url,
-                data=data,
-                json=json,
-                headers=headers,
-                files=files,
-                params=params,
-                timeout=timeout,
-                **kwargs,
-            )
+            if method=="POST":
+                response = session.post(
+                    url,
+                    data=data,
+                    json=json,
+                    headers=headers,
+                    files=files,
+                    params=params,
+                    timeout=timeout,
+                    **kwargs,
+                )
+            elif method=="GET":
+                response = session.get(
+                    url,
+                    data=data,
+                    json=json,
+                    headers=headers,
+                    files=files,
+                    params=params,
+                    timeout=timeout,
+                    **kwargs,
+                )
             if raise_on_http_error:
                 response.raise_for_status()
             return response
@@ -412,6 +425,7 @@ def load_to_anomaly_base(data, model, timeout=60):
     if status_check(res, f"load_to_anomaly_base_login_{username}"):
         access_token = json.loads(res.text)["access_token"]
         tg_id_data = send_post_request_with_retry(
+            method="GET",
             session=session,
             url=f"https://anomaly.fink-broker.org:443/user/get_tgid/{username}",
             timeout=timeout,
