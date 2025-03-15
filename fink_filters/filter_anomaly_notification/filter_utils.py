@@ -212,6 +212,7 @@ def get_data_permalink_slack(ztf_id):
         Link to the light curve image uploaded to the Slack server
 
     """
+    assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
     cutout = get_cutout(ztf_id)
     curve = get_curve(ztf_id)
     session = requests.Session()
