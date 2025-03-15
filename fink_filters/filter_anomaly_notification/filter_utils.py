@@ -369,7 +369,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
             url=method,
             params={
                 "chat_id": channel_id,
-                "media": f"""[
+                "media": f'''[
                     {{
                         "type" : "photo",
                         "media": "attach://second",
@@ -380,7 +380,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
                         "type" : "photo",
                         "media": "attach://first"
                     }}
-                ]""",
+                ]''',
                 "reply_markup": inline_keyboard,
             },
             files={
@@ -391,7 +391,7 @@ def msg_handler_tg(tg_data, channel_id, init_msg, timeout=60):
             source="tg_main_messages",
         )
         status_check(res, "sending to tg_channel (main messages)")
-        time.sleep(10)
+        time.sleep(15)
 
 
 def load_to_anomaly_base(data, model, timeout=60):
