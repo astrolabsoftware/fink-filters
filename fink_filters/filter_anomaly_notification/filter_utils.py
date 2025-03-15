@@ -50,6 +50,7 @@ def status_check(res, source="not defined", timeout=60):
             True : The request was successful
             False: The request was executed with an error
     """
+    assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
     if res is None or res.status_code != 200:
         url = "https://api.telegram.org/bot"
         url += os.environ["ANOMALY_TG_TOKEN"]

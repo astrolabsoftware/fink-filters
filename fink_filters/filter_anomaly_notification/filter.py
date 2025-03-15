@@ -253,6 +253,7 @@ Total number of objects per night in the area: {cut_count}.
     if send_to_slack:
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
+        assert os.environ["ANOMALY_TG_TOKEN"], 'A Telegram token is required!'
         filter_utils.msg_handler_tg(tg_data, channel_id, init_msg, timeout=timeout)
     if model != "" and send_to_anomaly_base:
         filter_utils.load_to_anomaly_base(base_data, model, timeout=timeout)
