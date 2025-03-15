@@ -71,11 +71,6 @@ def send_post_request_with_retry(
     session: requests.Session,
     url: str,
     method: str = "POST",
-    data=None,
-    json=None,
-    headers=None,
-    files=None,
-    params=None,
     timeout=60,
     max_retries=3,
     backoff_factor=2,
@@ -98,16 +93,6 @@ def send_post_request_with_retry(
         Active session object for maintaining persistent connections.
     url : str
         The URL to send the request to.
-    data : dict, optional
-        Dictionary, bytes, or file-like object to send in the body (form data).
-    json : dict, optional
-        JSON serializable Python object to send in the body.
-    headers : dict, optional
-        Dictionary of HTTP headers to send with the request.
-    files : dict, optional
-        Dictionary of files to upload (e.g., {"file": file_object}).
-    params : dict, optional
-        Dictionary of query parameters to append to the URL.
     timeout : int, optional
         Request timeout in seconds. Default is 30 seconds.
     max_retries : int, optional
@@ -134,16 +119,12 @@ def send_post_request_with_retry(
             if method == "POST":
                 response = session.post(
                     url,
+                    timeout=timeout,
                     **kwargs,
                 )
             elif method == "GET":
                 response = session.get(
                     url,
-                    data=data,
-                    json=json,
-                    headers=headers,
-                    files=files,
-                    params=params,
                     timeout=timeout,
                     **kwargs,
                 )
