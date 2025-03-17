@@ -139,7 +139,7 @@ def anomaly_notification_(
     ...         'candidate.dec', 'candidate.rb',
     ...         'anomaly_score', 'timestamp')
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
-    ...     send_to_tg=False, channel_id=None,
+    ...     send_to_tg=True, channel_id='@fink_test',
     ...     send_to_slack=False, channel_name=None)
     >>> print(sorted(pdf_anomalies['objectId'].to_numpy()))
     ['ZTF18aapgymv', 'ZTF18aapoack', 'ZTF18aaypnnd', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abzvnya', 'ZTF18actxdmj', 'ZTF19aboujyi', 'ZTF21acoshvy']
@@ -254,7 +254,7 @@ Total number of objects per night in the area: {cut_count}.
         filter_utils.msg_handler_slack(slack_data, channel_name, init_msg)
     if send_to_tg:
         filter_utils.msg_handler_tg(tg_data, channel_id, init_msg, timeout=timeout)
-    if model != "":
+    if model != "" and send_to_anomaly_base:
         filter_utils.load_to_anomaly_base(base_data, model, timeout=timeout)
     return pdf_anomalies
 
