@@ -98,8 +98,8 @@ def anomaly_notification_(
     --------
     >>> import pyspark.sql.functions as F
     >>> from fink_utils.spark.utils import concat_col
-    >>> from fink_science.ad_features.processor import extract_features_ad
-    >>> from fink_science.anomaly_detection.processor import anomaly_score
+    >>> from fink_science.ztf.ad_features.processor import extract_features_ad
+    >>> from fink_science.ztf.anomaly_detection.processor import anomaly_score
 
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> MODELS = ['_beta', ''] # '' corresponds to the model for a telegram channel

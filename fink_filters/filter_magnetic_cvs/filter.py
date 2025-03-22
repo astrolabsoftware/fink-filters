@@ -17,7 +17,7 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import StringType
 
-from fink_science.xmatch.utils import cross_match_astropy
+from fink_science.ztf.xmatch.utils import cross_match_astropy
 from fink_filters import __file__
 
 from fink_utils.tg_bot.utils import get_curve
