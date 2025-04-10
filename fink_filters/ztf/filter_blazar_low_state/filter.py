@@ -17,11 +17,9 @@ from line_profiler import profile
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
-import os
 import pandas as pd
 
 from fink_filters.tester import spark_unit_tests
-from fink_filters import __file__
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
