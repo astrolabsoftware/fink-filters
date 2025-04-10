@@ -28,7 +28,11 @@ jobs:
       run: |
         ruff check --preview --statistics fink_filters/*.py
         ruff format --preview --check fink_filters/*.py
-    - name: Filters
+    - name: classification
       run: |
         ruff check --preview --statistics fink_filters/*/*.py
         ruff format --preview --check fink_filters/*/*.py
+    - name: Filters
+      run: |
+        ruff check --preview --statistics fink_filters/*/*/*.py
+        ruff format --preview --check fink_filters/*/*/*.py

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022 AstroLab Software
+# Copyright 2022-2025 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,13 +16,17 @@
 ## Script to launch the python test suite and measure the coverage.
 ## Must be launched as fink_test
 set -e
+
+SERROR="\xE2\x9D\x8C"
+
 message_help="""
 Run the test suite of the modules\n\n
 Usage:\n
-    \t./run_tests.sh [--single_module]\n\n
+    \t./run_tests.sh [-s <survey>] [--single_module]\n\n
 
 Note you need Spark 3.1.3+ installed to fully test the modules.
 """
+
 export ROOTPATH=`pwd`
 # Grab the command line arguments
 NO_SPARK=false
@@ -31,6 +35,10 @@ while [ "$#" -gt 0 ]; do
     -h)
       echo -e $message_help
       exit
+      ;;
+    -s)
+      SURVEY=$2
+      shift 2
       ;;
     --single_module)
       SINGLE_MODULE_PATH=$2
@@ -70,8 +78,13 @@ do
     --rcfile ${ROOTPATH}/.coveragerc $filename
 done
 
-# Run the test suite on the modules
-for filename in fink_filters/*/*.py
+if [[ $SURVEY == "" ]]; then
+  echo -e "${SERROR} You need to specify a survey, e.g. ./run_test.sh -s ztf [options]"
+  exit 1
+fi
+
+# Run the test suite on the ZTF modules
+for filename in fink_filters/${SURVEY}/*/*.py
 do
   echo $filename
   # Run test suite + coverage

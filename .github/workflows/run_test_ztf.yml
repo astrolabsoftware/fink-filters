@@ -1,0 +1,50 @@
+name: Sentinel
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test-suite:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        container: ["julienpeloton/fink-ci-ztf:latest"]
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up env [1/2]
+      run: |
+        echo "FINK_FILTERS=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+        echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
+        echo "${BINPATH}" >> $GITHUB_PATH
+
+    - name: Set up env [2/2]
+      run: |
+        echo "PYTHONPATH="${PYTHONPATH}:${SPARKLIB}:${FINK_FILTERS}"" >> $GITHUB_ENV
+
+    - name: Check env
+      run: |
+        echo "FINK_FILTERS: $FINK_FILTERS"
+        echo "SPARK_HOME: $SPARK_HOME"
+        echo "SPARKLIB: $SPARKLIB"
+        echo "PYTHONPATH: $PYTHONPATH"
+        echo "JAVA_HOME: $JAVA_HOME"
+        echo `python -V`
+
+    - name: Run ZTF test suites
+      env:
+        ANOMALY_SLACK_TOKEN: ${{ secrets.ANOMALY_SLACK_TOKEN }}
+        ANOMALY_TG_TOKEN: ${{ secrets.ANOMALY_TG_TOKEN }}
+      run: |
+        pip install py4j
+        rm -f /tmp/forest_*.onnx
+        ./run_tests.sh -s ztf
+        curl -s https://codecov.io/bash | bash
