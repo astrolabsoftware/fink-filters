@@ -22,7 +22,9 @@ from fink_filters.ztf.filter_early_sn_candidates.filter import early_sn_candidat
 from fink_filters.ztf.filter_sn_candidates.filter import sn_candidates_
 from fink_filters.ztf.filter_kn_candidates.filter import kn_candidates_
 from fink_filters.ztf.filter_tracklet_candidates.filter import tracklet_candidates_
-from fink_filters.ztf.filter_microlensing_candidates.filter import microlensing_candidates_
+from fink_filters.ztf.filter_microlensing_candidates.filter import (
+    microlensing_candidates_,
+)
 from fink_filters.ztf.filter_simbad_candidates.filter import simbad_candidates_
 from fink_filters.ztf.filter_sso_ztf_candidates.filter import sso_ztf_candidates_
 from fink_filters.ztf.filter_sso_fink_candidates.filter import sso_fink_candidates_
