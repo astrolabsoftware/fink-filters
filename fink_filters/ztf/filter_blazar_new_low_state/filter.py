@@ -49,7 +49,7 @@ def new_low_state_filter(m0, m1, m2) -> pd.Series:
     >>> df = df.withColumn("m0", F.col('blazar_stats').getItem('m0').alias("m0"))
     >>> df = df.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
     >>> df = df.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
-    >>> f = 'fink_filters.filter_blazar_new_low_state'
+    >>> f = 'fink_filters.ztf.filter_blazar_new_low_state'
     >>> f += '.filter.new_low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())

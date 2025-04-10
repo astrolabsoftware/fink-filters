@@ -57,7 +57,7 @@ def yso_spicy_candidates(
     >>> for colname in to_expand:
     ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
 
-    >>> f = 'fink_filters.filter_yso_spicy_candidates.filter.yso_spicy_candidates'
+    >>> f = 'fink_filters.ztf.filter_yso_spicy_candidates.filter.yso_spicy_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     10

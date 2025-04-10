@@ -77,7 +77,7 @@ def ztf_quality_cuts(
     >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/regular')
 
-    >>> f = 'fink_filters.filter_quality_cuts.filter.ztf_quality_cuts'
+    >>> f = 'fink_filters.ztf.filter_quality_cuts.filter.ztf_quality_cuts'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     320

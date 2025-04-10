@@ -69,7 +69,7 @@ def microlensing_candidates(mulens) -> pd.Series:
     --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> f = 'fink_filters.filter_microlensing_candidates.filter.microlensing_candidates'
+    >>> f = 'fink_filters.ztf.filter_microlensing_candidates.filter.microlensing_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     0

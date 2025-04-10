@@ -98,7 +98,7 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
     >>> for colname in to_expand:
     ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
 
-    >>> f = 'fink_filters.filter_orphan_grb_candidates.filter.orphan_grb'
+    >>> f = 'fink_filters.ztf.filter_orphan_grb_candidates.filter.orphan_grb'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     0

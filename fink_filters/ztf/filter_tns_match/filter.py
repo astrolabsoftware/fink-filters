@@ -153,7 +153,7 @@ def tns_match(
     # Add a fake column
     >>> df = df.withColumn("tns", F.lit("SN Ia"))
 
-    >>> f = 'fink_filters.filter_tns_match.filter.tns_match'
+    >>> f = 'fink_filters.ztf.filter_tns_match.filter.tns_match'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     2

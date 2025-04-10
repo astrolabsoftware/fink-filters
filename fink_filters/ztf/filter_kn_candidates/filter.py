@@ -187,7 +187,7 @@ def kn_candidates(
     >>> for colname in to_expand:
     ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
 
-    >>> f = 'fink_filters.filter_kn_candidates.filter.kn_candidates'
+    >>> f = 'fink_filters.ztf.filter_kn_candidates.filter.kn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     0

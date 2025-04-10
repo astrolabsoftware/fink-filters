@@ -151,7 +151,7 @@ def early_sn_candidates(
 
     >>> df = df.withColumn('cstampDatac', df['cutoutScience.stampData'])
 
-    >>> f = 'fink_filters.filter_early_sn_candidates.filter.early_sn_candidates'
+    >>> f = 'fink_filters.ztf.filter_early_sn_candidates.filter.early_sn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     5

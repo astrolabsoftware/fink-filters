@@ -122,7 +122,7 @@ def sn_candidates(
     --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> f = 'fink_filters.filter_sn_candidates.filter.sn_candidates'
+    >>> f = 'fink_filters.ztf.filter_sn_candidates.filter.sn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     9

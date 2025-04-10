@@ -41,7 +41,7 @@ def blazar(cdsxmatch: Any) -> pd.Series:
     --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> f = 'fink_filters.filter_blazar.filter.blazar'
+    >>> f = 'fink_filters.ztf.filter_blazar.filter.blazar'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     10

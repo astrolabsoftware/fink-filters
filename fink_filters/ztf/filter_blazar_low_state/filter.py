@@ -50,7 +50,7 @@ def low_state_filter(m1, m2) -> pd.Series:
     >>> df = spark.read.parquet(ztf_alert_sample)
     >>> df = df.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
     >>> df = df.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
-    >>> f = 'fink_filters.filter_blazar_low_state.filter.low_state_filter'
+    >>> f = 'fink_filters.ztf.filter_blazar_low_state.filter.low_state_filter'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     12
