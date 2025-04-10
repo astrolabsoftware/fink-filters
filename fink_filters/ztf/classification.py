@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2022 AstroLab Software
+# Copyright 2022-2025 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,14 +18,14 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import StringType
 
-from fink_filters.filter_early_sn_candidates.filter import early_sn_candidates_
-from fink_filters.filter_sn_candidates.filter import sn_candidates_
-from fink_filters.filter_kn_candidates.filter import kn_candidates_
-from fink_filters.filter_tracklet_candidates.filter import tracklet_candidates_
-from fink_filters.filter_microlensing_candidates.filter import microlensing_candidates_
-from fink_filters.filter_simbad_candidates.filter import simbad_candidates_
-from fink_filters.filter_sso_ztf_candidates.filter import sso_ztf_candidates_
-from fink_filters.filter_sso_fink_candidates.filter import sso_fink_candidates_
+from fink_filters.ztf.filter_early_sn_candidates.filter import early_sn_candidates_
+from fink_filters.ztf.filter_sn_candidates.filter import sn_candidates_
+from fink_filters.ztf.filter_kn_candidates.filter import kn_candidates_
+from fink_filters.ztf.filter_tracklet_candidates.filter import tracklet_candidates_
+from fink_filters.ztf.filter_microlensing_candidates.filter import microlensing_candidates_
+from fink_filters.ztf.filter_simbad_candidates.filter import simbad_candidates_
+from fink_filters.ztf.filter_sso_ztf_candidates.filter import sso_ztf_candidates_
+from fink_filters.ztf.filter_sso_fink_candidates.filter import sso_fink_candidates_
 
 import numpy as np
 import pandas as pd

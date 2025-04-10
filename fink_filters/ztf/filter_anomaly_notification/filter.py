@@ -19,7 +19,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 
-from fink_filters.filter_anomaly_notification import filter_utils
+from fink_filters.ztf.filter_anomaly_notification import filter_utils
 
 from fink_filters.tester import spark_unit_tests
 

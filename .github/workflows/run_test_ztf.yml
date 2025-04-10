@@ -39,12 +39,12 @@ jobs:
         echo "JAVA_HOME: $JAVA_HOME"
         echo `python -V`
 
-    - name: Run test suites
+    - name: Run ZTF test suites
       env:
         ANOMALY_SLACK_TOKEN: ${{ secrets.ANOMALY_SLACK_TOKEN }}
         ANOMALY_TG_TOKEN: ${{ secrets.ANOMALY_TG_TOKEN }}
       run: |
         pip install py4j
         rm -f /tmp/forest_*.onnx
-        ./run_tests.sh
+        ./run_tests.sh -s ztf
         curl -s https://codecov.io/bash | bash
