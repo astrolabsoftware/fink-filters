@@ -30,6 +30,7 @@ from astroquery.sdss import SDSS
 
 from fink_utils.xmatch.simbad import return_list_of_eg_host
 
+from fink_filters import __file__
 from fink_filters.tester import spark_unit_tests
 
 
@@ -67,7 +68,7 @@ def perform_classification(
     if f_kn.any():
         # load mangrove catalog
         curdir = os.path.dirname(os.path.abspath(__file__))
-        mangrove_path = curdir + "/../data/mangrove_filtered.csv"
+        mangrove_path = curdir + "/data/mangrove_filtered.csv"
         pdf_mangrove = pd.read_csv(mangrove_path)
 
         catalog_mangrove = SkyCoord(
