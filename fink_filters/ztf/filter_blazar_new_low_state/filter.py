@@ -66,12 +66,7 @@ if __name__ == "__main__":
 
     # Run the test suite
     globs = globals()
-    path_list = os.path.dirname(__file__).split("/")
-    path_parent = "/".join(path_list[:-2])
-    path = os.path.join(path_parent, "datatest/CTAO_blazar")
-    filename = "CTAO_blazar_datatest_v20-12-24.parquet"
-    ztf_alert_sample = "file://{}/{}".format(path, filename)
-    globs["parent_path"] = path
+    ztf_alert_sample = "datatest/CTAO_blazar/CTAO_blazar_datatest_v20-12-24.parquet"
     globs["ztf_alert_sample"] = ztf_alert_sample
 
     # Run the test suite
