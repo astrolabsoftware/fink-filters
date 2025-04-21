@@ -44,7 +44,7 @@ def rrlyr(cdsxmatch: Any) -> pd.Series:
     >>> f = 'fink_filters.ztf.filter_rrlyr.filter.rrlyr'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    3
+    10
     """
     # Include new taxonomy
     mask = (cdsxmatch.to_numpy() == "RRLyr") | (cdsxmatch.to_numpy() == "RRLyrae")
