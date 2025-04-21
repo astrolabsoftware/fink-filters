@@ -36,14 +36,14 @@ def gaia_dr3_candidates_(DR3Name) -> pd.Series:
 
     Examples
     --------
-    >>> pdf = pd.read_parquet('datatest/regular2')
+    >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = gaia_dr3_candidates_(pdf['DR3Name'])
     >>> nalerts = len(pdf[classification]['objectId'])
     >>> print(nalerts)
     297
     """
     # string nan...
-    f_gaia = DR3Name.apply(lambda x: x != 'nan')
+    f_gaia = DR3Name.apply(lambda x: x != "nan")
 
     return f_gaia
 
@@ -66,7 +66,7 @@ def gaia_dr3_candidates(DR3Name) -> pd.Series:
     Examples
     --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest/regular2')
+    >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> f = 'fink_filters.ztf.filter_gaia_candidates.filter.gaia_dr3_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
