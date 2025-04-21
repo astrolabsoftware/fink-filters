@@ -471,7 +471,6 @@ def inter_night_hostless(
 ):
     """Find new hostless transients that repeat over nights (Spark)
 
-
     Notes
     -----
     We request 3 observations, 2 the first night, and 1 a subsequent night.
