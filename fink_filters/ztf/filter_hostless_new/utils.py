@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utilities for live hostless detections with ZTF"""
+
 import os
 import numpy as np
 
@@ -87,7 +88,7 @@ def is_hostless_base(cutoutScience, cutoutTemplate):
     """Check if an alert is hostless
 
     Parameters
-    -----------------
+    ----------
     cutoutScience: pd.Series
         science stamp images
     cutoutTemplate: pd.Series
@@ -120,7 +121,6 @@ def is_hostless_base(cutoutScience, cutoutTemplate):
     ...     pdf_uncat["cutoutTemplate"].apply(lambda x: x["stampData"]))
     >>> print(is_host.sum())
     3
-    >>> print(pdf_uncat["objectId"][is_host])
     """
     # load the configuration file
     hostless_science_class = HostLessExtragalactic(CONFIGS_BASE)
@@ -140,6 +140,101 @@ def is_hostless_base(cutoutScience, cutoutTemplate):
     f2 = (np.array(template_all) >= 0) * (np.array(template_all) <= 0.85)
 
     return f1 * f2
+
+
+def intra_night_transients(cjdc, cmagpsfc, nobs=2, lapse_hour=12):
+    """Find objects that vary within a night with `nobs` observations
+
+    Parameters
+    ----------
+    cjdc: pd.Series
+        Series of JD vectors
+    cmagpsfc: pd.Series
+        Series of magpsf vectors
+    nobs: int
+        Number of observations. Default is 2.
+    lapse_hour: float
+        Maximum time for variation, in hours. Default is 12
+
+    Returns
+    -------
+    out: np.array
+        Array of booleans. True is intra-night, False otherwise.
+
+    Examples
+    --------
+    >>> from fink_utils.spark.utils import concat_col
+    >>> df = spark.read.format('parquet').load('datatest/regular')
+
+    >>> to_expand = ['jd', 'magpsf']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> pdf = df.select(["cjdc", "cmagpsfc"]).toPandas()
+    >>> mask = intra_night_transients(pdf["cjdc"], pdf["cmagpsfc"], nobs=2, lapse_hour=12)
+    >>> np.sum(mask)
+    113
+    """
+    to_return = np.zeros_like(cjdc, dtype=bool)
+    # last nobs are not None
+    mask = cmagpsfc.apply(lambda x: np.sum([i is not None for i in x[-nobs:]])) == nobs
+
+    # difference between last and first JD
+    to_return[mask] = (
+        cjdc[mask].apply(lambda x: x[-nobs:][-1] - x[-nobs:][0]) < lapse_hour / 24.0
+    )
+    return to_return
+
+
+def inter_night_transients(cjdc, cmagpsfc, nobs=3, lapse_hour=12):
+    """Find new objects that vary between 2 observing night with `nobs` observations
+
+    Parameters
+    ----------
+    cjdc: pd.Series
+        Series of JD vectors
+    cmagpsfc: pd.Series
+        Series of magpsf vectors
+    nobs: int
+        Number of observations. Default is 3.
+    lapse_hour: float
+        Minimum time for variation, in hours. Default is 12
+
+    Examples
+    --------
+    >>> from fink_utils.spark.utils import concat_col
+    >>> df = spark.read.format('parquet').load('datatest/regular')
+
+    >>> to_expand = ['jd', 'magpsf']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> pdf = df.select(["cjdc", "cmagpsfc"]).toPandas()
+    >>> mask = inter_night_transients(pdf["cjdc"], pdf["cmagpsfc"], nobs=3, lapse_hour=12)
+    >>> np.sum(mask)
+    30
+    """
+    to_return = np.zeros_like(cjdc, dtype=bool)
+    # last nobs are not None
+    mask = cmagpsfc.apply(lambda x: np.sum([i is not None for i in x[-nobs:]])) == nobs
+
+    # difference between last and first JD
+    cond1 = cjdc[mask].apply(lambda x: x[-nobs:][2] - x[-nobs:][1]) > lapse_hour / 24.0
+    cond2 = cjdc[mask].apply(lambda x: x[-nobs:][1] - x[-nobs:][0]) < 12 / 24.0
+    to_return[mask] = cond1 * cond2
+    return to_return
 
 
 if __name__ == "__main__":
