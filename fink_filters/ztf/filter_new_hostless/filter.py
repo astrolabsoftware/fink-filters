@@ -106,10 +106,10 @@ def new_hostless(
 
     Parameters
     ----------
-    cutoutScience: pd.Series of NxN arrays
-        Science cutouts
-    cutoutTemplate: pd.Series of NxN arrays
-        Template cutouts
+    cutoutScience: pd.DataFrame
+        Science cutouts struct
+    cutoutTemplate: pd.DataFrame
+        Template cutouts struct
     ndethist: pd.Series of int
         Number of spatially-coincident detections falling within 1.5 arcsec
         going back to beginning of survey; only detections that fell on the
@@ -143,8 +143,8 @@ def new_hostless(
     --------
     >>> df = spark.read.format('parquet').load('datatest/regular')
     >>> df.filter(new_hostless(
-    ...     df["cutoutScience.stampData"],
-    ...     df["cutoutTemplate.stampData"],
+    ...     df["cutoutScience"],
+    ...     df["cutoutTemplate"],
     ...     df["candidate.ndethist"],
     ...     df["candidate.distnr"],
     ...     df["cdsxmatch"],
@@ -153,7 +153,13 @@ def new_hostless(
     3
     """
     return new_hostless_(
-        cutoutScience, cutoutTemplate, ndethist, distnr, cdsxmatch, DR3Name, roid
+        cutoutScience["stampData"],
+        cutoutTemplate["stampData"],
+        ndethist,
+        distnr,
+        cdsxmatch,
+        DR3Name,
+        roid,
     )
 
 
@@ -280,10 +286,10 @@ def intra_night_hostless(
 
     Parameters
     ----------
-    cutoutScience: pd.Series of NxN arrays
-        Science cutouts
-    cutoutTemplate: pd.Series of NxN arrays
-        Template cutouts
+    cutoutScience: pd.DataFrame
+        Science cutouts struct
+    cutoutTemplate: pd.DataFrame
+        Template cutouts struct
     ndethist: pd.Series of int
         Number of spatially-coincident detections falling within 1.5 arcsec
         going back to beginning of survey; only detections that fell on the
@@ -332,8 +338,8 @@ def intra_night_hostless(
     >>> df.filter(intra_night_hostless(
     ...     df["cjdc"],
     ...     df["cmagpsfc"],
-    ...     df["cutoutScience.stampData"].alias("cutoutScience"),
-    ...     df["cutoutTemplate.stampData"].alias("cutoutTemplate"),
+    ...     df["cutoutScience"],
+    ...     df["cutoutTemplate"],
     ...     df["candidate.ndethist"],
     ...     df["candidate.distnr"],
     ...     df["cdsxmatch"],
@@ -344,8 +350,8 @@ def intra_night_hostless(
     return intra_night_hostless_(
         cjdc,
         cmagpsfc,
-        cutoutScience,
-        cutoutTemplate,
+        cutoutScience["stampData"],
+        cutoutTemplate["stampData"],
         ndethist,
         distnr,
         cdsxmatch,
@@ -477,10 +483,10 @@ def inter_night_hostless(
 
     Parameters
     ----------
-    cutoutScience: pd.Series of NxN arrays
-        Science cutouts
-    cutoutTemplate: pd.Series of NxN arrays
-        Template cutouts
+    cutoutScience: pd.DataFrame
+        Science cutouts struct
+    cutoutTemplate: pd.DataFrame
+        Template cutouts struct
     ndethist: pd.Series of int
         Number of spatially-coincident detections falling within 1.5 arcsec
         going back to beginning of survey; only detections that fell on the
@@ -529,8 +535,8 @@ def inter_night_hostless(
     >>> df.filter(inter_night_hostless(
     ...     df["cjdc"],
     ...     df["cmagpsfc"],
-    ...     df["cutoutScience.stampData"].alias("cutoutScience"),
-    ...     df["cutoutTemplate.stampData"].alias("cutoutTemplate"),
+    ...     df["cutoutScience"],
+    ...     df["cutoutTemplate"],
     ...     df["candidate.ndethist"],
     ...     df["candidate.distnr"],
     ...     df["cdsxmatch"],
@@ -541,8 +547,8 @@ def inter_night_hostless(
     return inter_night_hostless_(
         cjdc,
         cmagpsfc,
-        cutoutScience,
-        cutoutTemplate,
+        cutoutScience["stampData"],
+        cutoutTemplate["stampData"],
         ndethist,
         distnr,
         cdsxmatch,
