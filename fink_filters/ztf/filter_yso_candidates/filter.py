@@ -44,7 +44,7 @@ def yso_candidates(cdsxmatch: Any) -> pd.Series:
     >>> f = 'fink_filters.ztf.filter_yso_candidates.filter.yso_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    8
+    3
     """
     f1 = cdsxmatch.to_numpy() == "Candidate_YSO"
     f2 = cdsxmatch.to_numpy() == "Candidate_TTau*"

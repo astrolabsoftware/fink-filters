@@ -130,8 +130,8 @@ def early_sn_candidates(
     Returns
     -------
     out: pandas.Series of bool
-        Return a Pandas DataFrame with the appropriate flag:
-        false for bad alert, and true for good alert.
+        Return a Pandas Series with the appropriate flag:
+        False for bad alert, and True for good alert.
 
     Examples
     --------
