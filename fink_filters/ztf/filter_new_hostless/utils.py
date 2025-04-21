@@ -114,7 +114,7 @@ def is_hostless_base(cutoutScience, cutoutTemplate):
     ...     pdf["DR3Name"],
     ...     pdf["roid"])
 
-    >>> pdf_uncat = pdf[is_uncat].reset_index()
+    >>> pdf_uncat = pdf[is_uncat]
 
     >>> is_host = is_hostless_base(
     ...     pdf_uncat["cutoutScience"].apply(lambda x: x["stampData"]),
@@ -128,8 +128,8 @@ def is_hostless_base(cutoutScience, cutoutTemplate):
     # Init values
     science_all, template_all = [], []
     for index in range(cutoutScience.shape[0]):
-        science_stamp = cutoutScience[index]
-        template_stamp = cutoutTemplate[index]
+        science_stamp = cutoutScience.to_numpy()[index]
+        template_stamp = cutoutTemplate.to_numpy()[index]
         kstest_science, kstest_template = hostless_science_class.process_candidate_fink(
             science_stamp, template_stamp
         )
