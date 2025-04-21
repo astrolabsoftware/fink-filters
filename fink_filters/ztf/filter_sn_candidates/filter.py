@@ -79,7 +79,7 @@ def sn_candidates_(
     >>> print(len(pdf[classification]['objectId'].to_numpy()))
     8
 
-    >>> assert 'ZTF21acoqgmy' in pdf[classification]['objectId'].to_numpy()
+    >>> assert 'ZTF21acoshvy' in pdf[classification]['objectId'].to_numpy()
     """
     snn1 = snn_snia_vs_nonia.astype(float) > 0.5
     snn2 = snn_sn_vs_all.astype(float) > 0.5
