@@ -170,6 +170,10 @@ def intra_night_hostless_(
 ):
     """Find new hostless transients that repeat over the same night
 
+    Notes
+    -----
+    We request 2 observations from the same night.
+
     Parameters
     ----------
     cutoutScience: pd.Series of NxN arrays
@@ -270,6 +274,10 @@ def intra_night_hostless(
 ):
     """Find new hostless transients that repeat over the same night (Spark)
 
+    Notes
+    -----
+    We request 2 observations from the same night.
+
     Parameters
     ----------
     cutoutScience: pd.Series of NxN arrays
@@ -358,6 +366,10 @@ def inter_night_hostless_(
     roid,
 ):
     """Find new hostless transients that repeat over nights
+
+    Notes
+    -----
+    We request 3 observations, 2 the first night, and 1 a subsequent night.
 
     Parameters
     ----------
@@ -458,6 +470,11 @@ def inter_night_hostless(
     roid,
 ):
     """Find new hostless transients that repeat over nights (Spark)
+
+
+    Notes
+    -----
+    We request 3 observations, 2 the first night, and 1 a subsequent night.
 
     Parameters
     ----------

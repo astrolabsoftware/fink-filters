@@ -40,15 +40,15 @@ def simbad_candidates_(cdsxmatch) -> pd.Series:
     >>> classification = simbad_candidates_(pdf['cdsxmatch'])
     >>> nalerts = len(pdf[classification]['objectId'])
     >>> print(nalerts)
-    290
+    295
 
     >>> pdf[classification].groupby('cdsxmatch').count().sort_values('objectId', ascending=False)['objectId'].head()
     cdsxmatch
-    QSO            8
-    Blue           7
-    HotSubdwarf    6
-    TTau*          5
-    Symbiotic*     5
+    LongPeriodV*    20
+    EclBin          12
+    delSctV*        11
+    RRLyrae         10
+    QSO              9
     Name: objectId, dtype: int64
     """
     f_simbad = ~cdsxmatch.isin(["Unknown", "Transient", "Fail", "Fail 504"])
@@ -86,7 +86,7 @@ def simbad_candidates(cdsxmatch) -> pd.Series:
     >>> f = 'fink_filters.ztf.filter_simbad_candidates.filter.simbad_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    290
+    295
 
     """
     f_simbad = simbad_candidates_(cdsxmatch)
