@@ -345,6 +345,7 @@ def intra_night_hostless(
         roid,
     )
 
+
 def inter_night_hostless_(
     cjdc,
     cmagpsfc,
@@ -456,7 +457,7 @@ def inter_night_hostless(
     DR3Name,
     roid,
 ):
-    """Find newly appearing and hostless transients
+    """Find new hostless transients that repeat over nights (Spark)
 
     Parameters
     ----------
@@ -532,7 +533,6 @@ def inter_night_hostless(
         DR3Name,
         roid,
     )
-
 
 
 if __name__ == "__main__":
