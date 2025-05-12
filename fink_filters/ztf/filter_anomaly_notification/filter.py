@@ -178,7 +178,7 @@ def anomaly_notification_(
     )
     pdf_anomalies = pdf_anomalies_ext[
         pdf_anomalies_ext[f"anomaly_score{model}"] <= upper_bound
-    ].head(10)
+    ].head(threshold)
 
     history_objects = filter_utils.get_an_history(history_period)
 
