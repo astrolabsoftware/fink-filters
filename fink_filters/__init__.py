@@ -1,4 +1,4 @@
-# Copyright 2019-2024 AstroLab Software
+# Copyright 2019-2025 AstroLab Software
 # Author: Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "6.4"
+__version__ = "6.5"
