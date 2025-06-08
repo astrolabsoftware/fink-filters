@@ -207,9 +207,7 @@ def anomaly_notification_(
         t5_ += f"""
 Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId] + 1} {"times" if (history_objects[row.objectId] + 1) > 1 else "time"}."""
         cutout, curve, cutout_perml, curve_perml = (
-            filter_utils.get_data_permalink_slack(
-                row.objectId, curve_last_days
-            )
+            filter_utils.get_data_permalink_slack(row.objectId, curve_last_days)
         )
         curve.seek(0)
         cutout.seek(0)
