@@ -24,9 +24,6 @@ from fink_filters.ztf.filter_anomaly_notification import filter_utils
 from fink_filters.tester import spark_unit_tests
 
 
-CURVE_LAST_DAYS = {"_beta": 30, "_emille_30days": 30}
-
-
 def anomaly_notification_(
     df_proc,
     threshold=10,
@@ -40,6 +37,7 @@ def anomaly_notification_(
     send_to_anomaly_base=False,
     timeout=25,
     model="",
+    curve_last_days=None,
 ):
     """Create event notifications with a high `anomaly_score` value
 
@@ -90,6 +88,9 @@ def anomaly_notification_(
         If True, notifications are uploaded to
         https://anomaly.fink-portal.org/ in the selected model's
         account. Only works for model != ‘’
+    curve_last_days: int, optional
+        The number of recent days for which the light curve is displayed
+
 
 
     Returns
@@ -207,7 +208,7 @@ def anomaly_notification_(
 Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId] + 1} {"times" if (history_objects[row.objectId] + 1) > 1 else "time"}."""
         cutout, curve, cutout_perml, curve_perml = (
             filter_utils.get_data_permalink_slack(
-                row.objectId, CURVE_LAST_DAYS.get(model, None)
+                row.objectId, curve_last_days
             )
         )
         curve.seek(0)
