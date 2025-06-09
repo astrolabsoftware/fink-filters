@@ -37,6 +37,7 @@ def anomaly_notification_(
     send_to_anomaly_base=False,
     timeout=25,
     model="",
+    curve_last_days=None,
 ):
     """Create event notifications with a high `anomaly_score` value
 
@@ -87,6 +88,9 @@ def anomaly_notification_(
         If True, notifications are uploaded to
         https://anomaly.fink-portal.org/ in the selected model's
         account. Only works for model != ‘’
+    curve_last_days: int, optional
+        The number of recent days for which the light curve is displayed
+
 
 
     Returns
@@ -203,7 +207,7 @@ def anomaly_notification_(
         t5_ += f"""
 Detected as top-{threshold} in the last {history_period} days: {history_objects[row.objectId] + 1} {"times" if (history_objects[row.objectId] + 1) > 1 else "time"}."""
         cutout, curve, cutout_perml, curve_perml = (
-            filter_utils.get_data_permalink_slack(row.objectId)
+            filter_utils.get_data_permalink_slack(row.objectId, curve_last_days)
         )
         curve.seek(0)
         cutout.seek(0)

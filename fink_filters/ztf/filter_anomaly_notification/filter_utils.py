@@ -188,13 +188,16 @@ def get_an_history(delta_date=90):
     return Counter()
 
 
-def get_data_permalink_slack(ztf_id):
+def get_data_permalink_slack(ztf_id, last_days=None):
     """Loads cutout and light curve via the Fink API and copies them to the Slack server
 
     Parameters
     ----------
     ztf_id : str
         unique identifier for this object
+    last_days : int or None
+        if set, include only the latest N days of observations.
+        if None, include all available data (default)
 
     Returns
     -------
@@ -210,7 +213,7 @@ def get_data_permalink_slack(ztf_id):
     """
     assert "ANOMALY_TG_TOKEN" in os.environ, "A Telegram token is required!"
     cutout = get_cutout(ztf_id)
-    curve = get_curve(ztf_id)
+    curve = get_curve(ztf_id, last_days)
     session = requests.Session()
     if "ANOMALY_SLACK_TOKEN" in os.environ:
         slack_client = WebClient(os.environ["ANOMALY_SLACK_TOKEN"])
@@ -547,18 +550,21 @@ def get_cutout(ztf_id):
     return buf
 
 
-def get_curve(ztf_id):
-    """Load light curve image via Fink API
+def get_curve(ztf_id, last_days=None):
+    """Load light curve image via Fink API and optionally plot only the latest data points (optional).
 
     Parameters
     ----------
         ztf_id : str
             unique identifier for this object
+        last_days : int or None
+            if set, include only the latest N days of observations.
+            if None, include all available data (default)
 
     Returns
     -------
-            out : BytesIO stream
-                light curve picture
+        out : BytesIO stream
+            light curve picture
     """
     r = requests.post(
         "https://api.fink-portal.org/api/v1/objects",
@@ -570,43 +576,55 @@ def get_curve(ztf_id):
     # Format output in a DataFrame
     pdf = pd.read_json(io.BytesIO(r.content))
 
+    # Convert JD to MJD
+    pdf["mjd"] = pdf["i:jd"].apply(lambda x: x - 2400000.5)
+
+    # Optionally filter by last N days
+    if last_days is not None:
+        latest_mjd = pdf["mjd"].max()
+        pdf_filtered = pdf[pdf["mjd"] >= (latest_mjd - last_days)]
+    else:
+        pdf_filtered = pdf  # use all data
+
     plt.figure(figsize=(15, 6))
 
     colordic = {1: "C0", 2: "C1"}
     filter_dict = {1: "g band", 2: "r band"}
 
-    for filt in np.unique(pdf["i:fid"]):
+    for filt in np.unique(pdf_filtered["i:fid"]):
         if filt == 3:
             continue
-        maskFilt = pdf["i:fid"] == filt
+        maskFilt = pdf_filtered["i:fid"] == filt
 
-        # The column `d:tag` is used to check data type
-        maskValid = pdf["d:tag"] == "valid"
+        # Valid points
+        maskValid = pdf_filtered["d:tag"] == "valid"
         plt.errorbar(
-            pdf[maskValid & maskFilt]["i:jd"].apply(lambda x: x - 2400000.5),
-            pdf[maskValid & maskFilt]["i:magpsf"],
-            pdf[maskValid & maskFilt]["i:sigmapsf"],
+            pdf_filtered[maskValid & maskFilt]["mjd"],
+            pdf_filtered[maskValid & maskFilt]["i:magpsf"],
+            pdf_filtered[maskValid & maskFilt]["i:sigmapsf"],
             ls="",
             marker="o",
             color=colordic[filt],
             label=filter_dict[filt],
         )
 
-        maskUpper = pdf["d:tag"] == "upperlim"
+        # Upper limits
+        maskUpper = pdf_filtered["d:tag"] == "upperlim"
         plt.plot(
-            pdf[maskUpper & maskFilt]["i:jd"].apply(lambda x: x - 2400000.5),
-            pdf[maskUpper & maskFilt]["i:diffmaglim"],
+            pdf_filtered[maskUpper & maskFilt]["mjd"],
+            pdf_filtered[maskUpper & maskFilt]["i:diffmaglim"],
             ls="",
             marker="^",
             color=colordic[filt],
             markerfacecolor="none",
         )
 
-        maskBadquality = pdf["d:tag"] == "badquality"
+        # Bad quality
+        maskBadquality = pdf_filtered["d:tag"] == "badquality"
         plt.errorbar(
-            pdf[maskBadquality & maskFilt]["i:jd"].apply(lambda x: x - 2400000.5),
-            pdf[maskBadquality & maskFilt]["i:magpsf"],
-            pdf[maskBadquality & maskFilt]["i:sigmapsf"],
+            pdf_filtered[maskBadquality & maskFilt]["mjd"],
+            pdf_filtered[maskBadquality & maskFilt]["i:magpsf"],
+            pdf_filtered[maskBadquality & maskFilt]["i:sigmapsf"],
             ls="",
             marker="v",
             color=colordic[filt],
