@@ -27,7 +27,7 @@ from fink_filters.ztf.filter_tracklet_candidates.filter import tracklet_candidat
 from fink_filters.ztf.livestream.filter_microlensing_candidates.filter import (
     microlensing_candidates_,
 )
-from fink_filters.ztf.livestream.filter_simbad_candidates.filter import (
+from fink_filters.ztf.filter_simbad_candidates.filter import (
     simbad_candidates_,
 )
 from fink_filters.ztf.livestream.filter_sso_ztf_candidates.filter import (
