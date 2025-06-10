@@ -146,7 +146,7 @@ def anomaly_notification_(
     ...     send_to_tg=True, channel_id='@fink_test',
     ...     send_to_slack=False, channel_name=None)
     >>> print(sorted(pdf_anomalies['objectId'].to_numpy()))
-    ['ZTF18aapgymv', 'ZTF18aapoack', 'ZTF18aaypnnd', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abzvnya', 'ZTF18actxdmj', 'ZTF19aboujyi', 'ZTF21acoshvy']
+    ['ZTF18aapgymv', 'ZTF18aaypnnd', 'ZTF18abbtxsx', 'ZTF18abgjtxx', 'ZTF18abhxigz', 'ZTF18abtrvkm', 'ZTF18abzvnya', 'ZTF18actxdmj', 'ZTF19aboujyi', 'ZTF21acoshvy']
 
     # Check cut_coords
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
