@@ -14,3 +14,7 @@ If you want to install the package (broker deployment), you can just pip it:
 ```bash
 pip install fink_filters --upgrade
 ```
+
+## Taxonomy
+
+There are two types of filters: filters that run on the live stream, and filters that are applied after the observing night (e.g. because they need to aggregate data before, or compute statistics). For each survey, the first kind can be found in the folder `livestream`. 

@@ -83,8 +83,8 @@ if [[ $SURVEY == "" ]]; then
   exit 1
 fi
 
-# Run the test suite on the ZTF modules
-for filename in fink_filters/${SURVEY}/*/*.py
+# Run the test for classification
+for filename in fink_filters/${SURVEY}/*.py
 do
   echo $filename
   # Run test suite + coverage
@@ -92,6 +92,28 @@ do
     --source=${ROOTPATH} \
     --rcfile ${ROOTPATH}/.coveragerc $filename
 done
+
+
+# Run the test suite for after the night filters
+for filename in fink_filters/${SURVEY}/filter_*/*.py
+do
+  echo $filename
+  # Run test suite + coverage
+  coverage run \
+    --source=${ROOTPATH} \
+    --rcfile ${ROOTPATH}/.coveragerc $filename
+done
+
+# Run the test suite for livestream filters
+for filename in fink_filters/${SURVEY}/livestream/*/*.py
+do
+  echo $filename
+  # Run test suite + coverage
+  coverage run \
+    --source=${ROOTPATH} \
+    --rcfile ${ROOTPATH}/.coveragerc $filename
+done
+
 
 # Combine individual reports in one
 coverage combine

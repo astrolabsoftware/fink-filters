@@ -18,16 +18,24 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import StringType
 
-from fink_filters.ztf.filter_early_sn_candidates.filter import early_sn_candidates_
-from fink_filters.ztf.filter_sn_candidates.filter import sn_candidates_
-from fink_filters.ztf.filter_kn_candidates.filter import kn_candidates_
+from fink_filters.ztf.livestream.filter_early_sn_candidates.filter import (
+    early_sn_candidates_,
+)
+from fink_filters.ztf.livestream.filter_sn_candidates.filter import sn_candidates_
+from fink_filters.ztf.livestream.filter_kn_candidates.filter import kn_candidates_
 from fink_filters.ztf.filter_tracklet_candidates.filter import tracklet_candidates_
-from fink_filters.ztf.filter_microlensing_candidates.filter import (
+from fink_filters.ztf.livestream.filter_microlensing_candidates.filter import (
     microlensing_candidates_,
 )
-from fink_filters.ztf.filter_simbad_candidates.filter import simbad_candidates_
-from fink_filters.ztf.filter_sso_ztf_candidates.filter import sso_ztf_candidates_
-from fink_filters.ztf.filter_sso_fink_candidates.filter import sso_fink_candidates_
+from fink_filters.ztf.filter_simbad_candidates.filter import (
+    simbad_candidates_,
+)
+from fink_filters.ztf.livestream.filter_sso_ztf_candidates.filter import (
+    sso_ztf_candidates_,
+)
+from fink_filters.ztf.livestream.filter_sso_fink_candidates.filter import (
+    sso_fink_candidates_,
+)
 
 import numpy as np
 import pandas as pd
@@ -116,16 +124,16 @@ def extract_fink_classification_(
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
-    Unknown                  14
-    QSO                       8
-    Blue                      7
-    HotSubdwarf               6
-    Symbiotic*                5
-    Early SN Ia candidate     5
-    CataclyV*                 5
-    Candidate_YSO             5
-    TTau*                     5
-    Candidate_CV*             4
+    LongPeriodV*    20
+    EclBin          12
+    delSctV*        11
+    RRLyrae         10
+    Unknown         10
+    QSO              9
+    RSCVnV*          8
+    Supernova        8
+    Mira             7
+    blue             7
     Name: objectId, dtype: int64
     """
     classification = pd.Series(["Unknown"] * len(cdsxmatch))
@@ -224,16 +232,16 @@ def extract_fink_classification_from_pdf(pdf):
     >>> pdf['class'] = classification
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
-    Unknown                  14
-    QSO                       8
-    Blue                      7
-    HotSubdwarf               6
-    Symbiotic*                5
-    Early SN Ia candidate     5
-    CataclyV*                 5
-    Candidate_YSO             5
-    TTau*                     5
-    Candidate_CV*             4
+    LongPeriodV*    20
+    EclBin          12
+    delSctV*        11
+    RRLyrae         10
+    Unknown         10
+    QSO              9
+    RSCVnV*          8
+    Supernova        8
+    Mira             7
+    blue             7
     Name: objectId, dtype: int64
     """
     classification = extract_fink_classification_(

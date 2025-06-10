@@ -32,7 +32,11 @@ jobs:
       run: |
         ruff check --preview --statistics fink_filters/*/*.py
         ruff format --preview --check fink_filters/*/*.py
-    - name: Filters
+    - name: After the night filters
       run: |
-        ruff check --preview --statistics fink_filters/*/*/*.py
-        ruff format --preview --check fink_filters/*/*/*.py
+        ruff check --preview --statistics fink_filters/*/filter_*/*.py
+        ruff format --preview --check fink_filters/*/filter_*/*.py
+    - name: Livestream filters
+      run: |
+        ruff check --preview --statistics fink_filters/*/livestream/*/*.py
+        ruff format --preview --check fink_filters/*/livestream/*/*.py
