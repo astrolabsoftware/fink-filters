@@ -21,13 +21,26 @@ import pandas as pd
 import numpy as np
 from fink_filters.ztf.livestream.filter_new_hostless.utils import is_uncataloged
 from fink_filters.ztf.livestream.filter_new_hostless.utils import is_hostless_base
+from fink_filters.ztf.livestream.filter_new_hostless.utils import intra_night_transients
 from fink_filters.tester import spark_unit_tests
 
 
-def new_hostless_(
-    cutoutScience, cutoutTemplate, ndethist, distnr, cdsxmatch, DR3Name, roid
+def intra_night_hostless_(
+    cjdc,
+    cmagpsfc,
+    cutoutScience,
+    cutoutTemplate,
+    ndethist,
+    distnr,
+    cdsxmatch,
+    DR3Name,
+    roid,
 ):
-    """Find newly appearing and hostless transients
+    """Find new hostless transients that repeat over the same night
+
+    Notes
+    -----
+    We request 2 observations from the same night.
 
     Parameters
     ----------
@@ -66,41 +79,72 @@ def new_hostless_(
 
     Examples
     --------
-    >>> import pandas as pd
-    >>> pdf = pd.read_parquet('datatest/regular')
-    >>> is_new_hostless = new_hostless_(
-    ...     pdf["cutoutScience"].apply(lambda x: x["stampData"]),
-    ...     pdf["cutoutTemplate"].apply(lambda x: x["stampData"]),
-    ...     pdf["candidate"].apply(lambda x: x["ndethist"]),
-    ...     pdf["candidate"].apply(lambda x: x["distnr"]),
+    >>> import pyspark.sql.functions as F
+    >>> from fink_utils.spark.utils import concat_col
+    >>> df = spark.read.format('parquet').load('datatest/regular')
+
+    >>> to_expand = ['jd', 'magpsf']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> pdf = df.select(["cjdc", "cmagpsfc", F.col("cutoutScience.stampData").alias("cutoutScience"), F.col("cutoutTemplate.stampData").alias("cutoutTemplate"), "candidate.ndethist", "candidate.distnr", "cdsxmatch", "DR3Name", "roid"]).toPandas()
+
+    >>> is_intra_night_hostless = intra_night_hostless_(
+    ...     pdf["cjdc"],
+    ...     pdf["cmagpsfc"],
+    ...     pdf["cutoutScience"],
+    ...     pdf["cutoutTemplate"],
+    ...     pdf["ndethist"],
+    ...     pdf["distnr"],
     ...     pdf["cdsxmatch"],
     ...     pdf["DR3Name"],
     ...     pdf["roid"])
-    >>> is_new_hostless.sum()
-    3
+    >>> is_intra_night_hostless.sum()
+    0
     """
-    # New and uncatalogued
+    # Uncatalogued
     is_uncat = is_uncataloged(distnr, cdsxmatch, DR3Name, roid)
-    is_new = ndethist.to_numpy() == 1
-    is_uncat_and_new = is_uncat & is_new
+    is_second = ndethist.to_numpy() == 2
+
+    # Intra Night
+    is_intra_night = intra_night_transients(cjdc, cmagpsfc, nobs=2, lapse_hour=12)
 
     # Hostless
+    is_candidate = is_uncat & is_second & is_intra_night
     is_host = is_hostless_base(
-        cutoutScience[is_uncat_and_new], cutoutTemplate[is_uncat_and_new]
+        cutoutScience[is_candidate], cutoutTemplate[is_candidate]
     )
 
     # Combine results
     mask = np.zeros_like(ndethist, dtype=bool)
-    mask[is_uncat_and_new] = is_host
+    mask[is_candidate] = is_host
 
     return pd.Series(mask)
 
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-def new_hostless(
-    cutoutScience, cutoutTemplate, ndethist, distnr, cdsxmatch, DR3Name, roid
+def intra_night_hostless(
+    cjdc,
+    cmagpsfc,
+    cutoutScience,
+    cutoutTemplate,
+    ndethist,
+    distnr,
+    cdsxmatch,
+    DR3Name,
+    roid,
 ):
-    """Find newly appearing and hostless transients (Spark)
+    """Find new hostless transients that repeat over the same night (Spark)
+
+    Notes
+    -----
+    We request 2 observations from the same night.
 
     Parameters
     ----------
@@ -139,8 +183,23 @@ def new_hostless(
 
     Examples
     --------
+    >>> import pyspark.sql.functions as F
+    >>> from fink_utils.spark.utils import concat_col
     >>> df = spark.read.format('parquet').load('datatest/regular')
-    >>> df.filter(new_hostless(
+
+    >>> to_expand = ['jd', 'magpsf']
+
+    >>> prefix = 'c'
+    >>> for colname in to_expand:
+    ...    df = concat_col(df, colname, prefix=prefix)
+
+    # quick fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in to_expand:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
+    >>> df.filter(intra_night_hostless(
+    ...     df["cjdc"],
+    ...     df["cmagpsfc"],
     ...     df["cutoutScience"],
     ...     df["cutoutTemplate"],
     ...     df["candidate.ndethist"],
@@ -148,9 +207,11 @@ def new_hostless(
     ...     df["cdsxmatch"],
     ...     df["DR3Name"],
     ...     df["roid"])).count()
-    3
+    0
     """
-    return new_hostless_(
+    return intra_night_hostless_(
+        cjdc,
+        cmagpsfc,
         cutoutScience["stampData"],
         cutoutTemplate["stampData"],
         ndethist,
