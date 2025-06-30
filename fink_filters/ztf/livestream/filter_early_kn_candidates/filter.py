@@ -41,7 +41,6 @@ def perform_classification(
     classtar,
     jd,
     jdstarthist,
-    ndethist,
     cdsxmatch,
     fid,
     magpsf,
@@ -164,7 +163,6 @@ def early_kn_candidates_(
     classtar,
     jd,
     jdstarthist,
-    ndethist,
     cdsxmatch,
     fid,
     magpsf,
@@ -187,8 +185,6 @@ def early_kn_candidates_(
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Pandas series
         Column containing earliest Julian dates corresponding to ndethist
-    ndethist: Pandas series
-        Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Pandas series
         Column containing the cross-match values
     fid: Pandas series
@@ -234,7 +230,6 @@ def early_kn_candidates_(
         classtar,
         jd,
         jdstarthist,
-        ndethist,
         cdsxmatch,
         fid,
         magpsf,
@@ -254,7 +249,6 @@ def early_kn_candidates(
     classtar,
     jd,
     jdstarthist,
-    ndethist,
     cdsxmatch,
     fid,
     magpsf,
@@ -285,8 +279,6 @@ def early_kn_candidates(
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Spark DataFrame Column
         Column containing earliest Julian dates corresponding to ndethist
-    ndethist: Spark DataFrame Column
-        Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
     fid: Spark DataFrame Column
@@ -327,7 +319,6 @@ def early_kn_candidates(
         classtar,
         jd,
         jdstarthist,
-        ndethist,
         cdsxmatch,
         fid,
         magpsf,
