@@ -256,8 +256,6 @@ def early_kn_candidates(
     dec,
     roid,
     field,
-    gal_lat_limit=10,
-    ecl_lat_limit=10,
 ) -> pd.Series:
     """
     Return alerts considered as KN candidates.
@@ -336,19 +334,19 @@ def early_kn_candidates(
     # Filter candidates based on galactic latitude
     # We consider candidates with galactic latitude > 10 degrees or < -10 degrees
     gal_latitude = gal.b.degree
-    mask_south_gal = gal_latitude < -gal_lat_limit
-    mask_north_gal = gal_latitude > gal_lat_limit
+    mask_south_gal = gal_latitude < -10
+    mask_north_gal = gal_latitude > 10
     f_gal = mask_north_gal | mask_south_gal
 
     # Filter candidates based on ecliptic latitude
     # We consider candidates with ecliptic latitude > 10 degrees or < -10 degrees
     ecl_latitude = ecl.lat.degree
-    mask_south_ecl = ecl_latitude < -ecl_lat_limit
-    mask_north_ecl = ecl_latitude > ecl_lat_limit
+    mask_south_ecl = ecl_latitude < -10
+    mask_north_ecl = ecl_latitude > 10
     f_ecl = mask_north_ecl | mask_south_ecl
 
-    mask_filter = f_kn.any() and f_gal.any() and f_ecl.any()
-    if mask_filter:
+    mask_filter = f_kn & f_gal & f_ecl
+    if mask_filter.any():
         # Simplify notations
         b = gal_latitude[mask_filter]
         beta = ecl_latitude[mask_filter]
