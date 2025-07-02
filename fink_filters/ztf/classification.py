@@ -125,10 +125,10 @@ def extract_fink_classification_(
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
     LongPeriodV*    20
+    Unknown         12
     EclBin          12
     delSctV*        11
     RRLyrae         10
-    Unknown         10
     QSO              9
     RSCVnV*          8
     Supernova        8
@@ -175,9 +175,6 @@ def extract_fink_classification_(
     # Kilonova (ML)
     f_kn = kn_candidates_(
         rf_kn_vs_nonkn,
-        rf_snia_vs_nonia,
-        snn_snia_vs_nonia,
-        snn_sn_vs_all,
         drb,
         classtar,
         jd,
@@ -233,10 +230,10 @@ def extract_fink_classification_from_pdf(pdf):
     >>> pdf.groupby('class').count().sort_values('objectId', ascending=False)['objectId'].head(10)
     class
     LongPeriodV*    20
+    Unknown         12
     EclBin          12
     delSctV*        11
     RRLyrae         10
-    Unknown         10
     QSO              9
     RSCVnV*          8
     Supernova        8
