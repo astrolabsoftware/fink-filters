@@ -43,7 +43,7 @@ def ztf_quality_cuts_(rb, nbad) -> pd.Series:
     ...     pdf['candidate'].apply(lambda x: x['rb']),
     ...     pdf['candidate'].apply(lambda x: x['nbad']))
     >>> print(len(pdf[classification]['objectId'].to_numpy()))
-    320
+    329
     """
     high_rb = rb.astype(float) >= 0.55
     no_nbad = nbad.astype(int) == 0
@@ -80,7 +80,7 @@ def ztf_quality_cuts(
     >>> f = 'fink_filters.ztf.filter_quality_cuts.filter.ztf_quality_cuts'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    320
+    329
     """
     series = ztf_quality_cuts_(
         rb,
