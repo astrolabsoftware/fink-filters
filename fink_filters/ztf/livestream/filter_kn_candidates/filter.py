@@ -37,9 +37,6 @@ from fink_filters.tester import spark_unit_tests
 
 def kn_candidates_(
     rf_kn_vs_nonkn,
-    rf_snia_vs_nonia,
-    snn_snia_vs_nonia,
-    snn_sn_vs_all,
     drb,
     classtar,
     jd,
@@ -80,9 +77,6 @@ def kn_candidates_(
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = kn_candidates_(
     ...     pdf['rf_kn_vs_nonkn'],
-    ...     pdf['rf_snia_vs_nonia'],
-    ...     pdf['snn_snia_vs_nonia'],
-    ...     pdf['snn_sn_vs_all'],
     ...     pdf['candidate'].apply(lambda x: x['drb']),
     ...     pdf['candidate'].apply(lambda x: x['classtar']),
     ...     pdf['candidate'].apply(lambda x: x['jd']),
@@ -91,7 +85,7 @@ def kn_candidates_(
     ...     pdf['cdsxmatch'],
     ...     pdf['roid'])
     >>> print(pdf[classification]['objectId'].to_numpy())
-    []
+    ['ZTF25aaugqpe' 'ZTF25aauurnj']
     """
     high_knscore = rf_kn_vs_nonkn.astype(float) > 0.5
     high_drb = drb.astype(float) > 0.5
@@ -129,7 +123,6 @@ def kn_candidates(
     csigmapsfc,
     cmagnrc,
     csigmagnrc,
-    cmagzpscic,
     cisdiffposc,
 ) -> pd.Series:
     """Pandas UDF of kn_candidates_ for Spark
@@ -160,9 +153,8 @@ def kn_candidates(
         Column containing the right Ascension of candidate; J2000 [deg]
     dec: Spark DataFrame Column
         Column containing the declination of candidate; J2000 [deg]
-    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
-        magzpsci, isdiffpos as arrays
+    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cisdiffposc: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, isdiffpos as arrays
 
     Returns
     -------
@@ -191,7 +183,7 @@ def kn_candidates(
     >>> f = 'fink_filters.ztf.livestream.filter_kn_candidates.filter.kn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    0
+    2
     """
     # Extract last (new) measurement from the concatenated column
     jd = cjdc.apply(lambda x: x[-1])
@@ -199,9 +191,6 @@ def kn_candidates(
 
     f_kn = kn_candidates_(
         rf_kn_vs_nonkn,
-        rf_snia_vs_nonia,
-        snn_snia_vs_nonia,
-        snn_sn_vs_all,
         drb,
         classtar,
         jd,
