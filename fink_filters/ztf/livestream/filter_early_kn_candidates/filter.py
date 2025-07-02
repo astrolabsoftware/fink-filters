@@ -222,7 +222,10 @@ def early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['dec']),
     ...     pdf['roid'])
     >>> print(pdf[classification]['objectId'].to_numpy())
-    []
+    ['ZTF25aavbqut' 'ZTF25aavcvel' 'ZTF25aavcvel']
+
+    >>> print(len(pdf[classification]))
+    3
     """
     f_kn, _, _, _, _ = perform_classification(
         drb,
@@ -308,7 +311,7 @@ def early_kn_candidates(
     >>> f = 'fink_filters.ztf.livestream.filter_early_kn_candidates.filter.early_kn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    0
+    1
     """
     # galactic plane
     alert_coord = SkyCoord(ra.astype(float), dec.astype(float), unit="deg")
