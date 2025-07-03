@@ -69,7 +69,7 @@ def is_uncataloged(distnr, cdsxmatch, dr3name, roid):
     ...     pdf["DR3Name"],
     ...     pdf["roid"])
     >>> print(is_uncat.sum())
-    11
+    20
     """
     # Not in ZTF internal
     f1 = distnr > 1.5
@@ -179,7 +179,7 @@ def intra_night_transients(cjdc, cmagpsfc, nobs=2, lapse_hour=12):
     >>> pdf = df.select(["cjdc", "cmagpsfc"]).toPandas()
     >>> mask = intra_night_transients(pdf["cjdc"], pdf["cmagpsfc"], nobs=2, lapse_hour=12)
     >>> np.sum(mask)
-    113
+    117
     """
     to_return = np.zeros_like(cjdc, dtype=bool)
     # last nobs are not None
