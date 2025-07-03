@@ -41,7 +41,7 @@ def sso_fink_candidates_(roid) -> pd.Series:
     >>> pdf = pd.read_parquet('datatest/regular')
     >>> classification = sso_fink_candidates_(pdf['roid'])
     >>> print(len(pdf[classification]['objectId'].to_numpy()))
-    3
+    5
 
     >>> assert 'ZTF21acqeepb' in pdf[classification]['objectId'].to_numpy()
     """
@@ -72,7 +72,7 @@ def sso_fink_candidates(roid) -> pd.Series:
     >>> f = 'fink_filters.ztf.livestream.filter_sso_fink_candidates.filter.sso_fink_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    3
+    5
 
     """
     f_roid = sso_fink_candidates_(roid)

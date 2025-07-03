@@ -41,7 +41,6 @@ def perform_classification(
     classtar,
     jd,
     jdstarthist,
-    ndethist,
     cdsxmatch,
     fid,
     magpsf,
@@ -164,7 +163,6 @@ def early_kn_candidates_(
     classtar,
     jd,
     jdstarthist,
-    ndethist,
     cdsxmatch,
     fid,
     magpsf,
@@ -187,8 +185,6 @@ def early_kn_candidates_(
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Pandas series
         Column containing earliest Julian dates corresponding to ndethist
-    ndethist: Pandas series
-        Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Pandas series
         Column containing the cross-match values
     fid: Pandas series
@@ -218,7 +214,6 @@ def early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['classtar']),
     ...     pdf['candidate'].apply(lambda x: x['jd']),
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']),
-    ...     pdf['candidate'].apply(lambda x: x['ndethist']),
     ...     pdf['cdsxmatch'],
     ...     pdf['candidate'].apply(lambda x: x['fid']),
     ...     pdf['candidate'].apply(lambda x: x['magpsf']),
@@ -227,14 +222,16 @@ def early_kn_candidates_(
     ...     pdf['candidate'].apply(lambda x: x['dec']),
     ...     pdf['roid'])
     >>> print(pdf[classification]['objectId'].to_numpy())
-    []
+    ['ZTF25aavbqut' 'ZTF25aavcvel' 'ZTF25aavcvel']
+
+    >>> print(len(pdf[classification]))
+    3
     """
     f_kn, _, _, _, _ = perform_classification(
         drb,
         classtar,
         jd,
         jdstarthist,
-        ndethist,
         cdsxmatch,
         fid,
         magpsf,
@@ -254,7 +251,6 @@ def early_kn_candidates(
     classtar,
     jd,
     jdstarthist,
-    ndethist,
     cdsxmatch,
     fid,
     magpsf,
@@ -285,8 +281,6 @@ def early_kn_candidates(
         Column containing observation Julian dates at start of exposure [days]
     jdstarthist: Spark DataFrame Column
         Column containing earliest Julian dates corresponding to ndethist
-    ndethist: Spark DataFrame Column
-        Column containing the number of prior detections (theshold of 3 sigma)
     cdsxmatch: Spark DataFrame Column
         Column containing the cross-match values
     fid: Spark DataFrame Column
@@ -317,17 +311,18 @@ def early_kn_candidates(
     >>> f = 'fink_filters.ztf.livestream.filter_early_kn_candidates.filter.early_kn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    0
+    1
     """
     # galactic plane
-    gal = SkyCoord(ra.astype(float), dec.astype(float), unit="deg").galactic
+    alert_coord = SkyCoord(ra.astype(float), dec.astype(float), unit="deg")
+    gal = alert_coord.galactic
+    ecl = alert_coord.transform_to("geocentricmeanecliptic")
 
     out = perform_classification(
         drb,
         classtar,
         jd,
         jdstarthist,
-        ndethist,
         cdsxmatch,
         fid,
         magpsf,
@@ -339,27 +334,43 @@ def early_kn_candidates(
 
     f_kn, pdf_mangrove, host_galaxies, host_alert_separation, abs_mag_candidate = out
 
-    if f_kn.any():
+    # Filter candidates based on galactic latitude
+    # We consider candidates with galactic latitude > 10 degrees or < -10 degrees
+    gal_latitude = gal.b.degree
+    mask_south_gal = gal_latitude < -10
+    mask_north_gal = gal_latitude > 10
+    f_gal = mask_north_gal | mask_south_gal
+
+    # Filter candidates based on ecliptic latitude
+    # We consider candidates with ecliptic latitude > 10 degrees or < -10 degrees
+    ecl_latitude = ecl.lat.degree
+    mask_south_ecl = ecl_latitude < -10
+    mask_north_ecl = ecl_latitude > 10
+    f_ecl = mask_north_ecl | mask_south_ecl
+
+    mask_filter = f_kn & f_gal & f_ecl
+    if mask_filter.any():
         # Simplify notations
-        b = gal.b.degree[f_kn]
-        ra = Angle(np.array(ra.astype(float)[f_kn]) * u.degree).deg
-        dec = Angle(np.array(dec.astype(float)[f_kn]) * u.degree).deg
+        b = gal_latitude[mask_filter]
+        beta = ecl_latitude[mask_filter]
+        ra = Angle(np.array(ra.astype(float)[mask_filter]) * u.degree).deg
+        dec = Angle(np.array(dec.astype(float)[mask_filter]) * u.degree).deg
         ra_formatted = Angle(ra * u.degree).to_string(precision=2, sep=" ", unit=u.hour)
         dec_formatted = Angle(dec * u.degree).to_string(
             precision=1, sep=" ", alwayssign=True
         )
         delta_jd_first = np.array(
-            jd.astype(float)[f_kn] - jdstarthist.astype(float)[f_kn]
+            jd.astype(float)[mask_filter] - jdstarthist.astype(float)[mask_filter]
         )
         # Redefine notations relative to candidates
-        fid = np.array(fid.to_numpy())[f_kn]
-        jd = np.array(jd.to_numpy())[f_kn]
-        mag = magpsf.to_numpy()[f_kn]
-        err_mag = sigmapsf.to_numpy()[f_kn]
-        field = field.to_numpy()[f_kn]
+        fid = np.array(fid.to_numpy())[mask_filter]
+        jd = np.array(jd.to_numpy())[mask_filter]
+        mag = magpsf.to_numpy()[mask_filter]
+        err_mag = sigmapsf.to_numpy()[mask_filter]
+        field = field.to_numpy()[mask_filter]
 
     dict_filt = {1: "g", 2: "r"}
-    for i, alertID in enumerate(objectId[f_kn].to_numpy()):
+    for i, alertID in enumerate(objectId[mask_filter].to_numpy()):
         # information to send
         alert_text = """
             *Fink Science Portal:* <https://fink-portal.org/{}|{}>
@@ -397,6 +408,8 @@ def early_kn_candidates(
         """.format(ra_formatted[i], dec_formatted[i], ra[i], dec[i])
         galactic_position_text = """
             *Galactic latitude:*\n- [deg]: {:.7f}""".format(b[i])
+        ecliptic_position_text = """
+            *Ecliptic latitude:*\n- [deg]: {:.7f}""".format(beta[i])
         tns_text = "*TNS:* <https://www.wis-tns.org/search?ra={}&decl={}&radius=5&coords_unit=arcsec|link>".format(
             ra[i], dec[i]
         )
@@ -417,6 +430,7 @@ def early_kn_candidates(
                     {"type": "mrkdwn", "text": radec_text},
                     {"type": "mrkdwn", "text": crossmatch_text},
                     {"type": "mrkdwn", "text": galactic_position_text},
+                    {"type": "mrkdwn", "text": ecliptic_position_text},
                     {"type": "mrkdwn", "text": measurements_text},
                     {"type": "mrkdwn", "text": tns_text},
                 ],
@@ -479,7 +493,7 @@ def early_kn_candidates(
             log = logging.Logger("Kilonova filter")
             log.warning(error_message.format("KNWEBHOOK_DWF"))
 
-    return f_kn
+    return mask_filter
 
 
 if __name__ == "__main__":

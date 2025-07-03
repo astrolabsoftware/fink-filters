@@ -52,7 +52,7 @@ def vra(magpsf: Any, drb: Any, cdsxmatch: Any, roid: Any) -> pd.Series:
     >>> f = 'fink_filters.ztf.livestream.filter_vra.filter.vra'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    1
+    2
 
     """
     # Include new taxonomy

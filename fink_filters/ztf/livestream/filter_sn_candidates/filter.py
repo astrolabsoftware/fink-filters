@@ -79,7 +79,7 @@ def sn_candidates_(
     ...     pdf['roid'],
     ...     pdf['candidate'].apply(lambda x: x['ndethist']))
     >>> print(len(pdf[classification]['objectId'].to_numpy()))
-    8
+    13
 
     >>> assert 'ZTF21acoshvy' in pdf[classification]['objectId'].to_numpy()
     """
@@ -127,7 +127,7 @@ def sn_candidates(
     >>> f = 'fink_filters.ztf.livestream.filter_sn_candidates.filter.sn_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    8
+    13
     """
     series = sn_candidates_(
         cdsxmatch,

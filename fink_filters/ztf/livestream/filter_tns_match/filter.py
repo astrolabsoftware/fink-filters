@@ -105,7 +105,7 @@ def tns_match_(
     ...     pdf['candidate'].apply(lambda x: x['jd']),
     ...     pdf['candidate'].apply(lambda x: x['jdstarthist']))
     >>> print(classification.sum())
-    16
+    25
     """
     is_in_tns = tns != ""
     is_young = jd.astype(float) - jdstarthist.astype(float) <= 30

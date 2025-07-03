@@ -39,9 +39,6 @@ from fink_filters.tester import spark_unit_tests
 
 def perform_classification(
     objectId,
-    rf_snia_vs_nonia,
-    snn_snia_vs_nonia,
-    snn_sn_vs_all,
     drb,
     classtar,
     jdstarthist,
@@ -56,7 +53,6 @@ def perform_classification(
     csigmapsfc,
     cmagnrc,
     csigmagnrc,
-    cmagzpscic,
     cisdiffposc,
 ) -> pd.Series:
     """
@@ -90,9 +86,8 @@ def perform_classification(
         Column containing the declination of candidate; J2000 [deg]
     ssdistnr: Spark DataFrame Column
         distance to nearest known solar system object; -999.0 if none [arcsec]
-    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
-        magzpsci, isdiffpos as arrays
+    cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cisdiffposc: Spark DataFrame Columns
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, isdiffpos as arrays
 
     Returns
     -------
@@ -199,9 +194,6 @@ def perform_classification(
 
 def rate_based_kn_candidates_(
     objectId,
-    rf_snia_vs_nonia,
-    snn_snia_vs_nonia,
-    snn_sn_vs_all,
     drb,
     classtar,
     jdstarthist,
@@ -216,7 +208,6 @@ def rate_based_kn_candidates_(
     csigmapsfc,
     cmagnrc,
     csigmagnrc,
-    cmagzpscic,
     cisdiffposc,
 ) -> pd.Series:
     """
@@ -231,9 +222,6 @@ def rate_based_kn_candidates_(
     ----------
     objectId: Spark DataFrame Column
         Column containing the alert IDs
-    rf_snia_vs_nonia, snn_snia_vs_nonia, snn_sn_vs_all: Spark DataFrame Columns
-        Columns containing the scores for: 'Early SN Ia',
-        'Ia SN vs non-Ia SN', 'SN Ia and Core-Collapse vs non-SN events'
     drb: Spark DataFrame Column
         Column containing the Deep-Learning Real Bogus score
     classtar: Spark DataFrame Column
@@ -251,8 +239,7 @@ def rate_based_kn_candidates_(
     ssdistnr: Spark DataFrame Column
         distance to nearest known solar system object; -999.0 if none [arcsec]
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
-        magzpsci, isdiffpos as arrays
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, isdiffpos as arrays
 
     Returns
     -------
@@ -262,9 +249,6 @@ def rate_based_kn_candidates_(
     """
     f_kn, _, _, _, _ = perform_classification(
         objectId,
-        rf_snia_vs_nonia,
-        snn_snia_vs_nonia,
-        snn_sn_vs_all,
         drb,
         classtar,
         jdstarthist,
@@ -279,7 +263,6 @@ def rate_based_kn_candidates_(
         csigmapsfc,
         cmagnrc,
         csigmagnrc,
-        cmagzpscic,
         cisdiffposc,
     )
 
@@ -306,7 +289,6 @@ def rate_based_kn_candidates(
     csigmapsfc,
     cmagnrc,
     csigmagnrc,
-    cmagzpscic,
     cisdiffposc,
 ) -> pd.Series:
     """
@@ -341,8 +323,7 @@ def rate_based_kn_candidates(
     ssdistnr: Spark DataFrame Column
         distance to nearest known solar system object; -999.0 if none [arcsec]
     cjdc, cfidc, cmagpsfc, csigmapsfc, cmagnrc, csigmagnrc, cmagzpscic: Spark DataFrame Columns
-        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr,
-        magzpsci, isdiffpos as arrays
+        Columns containing history of fid, magpsf, sigmapsf, magnr, sigmagnr, isdiffpos as arrays
 
     Returns
     -------
@@ -373,9 +354,6 @@ def rate_based_kn_candidates(
     """
     f_kn, rate, sigma_rate, mag, err_mag = perform_classification(
         objectId,
-        rf_snia_vs_nonia,
-        snn_snia_vs_nonia,
-        snn_sn_vs_all,
         drb,
         classtar,
         jdstarthist,
@@ -390,7 +368,6 @@ def rate_based_kn_candidates(
         csigmapsfc,
         cmagnrc,
         csigmagnrc,
-        cmagzpscic,
         cisdiffposc,
     )
 
