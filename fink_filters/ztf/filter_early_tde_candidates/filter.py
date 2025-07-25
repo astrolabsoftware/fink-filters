@@ -49,8 +49,32 @@ def find_candidates(
     classifiers=None,
     plot_lc=False,
     skip_classified=True,
-    verbose=False,
 ):
+    """Find early TDE candidates in pre-filtered dataframe.
+
+    Parameters
+    -----------------
+    data: DataFrame
+        pre-filtered data produced by prefilter.prefilter_alerts()
+    window: int
+        Fitting window size, days
+    hist_window: int
+        Historical window size, days
+    nsamples: int
+        Number of feature samples to generate according to fitted parameter covariances
+    classifiers: list
+        List containing the classifiers to apply to the features
+    plot_lc: bool
+        Whether to include the light curve plots in the output
+    skip_classified: bool
+        Whether to skip the candidates with already available TNS classification
+
+    Returns
+    -------
+    out: Pandas DataFrame
+         Pandas DataFrame with scores and parameters for the selected candidates
+    """
+
     candidates = []
 
     if classifiers is None:
@@ -70,23 +94,16 @@ def find_candidates(
             if len(types) and 'TDE' not in types and 'TDE-He' not in types:
                 continue
 
-        if True:
-            # Use Fink API, with some points potentially missing
-            pdf = lcs.request_lc(cand['objectId'])
-            if pdf is None:
-                if verbose:
-                    print('Error fetching full lightcurve for', cand['objectId'])
-                confinue
-            # Merge with detections from alert, if they are missing
-            sub = lcs.get_lc(cand, prefix='c')
-            pdf = pd.concat([
-                pdf,
-                sub[~np.isin(sub['i:jd'], pdf['i:jd'])]
-            ]).sort_values('i:jd').reset_index(drop=True)
-        else:
-            # Use ALeRCE
-            # TODO: deredden it!!!
-            pdf = lcs.request_lc_alerce(cand['objectId'])
+        # Use Fink API, with some points potentially missing
+        pdf = lcs.request_lc(cand['objectId'])
+        if pdf is None:
+            continue
+        # Merge with detections from alert, if they are missing
+        sub = lcs.get_lc(cand, prefix='c')
+        pdf = pd.concat([
+            pdf,
+            sub[~np.isin(sub['i:jd'], pdf['i:jd'])]
+        ]).sort_values('i:jd').reset_index(drop=True)
 
         # Fitting window
         jd_max = cand['jd']
@@ -252,7 +269,7 @@ def find_candidates(
     return candidates
 
 
-def early_tde_candidates_(
+def early_tde_candidates(
     df,
     prefiltered=None,
     send_to_tg=False,
@@ -392,6 +409,7 @@ def early_tde_candidates_(
 
 
     # TODO: propagate the scores to parent dataframe
+    return candidates
 
 
 if __name__ == "__main__":

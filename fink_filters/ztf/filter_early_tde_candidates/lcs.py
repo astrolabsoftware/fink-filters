@@ -29,6 +29,8 @@ from light_curve.light_curve_py import RainbowFit
 
 import matplotlib.pyplot as plt
 
+import logging
+
 from .prefilter import mag2fluxcal
 
 COLORS_ZTF = {1: "#15284F", 2: "#F5622E"}
@@ -38,6 +40,8 @@ API_ENDPOINT = 'https://api.fink-portal.org/api/v1/objects'
 # Filters ZTF
 filt_conv = {1: "g", 2: "r", 3: "i"}  # Conversion between filter ID (int) and filter name (str)
 band_wave_aa = {"g": 4770.0, "r": 6231.0, "i": 7625.0}  # Bands in angstroms for rainbow
+
+_LOG = logging.Logger("Early TDE")
 
 
 # TNS
@@ -142,6 +146,7 @@ def request_lc(oid):
     )
 
     if r.status_code != 200:
+        _LOG.warning("Error getting archival light curve for {}: {}".format(oid, r.content))
         return None
 
     pdf = pd.read_json(io.BytesIO(r.content))
@@ -161,29 +166,6 @@ def request_lc(oid):
     return pdf
 
 
-def request_lc_alerce(oid):
-    from alerce.core import Alerce
-
-    alerce = Alerce()
-    a1 = alerce.query_detections(cand['objectId'], format='pandas')
-    a2 = alerce.query_non_detections(cand['objectId'], format='pandas')
-    pdf = pd.concat([a1[['mjd', 'fid', 'diffmaglim', 'isdiffpos', 'magpsf', 'sigmapsf']], a2[['mjd', 'fid', 'diffmaglim']]]).reset_index(drop=True)
-    pdf['isdiffpos'] = np.where(pdf['isdiffpos']>0, 't', 'f')
-    pdf['jd'] = pdf['mjd'] + 2400000.5
-
-    pdf = pdf.rename(columns=lambda _: 'i:'+_)
-
-    # Remove other bands?..
-    pdf = pdf[(pdf['i:fid'] == 1) | (pdf['i:fid'] == 2)]
-
-    pdf['FLUXCAL'],pdf['FLUXCALERR'] = mag2fluxcal(pdf['i:magpsf'], pdf['i:sigmapsf'], pdf['i:isdiffpos'])
-    pdf['FLUXCALUPPER'] = 10**(11 - 0.4*pdf['i:diffmaglim'])
-
-    # TODO: deredden it!
-
-    return pdf
-
-
 def request_lc_snad(ra, dec, sr_arcsec=1.5):
     r = requests.get(
         "https://db.ztf.snad.space/api/v3/data/latest/circle/full/json",
@@ -191,6 +173,7 @@ def request_lc_snad(ra, dec, sr_arcsec=1.5):
     )
 
     if r.status_code != 200:
+        _LOG.warning("Error getting SNAD light curve for {} {} {}: {}".format(ra, dec, sr_arcsec, r.content))
         return None
 
     lc = []
@@ -313,6 +296,8 @@ def extract_features(sub, nsamples=None):
 
 
 def print_features(res1):
+    global feature
+
     for i,name in enumerate(feature.names):
         value,error = res1['params'][i], res1['errors'][i]
 
@@ -332,6 +317,8 @@ def print_features(res1):
 
 
 def plot_features(sub, res1, nsamples=100, prior=100, jd_min=None, jd_max=None, extra=None, **kwargs):
+    global feature
+
     if jd_min is not None:
         sub = sub[sub['i:jd'] >= jd_min]
     if jd_max is not None:
