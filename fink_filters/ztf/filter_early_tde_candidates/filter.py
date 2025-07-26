@@ -398,7 +398,14 @@ def early_tde_candidates(
 
 
     if send_to_tg and tg_msgs:
-        msg_handler_tg(tg_msgs, tg_channel, None, sleep_seconds=sleep, parse_mode='MarkdownV2')
+        msg_handler_tg(
+            tg_msgs,
+            tg_channel,
+            None,
+            sleep_seconds=sleep,
+            parse_mode='MarkdownV2',
+            token=os.environ["EARLY_TDE_TG_TOKEN"]
+        )
 
     # if send_to_slack:
     #     # Delete the Slack messages, useful for debugging
