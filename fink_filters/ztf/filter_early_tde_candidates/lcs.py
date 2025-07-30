@@ -19,11 +19,12 @@ from astropy.time import Time
 from astropy import units as u
 from astropy.coordinates import SkyCoord, concatenate
 
+import os
 import io
 import requests
 import pandas as pd
 
-from dustmaps.sfd import SFDQuery
+import dustmaps.sfd
 
 from light_curve.light_curve_py import RainbowFit
 
@@ -104,12 +105,22 @@ sfd = None
 Av = {1: 3.681, 2: 2.635, 3: 1.944}
 
 
+def prepare_sfd_data():
+    path = dustmaps.sfd.data_dir()
+    path = os.path.join(path, 'sfd')
+
+    if not os.path.exists(path):
+        _LOG.warning("No SFD data for dustmaps, downloading it")
+        dustmaps.sfd.fetch()
+
+
 def deredden(flux, fid, ra, dec):
     """De-reddening using SFD from dustmaps"""
     global sfd
 
     if sfd is None:
-        sfd = SFDQuery()
+        prepare_sfd_data()
+        sfd = dustmaps.sfd.SFDQuery()
 
     Ebv = sfd(SkyCoord(ra, dec, unit='deg'))
 
@@ -121,7 +132,8 @@ def deredden_pdf(pdf, ra=None, dec=None):
     global sfd
 
     if sfd is None:
-        sfd = SFDQuery()
+        prepare_sfd_data()
+        sfd = dustmaps.sfd.SFDQuery()
 
     Ebv = sfd(SkyCoord(ra, dec, unit='deg'))
     for fid in [1,2,3]:
