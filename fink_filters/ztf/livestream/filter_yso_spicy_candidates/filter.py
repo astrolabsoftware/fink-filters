@@ -27,7 +27,7 @@ import os
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def yso_spicy_candidates(
-    spicy_id, spicy_class, objectId, cjdc, cmagpsfc, csigmapsfc, cdiffmaglimc, cfidc
+    spicy_id, spicy_class, objectId, cjdc, cmagpsfc, csigmapsfc, cdiffmaglimc, cfidc, linear_fit_slope
 ) -> pd.Series:
     """Return alerts with a match in the SPICY catalog
 
@@ -64,7 +64,11 @@ def yso_spicy_candidates(
     >>> print(df.count())
     10
     """
-    mask = spicy_id.to_numpy() != -1
+    slope_lim = 0.025
+    
+    mask_spicy = spicy_id.to_numpy() != -1
+    mask_slope = linear_fit_slope > slope_lim
+    mask = mask_spicy & mask_slope
 
     pdf = pd.DataFrame({
         "objectId": objectId,
