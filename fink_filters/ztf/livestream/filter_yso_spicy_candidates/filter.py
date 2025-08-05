@@ -75,10 +75,10 @@ def r2_score(jd, magpsf, fid, min_points=5):
     
     return res
 
-
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def yso_spicy_candidates(
-    spicy_id, spicy_class, objectId, cjdc, cmagpsfc, csigmapsfc, cdiffmaglimc, cfidc, linear_fit_slope
+    spicy_id, spicy_class, objectId, cjdc, cmagpsfc, csigmapsfc, cdiffmaglimc, 
+    cfidc, linear_fit_slope
 ) -> pd.Series:
     """Return alerts with a match in the SPICY catalog
 
@@ -98,7 +98,9 @@ def yso_spicy_candidates(
     --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> from fink_utils.spark.utils import concat_col
+    >>> import pyspark.sql.functions as F
     >>> df = spark.read.format('parquet').load('datatest/spicy_yso')
+    >>> df = df.withColumn('linear_fit_slope', F.col('lc_features_r.linear_fit_slope'))
 
     >>> to_expand = ['jd', 'fid', 'magpsf', 'sigmapsf', 'diffmaglim']
 
@@ -142,11 +144,8 @@ def yso_spicy_candidates(
     pdf['r2_values'] = pdf[['jd', 'magpsf', 'fid']].apply(lambda vecs: r2_score(*vecs), axis=1)
     mask_r2 = pdf['r2_values'] > r2_lim 
     
-    print(pdf[['objectId', 'r2_values','linear_fit_slope']])
-
     mask = mask_r2 & mask_slope
-  
-    
+      
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
         payloads = []
