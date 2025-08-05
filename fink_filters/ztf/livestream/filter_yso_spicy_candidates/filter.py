@@ -25,27 +25,41 @@ import numpy as np
 import pandas as pd
 import os
 
-def r2_score(x, y):
+def r2_score(jd, magpsf, fid, min_points=5):
     """
     Compute the coefficient of determination (R²) for two numeric arrays.
 
     Parameters
     ----------
-    x : array-like
-        Independent variable (predictor values).
-    y : array-like
-        Dependent variable (observed values).
+    jd : array-like
+        Independent variable (predictor values). Time of observation.
+    magpsf : array-like
+        Dependent variable (observed values). PSF magnitude.
+    fid: array-like
+        Observed filter. For ZTF, g=1, r=2
+    min_points: int
+        Minimum number of points required.
 
     Returns
     -------
     float
         R² value.
     """
+    # remove Nans
+    mask_nan = ~np.isnan(magpsf)
+    mask_r = fid == 2
+    mask = mask_nan & mask_r
+    
+    if sum(mask) < min_points:
+        return np.nan
+    
+    x = jd[mask]
+    y = magpsf[mask]
     
     x_mean = x.mean()
     y_mean = y.mean()
 
-    sxx = np.sum((x - x_mean) ** 2)
+    sxx = np.sum(pow(x - x_mean, 2))
     if sxx == 0:
         return np.nan
 
@@ -54,8 +68,8 @@ def r2_score(x, y):
     beta0 = y_mean - beta1 * x_mean
 
     y_hat = beta0 + beta1 * x
-    ss_res = np.sum((y - y_hat) ** 2)
-    ss_tot = np.sum((y - y_mean) ** 2)
+    ss_res = np.sum(pow(y - y_hat, 2))
+    ss_tot = np.sum(pow(y - y_mean, 2))
 
     res = 1.0 - ss_res / ss_tot if ss_tot != 0 else np.nan
     
@@ -103,33 +117,9 @@ def yso_spicy_candidates(
     """
     
     slope_lim = 0.025   # minimum slope threshold
-    npoints = 5         # minimum required number of points
     r2_lim = 0.6        # minimum required r2
-    
-    # select spicy objecs
-    mask_spicy = (spicy_class != "Unknown")
-
-    # select spicy objects which respect the slope threshold
-    mask_slope = mask_spicy & (linear_fit_slope.abs() > slope_lim)
-    
+     
     # convert to pandas
-    pdf = pd.DataFrame({"cmagpsfc": cmagpsfc[mask_slope], 
-                        "cfidc": cfidc[mask_slope], 
-                        "cjdc": cjdc[mask_slope]})
-                        
-    pdf['sum_rband'] = pd.Series([sum(item == 2) for item in pdf['cfidc'].values])
-
-    # select objects with minimum number of points
-    mask_points = mask_slope & (pdf['sum_rband'] >= npoints)
-    
-    use_jd = pdf['cjdc'][mask_points]
-    use_magpsf = pdf['cmagpsfc'][mask_points]
-
-    # calculate r2 statistics
-    r2_values = r2_score(use_jd, use_magpsf)
-    
-    mask = r2_values > r2_lim 
-
     pdf = pd.DataFrame({
         "objectId": objectId,
         "magpsf": cmagpsfc,
@@ -139,8 +129,24 @@ def yso_spicy_candidates(
         "jd": cjdc,
         "spicy_id": spicy_id,
         "spicy_class": spicy_class,
+        "linear_fit_slope": linear_fit_slope
     })
+    
+    # select spicy objecs, N
+    mask_spicy = (spicy_class != "Unknown")
 
+    # select spicy objects which respect the slope threshold, N
+    mask_slope = mask_spicy & (linear_fit_slope.abs() > slope_lim)
+    
+    # calculate r2 statistics
+    pdf['r2_values'] = pdf[['jd', 'magpsf', 'fid']].apply(lambda vecs: r2_score(*vecs), axis=1)
+    mask_r2 = pdf['r2_values'] > r2_lim 
+    
+    print(pdf[['objectId', 'r2_values','linear_fit_slope']])
+
+    mask = mask_r2 & mask_slope
+  
+    
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
         payloads = []
