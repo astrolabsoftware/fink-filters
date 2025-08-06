@@ -312,7 +312,7 @@ def early_tde_candidates(
         prefiltered = prefilter.prefilter_alerts(df)
 
     data = prefiltered.toPandas()
-    data.sort_values('jd', inplace=True) # Report alerts in proper order
+    data.sort_values(['objectId', 'jd'], inplace=True) # Report alerts in proper order, grouped by objectId
 
     candidates = find_candidates(data, plot_lc=True, skip_classified=True)
 
