@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 import os
 
+
 def r2_score(jd, magpsf, fid, min_points=5):
     """
     Compute the coefficient of determination (R²) for two numeric arrays.
@@ -49,13 +50,13 @@ def r2_score(jd, magpsf, fid, min_points=5):
     mask_nan = ~np.isnan(magpsf)
     mask_r = fid == 2
     mask = mask_nan & mask_r
-    
+
     if sum(mask) < min_points:
         return np.nan
-    
+
     x = jd[mask]
     y = magpsf[mask]
-    
+
     x_mean = x.mean()
     y_mean = y.mean()
 
@@ -72,13 +73,21 @@ def r2_score(jd, magpsf, fid, min_points=5):
     ss_tot = np.sum(pow(y - y_mean, 2))
 
     res = 1.0 - ss_res / ss_tot if ss_tot != 0 else np.nan
-    
+
     return res
+
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def yso_spicy_candidates(
-    spicy_id, spicy_class, objectId, cjdc, cmagpsfc, csigmapsfc, cdiffmaglimc, 
-    cfidc, linear_fit_slope
+    spicy_id,
+    spicy_class,
+    objectId,
+    cjdc,
+    cmagpsfc,
+    csigmapsfc,
+    cdiffmaglimc,
+    cfidc,
+    linear_fit_slope,
 ) -> pd.Series:
     """Return alerts with a match in the SPICY catalog
 
@@ -117,10 +126,9 @@ def yso_spicy_candidates(
     >>> print(df.count())
     6
     """
-    
-    slope_lim = 0.025   # minimum slope threshold
-    r2_lim = 0.6        # minimum required r2
-     
+    slope_lim = 0.025  # minimum slope threshold
+    r2_lim = 0.6  # minimum required r2
+
     # convert to pandas
     pdf = pd.DataFrame({
         "objectId": objectId,
@@ -131,21 +139,23 @@ def yso_spicy_candidates(
         "jd": cjdc,
         "spicy_id": spicy_id,
         "spicy_class": spicy_class,
-        "linear_fit_slope": linear_fit_slope
+        "linear_fit_slope": linear_fit_slope,
     })
-    
+
     # select spicy objecs, N
-    mask_spicy = (spicy_class != "Unknown")
+    mask_spicy = spicy_class != "Unknown"
 
     # select spicy objects which respect the slope threshold, N
     mask_slope = mask_spicy & (linear_fit_slope.abs() > slope_lim)
-    
+
     # calculate r2 statistics
-    pdf['r2_values'] = pdf[['jd', 'magpsf', 'fid']].apply(lambda vecs: r2_score(*vecs), axis=1)
-    mask_r2 = pdf['r2_values'] > r2_lim 
-    
+    pdf["r2_values"] = pdf[["jd", "magpsf", "fid"]].apply(
+        lambda vecs: r2_score(*vecs), axis=1
+    )
+    mask_r2 = pdf["r2_values"] > r2_lim
+
     mask = mask_r2 & mask_slope
-      
+
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
         payloads = []
@@ -180,8 +190,6 @@ if __name__ == "__main__":
     # Run the test suite
     globs = globals()
     path = os.path.dirname(__file__)
-    sample_file = (
-        "./fink-filters/datatest/spicy_yso/"
-    )
+    sample_file = "./fink-filters/datatest/spicy_yso/"
     globs["test_yso_cuts"] = sample_file
     spark_unit_tests(globs)
