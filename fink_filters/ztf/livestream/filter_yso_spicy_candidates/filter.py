@@ -161,13 +161,8 @@ def yso_spicy_candidates(
         payloads = []
         for _, alert in pdf[mask].iterrows():
             curve_png = get_curve(
-                jd=alert["jd"],
-                magpsf=alert["magpsf"],
-                sigmapsf=alert["sigmapsf"],
-                diffmaglim=alert["diffmaglim"],
-                fid=alert["fid"],
                 objectId=alert["objectId"],
-                origin="fields",
+                origin="API",
             )
 
             hyperlink = "[{}](https://fink-portal.org/{}): ID {} ({})".format(
