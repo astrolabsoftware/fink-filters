@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 
 import logging
 
-from .prefilter import mag2fluxcal
+from fink_filters.ztf.filter_early_tde_candidates.prefilter import mag2fluxcal
 
 COLORS_ZTF = {1: "#15284F", 2: "#F5622E"}
 

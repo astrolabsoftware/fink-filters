@@ -36,7 +36,7 @@ from slack_sdk import WebClient
 
 # Telegram
 
-from . import prefilter, lcs
+from fink_filters.ztf.filter_early_tde_candidates import prefilter, lcs
 
 
 def find_candidates(
