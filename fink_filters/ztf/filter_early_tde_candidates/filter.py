@@ -38,7 +38,7 @@ from slack_sdk.errors import SlackApiError
 # Telegram
 from fink_utils.tg_bot.utils import msg_handler_tg, send_simple_text_tg, status_check, escape
 
-from . import prefilter, lcs
+from fink_filters.ztf.filter_early_tde_candidates import prefilter, lcs
 
 
 def find_candidates(
