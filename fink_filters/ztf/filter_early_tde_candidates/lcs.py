@@ -21,6 +21,7 @@ import io
 import requests
 import pandas as pd
 
+from dustmaps.config import config as dustconfig
 import dustmaps.sfd
 
 from light_curve.light_curve_py import RainbowFit
@@ -30,6 +31,8 @@ import matplotlib.pyplot as plt
 import logging
 
 from fink_filters.ztf.filter_early_tde_candidates.prefilter import mag2fluxcal
+
+dustconfig["data_dir"] = "/tmp"
 
 COLORS_ZTF = {1: "#15284F", 2: "#F5622E"}
 
