@@ -143,7 +143,7 @@ def yso_spicy_candidates(
     })
 
     # select spicy objecs, N
-    mask_spicy = spicy_class != "Unknown"
+    mask_spicy = ~spicy_class.isin(["Unknown", None, np.nan])
 
     # select spicy objects which respect the slope threshold, N
     mask_slope = mask_spicy & (linear_fit_slope.abs() > slope_lim)
