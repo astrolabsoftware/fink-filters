@@ -15,21 +15,32 @@
 
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
-from fink_science.ztf.transient_features.processor import extract_transient_features
+from fink_science.ztf.transient_features.processor import extract_transient_features  # noqa: E501
 from fink_filters.tester import spark_unit_tests
 from fink_filters import __file__
 import os
 import pandas as pd
 
 
-def transient_complete_filter_(faint, positivesubtraction, real, pointunderneath, brightstar, variablesource, stationary, roid) -> pd.Series:
+def transient_complete_filter_(
+    faint,
+    positivesubtraction,
+    real,
+    pointunderneath,
+    brightstar,
+    variablesource,
+    stationary,
+    roid,
+) -> pd.Series:
     """Return a relatively complete stream of transient alerts.
-    Should keep good quality transients, and remove a significant part of the contamination.
+    Should keep good quality transients,
+    and remove a significant part of the contamination.
 
     Parameters
     ----------
     faint: Pandas series of bool
-        Is currently fainter than 19.8, or the source had a very recent detection fainter than 19.
+        Is currently fainter than 19.8,
+        or the source had a very recent detection fainter than 19.
     positivesubtraction: Pandas series
         Is brighter than the template image.
     real: Pandas series of bool
@@ -65,13 +76,13 @@ def transient_complete_filter_(faint, positivesubtraction, real, pointunderneath
     >>> sum(is_transient)
     29
     """
-    
+
     roid_mask = roid.apply(lambda x: x == 0)
 
     # Remove alerts that are too faint
     faint_mask = faint.apply(lambda x: x is False)
 
-    # Remove alerts with flux below reference image 
+    # Remove alerts with flux below reference image
     positivesubtraction_mask = positivesubtraction.apply(lambda x: x is True)
 
     # Remove alerts that are likely artifacts
@@ -92,29 +103,38 @@ def transient_complete_filter_(faint, positivesubtraction, real, pointunderneath
     # Remove asteroid alerts
     roid_mask = roid.apply(lambda x: x == 0)
 
-    final_mask = faint_mask &\
-                positivesubtraction_mask &\
-                real_mask &\
-                pointunderneath_mask &\
-                brightstar_mask &\
-                variablesource_mask &\
-                stationary_mask &\
-                roid_mask
+    final_mask = (
+        faint_mask &
+        positivesubtraction_mask &
+        real_mask &
+        pointunderneath_mask &
+        brightstar_mask &
+        variablesource_mask &
+        stationary_mask &
+        roid_mask
+    )
 
     return final_mask
 
 
 @pandas_udf(BooleanType())
-def transient_complete_filter(faint: pd.Series, positivesubtraction: pd.Series,
-                   real: pd.Series, pointunderneath: pd.Series,
-                   brightstar: pd.Series, variablesource: pd.Series,
-                   stationary: pd.Series, roid: pd.Series) -> pd.Series:
+def transient_complete_filter(
+    faint: pd.Series,
+    positivesubtraction: pd.Series,
+    real: pd.Series,
+    pointunderneath: pd.Series,
+    brightstar: pd.Series,
+    variablesource: pd.Series,
+    stationary: pd.Series,
+    roid: pd.Series,
+) -> pd.Series:
     """Pandas UDF version of transient_complete_filter_ for Spark
 
     Parameters
     ----------
     faint: Spark DataFrame Column of bool
-        Is currently fainter than 19.8, or the source had a very recent detection fainter than 19.
+        Is currently fainter than 19.8, or the source had
+        a very recent detection fainter than 19.
     positivesubtraction: Spark DataFrame Column of bool
         Is brighter than the template image.
     real: Spark DataFrame Column of bool
@@ -152,25 +172,28 @@ def transient_complete_filter(faint: pd.Series, positivesubtraction: pd.Series,
     29
     """
 
-    f = transient_complete_filter_(faint, positivesubtraction, real,
-                               pointunderneath, brightstar,
-                               variablesource, stationary, roid)
+    f = transient_complete_filter_(
+        faint,
+        positivesubtraction,
+        real,
+        pointunderneath,
+        brightstar,
+        variablesource,
+        stationary,
+        roid,
+    )
 
     return f
 
 
 if __name__ == "__main__":
-    """ Execute the test suite """
+    """Execute the test suite"""
 
     # Run the test suite
     globs = globals()
     path = os.path.dirname(__file__)
 
-    ztf_alert_sample = "file://{}/data/few_SLSN_alerts.parquet".format(
-        path
-    )
+    ztf_alert_sample = "file://{}/data/few_SLSN_alerts.parquet".format(path)
 
     globs["ztf_alert_sample"] = ztf_alert_sample
     spark_unit_tests(globs)
-
-
