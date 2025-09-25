@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import BooleanType
-from fink_science.ztf.transient_features.processor import extract_transient_features  # noqa: E501
 from fink_filters.tester import spark_unit_tests
 from fink_filters import __file__
 import os
@@ -33,6 +32,9 @@ def transient_complete_filter_(
     roid,
 ) -> pd.Series:
     """Return a relatively complete stream of transient alerts.
+
+    Notes
+    -----
     Should keep good quality transients,
     and remove a significant part of the contamination.
 
@@ -76,7 +78,6 @@ def transient_complete_filter_(
     >>> sum(is_transient)
     29
     """
-
     roid_mask = roid.apply(lambda x: x == 0)
 
     # Remove alerts that are too faint
@@ -104,14 +105,14 @@ def transient_complete_filter_(
     roid_mask = roid.apply(lambda x: x == 0)
 
     final_mask = (
-        faint_mask &
-        positivesubtraction_mask &
-        real_mask &
-        pointunderneath_mask &
-        brightstar_mask &
-        variablesource_mask &
-        stationary_mask &
-        roid_mask
+        faint_mask
+        & positivesubtraction_mask
+        & real_mask
+        & pointunderneath_mask
+        & brightstar_mask
+        & variablesource_mask
+        & stationary_mask
+        & roid_mask
     )
 
     return final_mask
@@ -171,7 +172,6 @@ def transient_complete_filter(
     >>> len(pdf)
     29
     """
-
     f = transient_complete_filter_(
         faint,
         positivesubtraction,
