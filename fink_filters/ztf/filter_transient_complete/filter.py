@@ -67,14 +67,14 @@ def transient_complete_filter_(
     --------
     >>> from pyspark.sql import SparkSession
     >>> from pyspark.sql.functions import col
-    >>> spark=SparkSession.builder.appName("parquetFile").getOrCreate()
+    >>> from fink_science.ztf.transient_features.processor import extract_transient_features
     >>> sdf = spark.read.load(ztf_alert_sample)
     >>> sdf = extract_transient_features(sdf)
     >>> pdf = sdf.toPandas()
     >>> is_transient = transient_complete_filter_(pdf["faint"],
-    ... pdf["positivesubtraction"], pdf["real"], pdf["pointunderneath"],
-    ... pdf["brightstar"], pdf["variablesource"], pdf["stationary"],
-    ... pdf["roid"])
+    ...     pdf["positivesubtraction"], pdf["real"], pdf["pointunderneath"],
+    ...     pdf["brightstar"], pdf["variablesource"], pdf["stationary"],
+    ...     pdf["roid"])
     >>> sum(is_transient)
     29
     """
@@ -160,14 +160,14 @@ def transient_complete_filter(
     --------
     >>> from pyspark.sql import SparkSession
     >>> from pyspark.sql.functions import col
-    >>> spark=SparkSession.builder.appName("parquetFile").getOrCreate()
+    >>> from fink_science.ztf.transient_features.processor import extract_transient_features
     >>> sdf = spark.read.load(ztf_alert_sample)
     >>> sdf = extract_transient_features(sdf)
     >>> sdf = sdf.withColumn(
-    ... "is_transient",
-    ... transient_complete_filter(
-    ... "faint", "positivesubtraction", "real", "pointunderneath",
-    ... "brightstar", "variablesource", "stationary", "roid"))
+    ...     "is_transient",
+    ...     transient_complete_filter(
+    ...     "faint", "positivesubtraction", "real", "pointunderneath",
+    ...     "brightstar", "variablesource", "stationary", "roid"))
     >>> pdf = sdf.filter(sdf["is_transient"]).toPandas()
     >>> len(pdf)
     29
