@@ -1,4 +1,4 @@
-# Copyright 2023 AstroLab Software
+# Copyright 2025 AstroLab Software
 # Author: Etienne Russeil, Julien Peloton
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,47 +21,64 @@ import os
 import pandas as pd
 
 
-def slsn_filter_(slsn_probas) -> pd.Series:
+def slsn_filter_(slsn_score, threshold=0.5) -> pd.Series:
     """Return a stream of objects classified as superluminous supernovae.
 
     Parameters
     ----------
-    slsn_probas: Pandas series of floats
+    slsn_score: Pandas series of floats
+        Probability of being a slsn.
+    threshold: float
+        Score value above which the the alerts are
+        classified as SLSN.
+
+    Returns
+    -------
+    out: pandas.Series of bool
+        Is classified as slsn
+
+    Examples
+    --------
+    >>> scores = pd.Series([0.1, -1.0, 0.0, 0.5, 1.0])
+    >>> list(slsn_filter_(scores).values)
+    [False, False, False, True, True]
+    >>> list(slsn_filter_(scores, threshold=0.0).values)
+    [True, False, True, True, True]
+    """
+    slsn_mask = slsn_score.apply(lambda x: x >= threshold)
+
+    return slsn_mask
+
+
+@pandas_udf(BooleanType())
+def slsn_filter(slsn_score: pd.Series) -> pd.Series:
+    """Pandas UDF version of slsn_filter_ for Spark
+
+    Parameters
+    ----------
+    slsn_score: Spark DataFrame Column of floats
         Probability of being a slsn.
 
     Returns
     -------
     out: pandas.Series of bool
         Is classified as slsn
+
+    Examples
+    --------
+    >>> scores = pd.DataFrame(data = {'slsn_score':[0.1, -1.0, 0.0, 0.5, 1.0],})
+    >>> sdf = spark.createDataFrame(scores)
+    >>> sdf = sdf.withColumn('is_slsn', slsn_filter('slsn_score'))
+    >>> pdf = sdf.toPandas()
+    >>> list(pdf['is_slsn'].values)
+    [False, False, False, True, True]
     """
-    threshold = 0.5
-    slsn_mask = slsn_probas.apply(lambda x: x >= threshold)
-
-    return slsn_mask
-
-
-@pandas_udf(BooleanType())
-def slsn_filter(slsn_probas: pd.Series) -> pd.Series:
-    """Pandas UDF version of slsn_filter_ for Spark
-
-    Parameters
-    ----------
-    slsn_probas: Spark DataFrame Column of floats
-        Probability of being a slsn.
-
-    Returns
-    -------
-    out: pandas.Series of bool
-        Meet the transient criteria.
-    """
-    f = slsn_filter_(slsn_probas)
-
+    f = slsn_filter_(slsn_score)
     return f
 
 
 if __name__ == "__main__":
     """Execute the test suite"""
-
     # Run the test suite
     globs = globals()
     path = os.path.dirname(__file__)
