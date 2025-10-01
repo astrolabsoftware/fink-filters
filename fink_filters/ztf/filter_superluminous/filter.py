@@ -21,14 +21,14 @@ import os
 import pandas as pd
 
 
-def slsn_filter_(slsn_score, threshold=0.5) -> pd.Series:
+def slsn_filter_(slsn_score, threshold) -> pd.Series:
     """Return a stream of objects classified as superluminous supernovae.
 
     Parameters
     ----------
     slsn_score: Pandas series of floats
         Probability of being a slsn.
-    threshold: float
+    threshold: Pandas series of floats
         Score value above which the the alerts are
         classified as SLSN.
 
@@ -40,18 +40,17 @@ def slsn_filter_(slsn_score, threshold=0.5) -> pd.Series:
     Examples
     --------
     >>> scores = pd.Series([0.1, -1.0, 0.0, 0.5, 1.0])
-    >>> list(slsn_filter_(scores).values)
+    >>> threshold = pd.Series([0.5] * len(scores))
+    >>> list(slsn_filter_(scores, threshold).values)
     [False, False, False, True, True]
-    >>> list(slsn_filter_(scores, threshold=0.0).values)
-    [True, False, True, True, True]
     """
-    slsn_mask = slsn_score.apply(lambda x: x >= threshold)
+    slsn_mask = slsn_score >= threshold
 
     return slsn_mask
 
 
 @pandas_udf(BooleanType())
-def slsn_filter(slsn_score: pd.Series) -> pd.Series:
+def slsn_filter(slsn_score: pd.Series, threshold: pd.Series) -> pd.Series:
     """Pandas UDF version of slsn_filter_ for Spark
 
     Parameters
@@ -63,17 +62,21 @@ def slsn_filter(slsn_score: pd.Series) -> pd.Series:
     -------
     out: pandas.Series of bool
         Is classified as slsn
+    threshold: pandas.Series of floats
+        Score value above which the the alerts are
+        classified as SLSN.
 
     Examples
     --------
-    >>> scores = pd.DataFrame(data = {'slsn_score':[0.1, -1.0, 0.0, 0.5, 1.0],})
+    >>> scores = pd.DataFrame(data = {'slsn_score':[0.1, -1.0, 0.0, 0.5, 1.0]})
+    >>> scores['threshold'] = [0.5] * len(scores)
     >>> sdf = spark.createDataFrame(scores)
-    >>> sdf = sdf.withColumn('is_slsn', slsn_filter('slsn_score'))
+    >>> sdf = sdf.withColumn('is_slsn', slsn_filter('slsn_score', 'threshold'))
     >>> pdf = sdf.toPandas()
     >>> list(pdf['is_slsn'].values)
     [False, False, False, True, True]
     """
-    f = slsn_filter_(slsn_score)
+    f = slsn_filter_(slsn_score, threshold)
     return f
 
 
