@@ -188,13 +188,26 @@ def get_an_history(delta_date=90):
     return Counter()
 
 
-def get_data_permalink_slack(ztf_id, last_days=None):
+def get_data_permalink_slack(
+    ztf_id,
+    slack_token_env="ANOMALY_SLACK_TOKEN",
+    tg_token_env="ANOMALY_TG_TOKEN",
+    last_days=None,
+):
     """Loads cutout and light curve via the Fink API and copies them to the Slack server
 
     Parameters
     ----------
     ztf_id : str
         unique identifier for this object
+    slack_token_env: str
+        Environment variable holding the Slack bot token.
+        It is used to send valid message.
+        Default is ANOMALY_SLACK_TOKEN.
+    tg_token_env: str
+        Environment variable holding the Telegram bot token.
+        It is used to redirect error messages.
+        Default is ANOMALY_TG_TOKEN.
     last_days : int or None
         if set, include only the latest N days of observations.
         if None, include all available data (default)
@@ -211,14 +224,13 @@ def get_data_permalink_slack(ztf_id, last_days=None):
         Link to the light curve image uploaded to the Slack server
 
     """
-    assert "ANOMALY_TG_TOKEN" in os.environ, "A Telegram token is required!"
+    assert tg_token_env in os.environ, "A Telegram token is required!"
+    assert slack_token_env in os.environ, "A Slack token is required!"
     cutout = get_cutout(ztf_id)
     curve = get_curve(ztf_id, last_days)
     session = requests.Session()
-    if "ANOMALY_SLACK_TOKEN" in os.environ:
-        slack_client = WebClient(os.environ["ANOMALY_SLACK_TOKEN"])
-    else:
-        raise KeyError("You need to set up ANOMALY_SLACK_TOKEN in your .bashrc")
+
+    slack_client = WebClient(os.environ[slack_token_env])
     try:
         curve.seek(0)
         cutout.seek(0)
@@ -233,7 +245,7 @@ def get_data_permalink_slack(ztf_id, last_days=None):
         if e.response["ok"] is False:
             send_post_request_with_retry(
                 session=session,
-                url=f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMessage",
+                url=f"https://api.telegram.org/bot{os.environ[tg_token_env]}/sendMessage",
                 data={"chat_id": "@fink_test", "text": e.response["error"]},
                 timeout=60,
                 source="slack_api_error",
@@ -247,7 +259,13 @@ def get_data_permalink_slack(ztf_id, last_days=None):
     )
 
 
-def msg_handler_slack(slack_data, channel_name, init_msg):
+def msg_handler_slack(
+    slack_data,
+    channel_name,
+    init_msg,
+    slack_token_env="ANOMALY_SLACK_TOKEN",
+    tg_token_env="ANOMALY_TG_TOKEN",
+):
     """Slack handler
 
     Notes
@@ -262,12 +280,22 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
         Channel name in Slack
     init_msg: str
         Initial message
+    slack_token_env: str
+        Environment variable holding the Slack bot token.
+        It is used to send valid message.
+        Default is ANOMALY_SLACK_TOKEN.
+    tg_token_env: str
+        Environment variable holding the Telegram bot token.
+        It is used to redirect error messages.
+        Default is ANOMALY_TG_TOKEN.
 
     Returns
     -------
         None
     """
-    slack_client = WebClient(os.environ["ANOMALY_SLACK_TOKEN"])
+    assert tg_token_env in os.environ, "A Telegram token is required!"
+    assert slack_token_env in os.environ, "A Slack token is required!"
+    slack_client = WebClient(os.environ[slack_token_env])
     slack_data = [init_msg] + slack_data
     try:
         for slack_obj in slack_data:
@@ -283,7 +311,7 @@ def msg_handler_slack(slack_data, channel_name, init_msg):
         if e.response["ok"] is False:
             requests.post(
                 "https://api.telegram.org/bot"
-                + os.environ["ANOMALY_TG_TOKEN"]
+                + os.environ[tg_token_env]
                 + "/sendMessage",
                 data={"chat_id": "@fink_test", "text": e.response["error"]},
                 timeout=60,
