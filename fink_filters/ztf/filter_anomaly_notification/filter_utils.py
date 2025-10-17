@@ -190,9 +190,9 @@ def get_an_history(delta_date=90):
 
 def get_data_permalink_slack(
     ztf_id,
+    last_days=None,
     slack_token_env="ANOMALY_SLACK_TOKEN",
     tg_token_env="ANOMALY_TG_TOKEN",
-    last_days=None,
 ):
     """Loads cutout and light curve via the Fink API and copies them to the Slack server
 
