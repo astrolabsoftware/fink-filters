@@ -15,7 +15,7 @@
 """Return alerts with a match in a magnetic cataclysmic variables catalog"""
 
 from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import StringType
+from pyspark.sql.types import BooleanType
 
 from fink_science.ztf.xmatch.utils import cross_match_astropy
 from fink_filters import __file__
@@ -123,7 +123,7 @@ def magnetic_cvs_(ra, dec):
     return pdf_merge["intname"]
 
 
-@pandas_udf(StringType(), PandasUDFType.SCALAR)
+@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
     """Pandas UDF for magnetic_cvs_
 
@@ -141,14 +141,14 @@ def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
     Returns
     -------
     out: pandas.Series of str
-        Return a Pandas DataFrame with the appropriate label:
-        Unknown if no match, the name of the magnetic CV otherwise.
+        Return a Pandas DataFrame with the appropriate flag:
+        false for bad alert, and true for good alert.
 
     Examples
     --------
     >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
     >>> df = df.withColumn("mcvs", magnetic_cvs("objectId", "candidate.isdiffpos", "candidate.ra", "candidate.dec"))
-    >>> print(df.filter(df["mcvs"] != "Unknown").count())
+    >>> print(df.filter(df["mcvs"]).count())
     10
     """
     # Keep only positive alerts
@@ -174,7 +174,7 @@ def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
         })
         send_to_telegram(pdf, channel="@fink_magnetic_cv_stars")
 
-    return names
+    return pd.Series(mask)
 
 
 if __name__ == "__main__":
