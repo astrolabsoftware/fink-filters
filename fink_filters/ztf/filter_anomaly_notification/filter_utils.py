@@ -445,19 +445,19 @@ def load_to_anomaly_base(data, model, timeout=60):
                 tg_id_data = int(tg_id_data.replace('"', ""))
             except ValueError:
                 tg_id_data = "ND"
-        for ztf_id, text_data, cutout, curve in data:
+        for ztf_id, text_data, cutout, curve, candid_id in data:
             cutout.seek(0)
             curve.seek(0)
             files = {"image1": cutout, "image2": curve}
-            data = {"description": text_data}
-            params = {"ztf_id": ztf_id}
+            data_payload = {"description": text_data}
+            params = {"ztf_id": ztf_id, "candid_id": candid_id}
             headers = {"Authorization": f"Bearer {access_token}"}
             response = send_post_request_with_retry(
                 session=session,
                 url="https://anomaly.fink-broker.org:443/images/upload",
                 files=files,
                 params=params,
-                data=data,
+                data=data_payload,
                 headers=headers,
                 timeout=timeout,
                 source="upload_to_anomaly_base",
@@ -467,11 +467,14 @@ def load_to_anomaly_base(data, model, timeout=60):
             curve.seek(0)
             if tg_id_data == "ND":
                 continue
+            callback_anomaly = f"A_{candid_id}_{ztf_id}"
+            callback_not_anomaly = f"NA_{candid_id}_{ztf_id}"
+
             inline_keyboard = {
                 "inline_keyboard": [
                     [
-                        {"text": "Anomaly", "callback_data": f"A_{ztf_id}"},
-                        {"text": "Not anomaly", "callback_data": f"NA_{ztf_id}"},
+                        {"text": "Anomaly", "callback_data": callback_anomaly},
+                        {"text": "Not anomaly", "callback_data": callback_not_anomaly},
                     ]
                 ]
             }

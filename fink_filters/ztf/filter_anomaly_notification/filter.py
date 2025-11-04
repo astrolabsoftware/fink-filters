@@ -14,7 +14,6 @@
 # limitations under the License.
 import pandas as pd
 import numpy as np
-
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
@@ -133,7 +132,7 @@ def anomaly_notification_(
     ...     df_proc = df.select(
     ...         'objectId', 'candidate.ra',
     ...         'candidate.dec', 'candidate.rb',
-    ...         f'anomaly_score{model}', 'timestamp')
+    ...         f'anomaly_score{model}', 'timestamp', 'candid')
     ...     df_out = anomaly_notification_(df_proc, send_to_tg=False,
     ...     send_to_slack=False, send_to_anomaly_base=True, model=model)
 
@@ -141,7 +140,7 @@ def anomaly_notification_(
     >>> df_proc = df.select(
     ...         'objectId', 'candidate.ra',
     ...         'candidate.dec', 'candidate.rb',
-    ...         'anomaly_score', 'timestamp')
+    ...         'anomaly_score', 'timestamp', 'candid')
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=True, channel_id='@fink_test',
     ...     send_to_slack=False, channel_name=None)
@@ -161,7 +160,9 @@ def anomaly_notification_(
         cut_count = df_proc.count()
         if cut_count == 0:
             return pd.DataFrame()
-
+    df_proc = df_proc.filter(f"not isnan(anomaly_score{model})")
+    if df_proc.rdd.isEmpty():
+        return pd.DataFrame()
     # Compute the median for the night
     buf_df = df_proc.select(f"anomaly_score{model}")
     med = buf_df.approxQuantile(f"anomaly_score{model}", [0.5], 0.05)
@@ -242,6 +243,7 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
 {t5_}""".replace("\n", "  \n"),
             cutout,
             curve,
+            row.candid,
         ))
 
     init_msg = f"Median anomaly score overnight: {med}."
