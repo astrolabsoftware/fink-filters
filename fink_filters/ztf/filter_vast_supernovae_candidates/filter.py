@@ -21,8 +21,8 @@ import os
 import pandas as pd
 
 
-def vast_supernovae_(lum_dist, dec, tns) -> pd.Series:
-    """Return a stream of objects passing VAST filter
+def vast_supernovae_candidates_(lum_dist, dec, snn_sn_vs_all) -> pd.Series:
+    """Return a stream of objects passing VAST candidate filter
 
     Parameters
     ----------
@@ -30,8 +30,8 @@ def vast_supernovae_(lum_dist, dec, tns) -> pd.Series:
         Luminosity distance from mangrove
     dec: Pandas series of floats
         Declination of alerts
-    tns: Pandas series of string
-        TNS classification
+    snn_sn_vs_all: Pandas series of floats
+        Classification scores from SNN
 
     Returns
     -------
@@ -43,19 +43,21 @@ def vast_supernovae_(lum_dist, dec, tns) -> pd.Series:
     >>> import numpy as np
     >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
-    >>> tns = pd.Series(["Unknown", "SN Ia", "Unknown", "Unknown", "Unknown"])
-    >>> list(vast_supernovae_(lum_dist, dec, tns).values)
+    >>> snn_sn_vs_all = pd.Series([0.1, 0.7, 0.3, 0.3, 0.9])
+    >>> list(vast_supernovae_candidates_(lum_dist, dec, snn_sn_vs_all).values)
     [False, True, False, False, False]
     """
     f1 = lum_dist < 200
     f2 = dec < -10
-    f3 = tns != "Unknown"
+    f3 = snn_sn_vs_all > 0.5
 
     return f1 & f2 & f3
 
 
 @pandas_udf(BooleanType())
-def vast_supernovae(lum_dist: pd.Series, dec: pd.Series, tns: pd.Series) -> pd.Series:
+def vast_supernovae_candidates(
+    lum_dist: pd.Series, dec: pd.Series, snn_sn_vs_all: pd.Series
+) -> pd.Series:
     """Pandas UDF version of vast_supernovae_ for Spark
 
     Parameters
@@ -64,8 +66,8 @@ def vast_supernovae(lum_dist: pd.Series, dec: pd.Series, tns: pd.Series) -> pd.S
         Luminosity distance from mangrove
     dec: Pandas series of floats
         Declination of alerts
-    tns: Pandas series of string
-        TNS classification
+    snn_sn_vs_all: Pandas series of floats
+        Classification scores from SNN
 
     Returns
     -------
@@ -76,15 +78,15 @@ def vast_supernovae(lum_dist: pd.Series, dec: pd.Series, tns: pd.Series) -> pd.S
     --------
     >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
-    >>> tns = pd.Series(["Unknown", "SN Ia", "Unknown", "Unknown", "Unknown"])
-    >>> pdf = pd.DataFrame({"lum_dist": lum_dist, "dec": dec, "tns": tns})
+    >>> snn_sn_vs_all = pd.Series([0.1, 0.7, 0.3, 0.3, 0.9])
+    >>> pdf = pd.DataFrame({"lum_dist": lum_dist, "dec": dec, "snn_sn_vs_all": snn_sn_vs_all})
     >>> sdf = spark.createDataFrame(pdf)
-    >>> sdf = sdf.withColumn('is_vast', vast_supernovae('lum_dist', "dec", "tns"))
+    >>> sdf = sdf.withColumn('is_vast', vast_supernovae('lum_dist', "dec", "snn_sn_vs_all"))
     >>> pdf = sdf.toPandas()
     >>> list(pdf['is_vast'].values)
     [False, True, False, False, False]
     """
-    f = vast_supernovae_(lum_dist, dec, tns)
+    f = vast_supernovae_candidates_(lum_dist, dec, snn_sn_vs_all)
     return f
 
 
