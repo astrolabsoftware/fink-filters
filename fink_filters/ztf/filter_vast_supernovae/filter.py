@@ -41,7 +41,7 @@ def vast_supernovae_(lum_dist, dec, tns) -> pd.Series:
     Examples
     --------
     >>> import numpy as np
-    >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
+    >>> lum_dist = pd.Series([100, 50, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
     >>> tns = pd.Series(["Unknown", "SN Ia", "Unknown", "Unknown", "Unknown"])
     >>> list(vast_supernovae_(lum_dist, dec, tns).values)
@@ -75,7 +75,7 @@ def vast_supernovae(lum_dist: pd.Series, dec: pd.Series, tns: pd.Series) -> pd.S
     Examples
     --------
     >>> import numpy as np
-    >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
+    >>> lum_dist = pd.Series([100, 50, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
     >>> tns = pd.Series(["Unknown", "SN Ia", "Unknown", "Unknown", "Unknown"])
     >>> pdf = pd.DataFrame({"lum_dist": lum_dist, "dec": dec, "tns": tns})
