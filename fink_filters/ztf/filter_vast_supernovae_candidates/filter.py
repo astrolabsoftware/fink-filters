@@ -41,7 +41,7 @@ def vast_supernovae_candidates_(lum_dist, dec, snn_sn_vs_all) -> pd.Series:
     Examples
     --------
     >>> import numpy as np
-    >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
+    >>> lum_dist = pd.Series([100, 50, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
     >>> snn_sn_vs_all = pd.Series([0.1, 0.7, 0.3, 0.3, 0.9])
     >>> list(vast_supernovae_candidates_(lum_dist, dec, snn_sn_vs_all).values)
@@ -77,12 +77,12 @@ def vast_supernovae_candidates(
     Examples
     --------
     >>> import numpy as np
-    >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
+    >>> lum_dist = pd.Series([100, 50, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
     >>> snn_sn_vs_all = pd.Series([0.1, 0.7, 0.3, 0.3, 0.9])
     >>> pdf = pd.DataFrame({"lum_dist": lum_dist, "dec": dec, "snn_sn_vs_all": snn_sn_vs_all})
     >>> sdf = spark.createDataFrame(pdf)
-    >>> sdf = sdf.withColumn('is_vast', vast_supernovae('lum_dist', "dec", "snn_sn_vs_all"))
+    >>> sdf = sdf.withColumn('is_vast', vast_supernovae_candidates('lum_dist', "dec", "snn_sn_vs_all"))
     >>> pdf = sdf.toPandas()
     >>> list(pdf['is_vast'].values)
     [False, True, False, False, False]
