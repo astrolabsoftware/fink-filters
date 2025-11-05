@@ -76,6 +76,7 @@ def vast_supernovae_candidates(
 
     Examples
     --------
+    >>> import numpy as np
     >>> lum_dist = pd.Series([100, 300, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
     >>> snn_sn_vs_all = pd.Series([0.1, 0.7, 0.3, 0.3, 0.9])
