@@ -467,7 +467,7 @@ def rate_based_kn_candidates(
         the message has not been sent to Slack
         """
         for url_name in ["KNWEBHOOK", "KNWEBHOOK_FINK"]:
-            if url_name in os.environ:
+            if (url_name in os.environ) and (os.environ[url_name] != ""):
                 requests.post(
                     os.environ[url_name],
                     json={"blocks": blocks, "username": "Rate-based kilonova bot"},
@@ -477,7 +477,9 @@ def rate_based_kn_candidates(
                 log = logging.Logger("Kilonova filter")
                 log.warning(error_message.format(url_name))
 
-        ama_in_env = "KNWEBHOOK_AMA_RATE" in os.environ
+        ama_in_env = ("KNWEBHOOK_AMA_RATE" in os.environ) and (
+            os.environ["KNWEBHOOK_AMA_RATE"]
+        )
 
         # Send alerts to amateurs only on Friday
         now = datetime.datetime.utcnow()
