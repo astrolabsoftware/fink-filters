@@ -155,7 +155,7 @@ def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
     valid = isdiffpos.apply(lambda x: (x == "t") or (x == "1"))
 
     if len(ra[valid]) == 0:
-        return pd.Series(["Unknown"] * len(ra))
+        return pd.Series([False] * len(ra))
 
     # perform crossmatch
     out = magnetic_cvs_(ra[valid], dec[valid])
