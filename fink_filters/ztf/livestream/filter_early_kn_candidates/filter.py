@@ -35,6 +35,7 @@ from fink_utils.xmatch.simbad import return_list_of_eg_host
 from fink_filters import __file__
 from fink_filters.tester import spark_unit_tests
 
+log = logging.Logger("Kilonova filter")
 
 def perform_classification(
     drb,
@@ -143,7 +144,12 @@ def perform_classification(
             )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
-            table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
+            try:
+                table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
+            except requests.exceptions.ReadTimeout as e:
+                log.warning("Timeout when querying SDSS servers")
+                table = None
+
             type_close_objects = []
             if table is not None:
                 type_close_objects = table["type"]
@@ -454,7 +460,6 @@ def early_kn_candidates(
                     headers={"Content-Type": "application/json"},
                 )
             else:
-                log = logging.Logger("Kilonova filter")
                 log.warning(error_message.format(url_name))
 
         # Grandma amateur channel
@@ -475,7 +480,6 @@ def early_kn_candidates(
                 headers={"Content-Type": "application/json"},
             )
         else:
-            log = logging.Logger("Kilonova filter")
             log.warning(error_message.format("KNWEBHOOK_AMA_GALAXIES"))
 
         # DWF channel and requirements
@@ -490,7 +494,6 @@ def early_kn_candidates(
                 headers={"Content-Type": "application/json"},
             )
         else:
-            log = logging.Logger("Kilonova filter")
             log.warning(error_message.format("KNWEBHOOK_DWF"))
 
     return mask_filter
