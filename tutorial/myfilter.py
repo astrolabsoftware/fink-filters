@@ -37,19 +37,15 @@ def example_filter_(cdsxmatch, magpsf) -> pd.Series:
 
     Examples
     ----------
-    >>> pdf = pd.read_parquet('datatest')
+    >>> pdf = pd.read_parquet('datatest/magnetic_cvs/')
     >>> classification = example_filter_(pdf['cdsxmatch'], pdf['candidate'].apply(lambda x: x['magpsf']))
     >>> nalerts = len(pdf[classification]['objectId'])
     >>> print(nalerts)
-    290
+    1
 
     >>> pdf[classification].groupby('cdsxmatch').count().sort_values('objectId', ascending=False)['objectId'].head()
     cdsxmatch
-    QSO            8
-    Blue           7
-    HotSubdwarf    6
-    TTau*          5
-    Symbiotic*     5
+    QSO    1
     Name: objectId, dtype: int64
     """
     myfilter = ~cdsxmatch.isin(['Unknown', 'Transient'])
@@ -87,12 +83,14 @@ def example_filter(cdsxmatch: pd.Series, magpsf: pd.Series) -> pd.Series:
 
     Examples
     ----------
-    >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> df = spark.read.format('parquet').load('datatest')
-    >>> f = 'fink_filters.example_filter.filter.example_filter'
-    >>> df = apply_user_defined_filter(df, f)
+    >>> from pyspark.sql.functions import col
+    >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
+    >>> df = df.withColumn(
+    ...     "keep",
+    ...     example_filter(col("cdsxmatch"), col("candidate.magpsf"))
+    ... ).where(col("keep"))
     >>> print(df.count())
-    290
+    1
     """
     f_simbad = example_filter_(cdsxmatch, magpsf)
 
