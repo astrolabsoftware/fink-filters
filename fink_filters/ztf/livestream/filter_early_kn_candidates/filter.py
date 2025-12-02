@@ -37,6 +37,7 @@ from fink_filters.tester import spark_unit_tests
 
 log = logging.Logger("Kilonova filter")
 
+
 def perform_classification(
     drb,
     classtar,
@@ -146,7 +147,7 @@ def perform_classification(
             # query limit.
             try:
                 table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
-            except requests.exceptions.ReadTimeout as e:
+            except requests.exceptions.ReadTimeout:
                 log.warning("Timeout when querying SDSS servers")
                 table = None
 
