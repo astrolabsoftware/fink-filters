@@ -83,12 +83,10 @@ def example_filter(cdsxmatch: pd.Series, magpsf: pd.Series) -> pd.Series:
 
     Examples
     ----------
-    >>> from pyspark.sql.functions import col
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/magnetic_cvs/')
-    >>> df = df.withColumn(
-    ...     "keep",
-    ...     example_filter(col("cdsxmatch"), col("candidate.magpsf"))
-    ... ).where(col("keep"))
+    >>> f = 'fink_filters.ztf.filter_bright.filter.example_filter'
+    >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     1
     """
