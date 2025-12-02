@@ -12,29 +12,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import BooleanType
 
 from fink_filters.tester import spark_unit_tests
 
 import pandas as pd
 
+
 def example_filter_(magpsf) -> pd.Series:
-    """ Return alerts with difference magnitude above 18
+    """Return alerts with difference magnitude above 18
 
     Parameters
     ----------
     magpsf: Pandas series
         Column containing difference magnitudes
-        
+
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> pdf = pd.read_parquet('datatest/regular/')
     >>> classification = example_filter_(pdf['candidate'].apply(lambda x: x['magpsf']))
     >>> nalerts = len(pdf[classification]['objectId'])
@@ -50,15 +51,14 @@ def example_filter_(magpsf) -> pd.Series:
     Mira             7
     Name: objectId, dtype: int64
     """
-    
     mask_mag = magpsf <= 18
-    
+
     return mask_mag
 
 
 @pandas_udf(BooleanType())
 def example_filter(magpsf: pd.Series) -> pd.Series:
-    """ Pandas UDF version of example_filter_ for Spark
+    """Pandas UDF version of example_filter_ for Spark
 
     Parameters
     ----------
@@ -66,13 +66,13 @@ def example_filter(magpsf: pd.Series) -> pd.Series:
         Column containing the difference magnitudes
 
     Returns
-    ----------
+    -------
     out: pandas.Series of bool
         Return a Pandas DataFrame with the appropriate flag:
         false for bad alert, and true for good alert.
 
     Examples
-    ----------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> df = spark.read.format('parquet').load('datatest/regular/')
     >>> f = 'fink_filters.ztf.filter_example.filter.example_filter'
@@ -84,10 +84,10 @@ def example_filter(magpsf: pd.Series) -> pd.Series:
 
     return f_simbad
 
+
 if __name__ == "__main__":
     """Execute the test suite"""
 
     # Run the test suite
     globs = globals()
     spark_unit_tests(globs)
-
