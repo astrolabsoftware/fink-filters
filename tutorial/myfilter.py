@@ -15,6 +15,8 @@
 from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.types import BooleanType
 
+from fink_filters.tester import spark_unit_tests
+
 import pandas as pd
 
 def example_filter_(cdsxmatch, magpsf) -> pd.Series:
@@ -95,3 +97,12 @@ def example_filter(cdsxmatch: pd.Series, magpsf: pd.Series) -> pd.Series:
     f_simbad = example_filter_(cdsxmatch, magpsf)
 
     return f_simbad
+
+
+if __name__ == "__main__":
+    """Execute the test suite"""
+
+    # Run the test suite
+    globs = globals()
+    spark_unit_tests(globs)
+
