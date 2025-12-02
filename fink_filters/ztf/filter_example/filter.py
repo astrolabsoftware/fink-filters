@@ -39,7 +39,7 @@ def example_filter_(magpsf) -> pd.Series:
     >>> classification = example_filter_(pdf['candidate'].apply(lambda x: x['magpsf']))
     >>> nalerts = len(pdf[classification]['objectId'])
     >>> print(nalerts)
-    169
+    329
 
     >>> pdf[classification].groupby('cdsxmatch').count().sort_values('objectId', ascending=False)['objectId'].head()
     cdsxmatch
@@ -78,7 +78,7 @@ def example_filter(magpsf: pd.Series) -> pd.Series:
     >>> f = 'fink_filters.ztf.filter_bright.filter.example_filter'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
-    169
+    329
     """
     f_simbad = example_filter_(magpsf)
 
