@@ -160,7 +160,7 @@ def anomaly_notification_(
         cut_count = df_proc.count()
         if cut_count == 0:
             return pd.DataFrame()
-    df_proc = df_proc.filter(f"not isnan(anomaly_score{model})")
+    df_proc = df_proc.filter(f"not isnull(anomaly_score{model})")
     if df_proc.rdd.isEmpty():
         return pd.DataFrame()
     # Compute the median for the night
