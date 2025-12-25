@@ -504,6 +504,7 @@ def load_to_anomaly_base(data, model, timeout=60):
                 source=f"individual_sending_to_{tg_id_data}",
             )
             if status_check(res, f"individual sending to {tg_id_data}"):
+                time.sleep(1.0)
                 res = send_post_request_with_retry(
                     session=session,
                     url=f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMessage",
@@ -516,6 +517,7 @@ def load_to_anomaly_base(data, model, timeout=60):
                     source=f"button_individual_sending_to_{tg_id_data}",
                 )
                 status_check(res, f"button individual sending to {tg_id_data}")
+            time.sleep(1.0)
 
 
 def get_oid(ra, dec):
