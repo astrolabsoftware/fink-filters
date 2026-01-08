@@ -98,7 +98,8 @@ def find_candidates(
         # Merge with detections from alert, if they are missing
         sub = lcs.get_lc(cand, prefix="c")
         pdf = (
-            pd.concat([pdf, sub[~np.isin(sub["i:jd"], pdf["i:jd"])]])
+            pd
+            .concat([pdf, sub[~np.isin(sub["i:jd"], pdf["i:jd"])]])
             .sort_values("i:jd")
             .reset_index(drop=True)
         )

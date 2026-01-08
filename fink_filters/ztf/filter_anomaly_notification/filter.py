@@ -171,7 +171,8 @@ def anomaly_notification_(
     # Extract anomalous objects
 
     pdf_anomalies_ext = (
-        df_proc.sort([f"anomaly_score{model}"], ascending=True)
+        df_proc
+        .sort([f"anomaly_score{model}"], ascending=True)
         .limit(trick_par * threshold)
         .toPandas()
     )
