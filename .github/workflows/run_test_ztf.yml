@@ -1,4 +1,4 @@
-name: Sentinel
+name: Sentinel ZTF
 
 on:
   push:
