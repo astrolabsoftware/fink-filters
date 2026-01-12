@@ -19,3 +19,7 @@ pip install fink_filters --upgrade
 ## Taxonomy
 
 There are two types of filters: filters that run on the live stream, and filters that are applied after the observing night (e.g. because they need to aggregate data before, or compute statistics). For each survey, the first kind can be found in the folder `livestream`. 
+
+## Rubin
+
+For Rubin, 1 filter = 1 class = 1 HBase table (query). The name of the filter is also the same name for the class, and the same name for the Kafka topic.
