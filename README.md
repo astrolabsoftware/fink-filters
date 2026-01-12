@@ -1,5 +1,6 @@
 [![pypi](https://img.shields.io/pypi/v/fink-filters.svg)](https://pypi.python.org/pypi/fink-filters)
-[![Sentinel](https://github.com/astrolabsoftware/fink-filters/workflows/Sentinel/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions?query=workflow%3ASentinel)
+[![Sentinel ZTF](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_ztf.yml/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_ztf.yml)
+[![Sentinel Rubin](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_rubin.yml/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_rubin.yml)
 [![PEP8](https://github.com/astrolabsoftware/fink-filters/workflows/PEP8/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions?query=workflow%3APEP8)
 [![codecov](https://codecov.io/gh/astrolabsoftware/fink-filters/branch/master/graph/badge.svg)](https://codecov.io/gh/astrolabsoftware/fink-filters)
 
@@ -18,3 +19,7 @@ pip install fink_filters --upgrade
 ## Taxonomy
 
 There are two types of filters: filters that run on the live stream, and filters that are applied after the observing night (e.g. because they need to aggregate data before, or compute statistics). For each survey, the first kind can be found in the folder `livestream`. 
+
+## Rubin
+
+For Rubin, 1 filter = 1 class = 1 HBase table (query). The name of the filter is also the same name for the class, and the same name for the Kafka topic.

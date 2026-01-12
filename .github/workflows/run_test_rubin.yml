@@ -1,4 +1,4 @@
-name: Sentinel ZTF
+name: Sentinel LSST
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        container: ["julienpeloton/fink-ci-ztf:latest"]
+        container: ["julienpeloton/fink-ci-rubin:latest"]
 
     container:
       image: ${{ matrix.container }}
@@ -39,12 +39,12 @@ jobs:
         echo "JAVA_HOME: $JAVA_HOME"
         echo `python -V`
 
-    - name: Run ZTF test suites
+    - name: Run LSST test suites
       env:
         ANOMALY_SLACK_TOKEN: ${{ secrets.ANOMALY_SLACK_TOKEN }}
         ANOMALY_TG_TOKEN: ${{ secrets.ANOMALY_TG_TOKEN }}
       run: |
         pip install py4j
         rm -f /tmp/forest_*.onnx
-        ./run_tests.sh -s ztf
+        ./run_tests.sh -s rubin
         curl -s https://codecov.io/bash | bash
