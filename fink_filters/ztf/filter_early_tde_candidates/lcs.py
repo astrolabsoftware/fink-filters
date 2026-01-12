@@ -36,7 +36,7 @@ dustconfig["data_dir"] = "/tmp"
 
 COLORS_ZTF = {1: "#15284F", 2: "#F5622E"}
 
-API_ENDPOINT = "https://api.fink-portal.org/api/v1/objects"
+API_ENDPOINT = "https://api.ztf.fink-portal.org/api/v1/objects"
 
 # Filters ZTF
 filt_conv = {
@@ -59,7 +59,7 @@ def get_tns_info(oid=None, ra=None, dec=None, sr=5 / 3600, return_types=False):
 
     if tns is None:
         r = requests.post(
-            "https://api.fink-portal.org/api/v1/resolver",
+            "https://api.ztf.fink-portal.org/api/v1/resolver",
             json={"resolver": "tns", "name": "", "nmax": 1000000},
         )
 
@@ -148,7 +148,7 @@ def deredden_pdf(pdf, ra=None, dec=None):
 # Light curves
 def request_lc(oid):
     r = requests.post(
-        "https://api.fink-portal.org/api/v1/objects",
+        "https://api.ztf.fink-portal.org/api/v1/objects",
         json={
             "objectId": oid,
             "output-format": "json",
