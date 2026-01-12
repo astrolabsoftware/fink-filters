@@ -16,6 +16,10 @@
 
 import pandas as pd
 
+DESCRIPTION = (
+    "Select alerts with a counterpart within 1.5 arcseconds in SIMBAD or GAIA DR3"
+)
+
 
 def cataloged(is_cataloged: pd.Series) -> pd.Series:
     """Flag for cataloged alerts in Rubin
