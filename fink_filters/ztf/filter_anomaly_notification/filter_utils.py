@@ -126,7 +126,9 @@ def send_post_request_with_retry(
                     **kwargs,
                 )
             if response.status_code == 429:
-                retry_after = response.json().get("parameters", {}).get("retry_after", 1)
+                retry_after = (
+                    response.json().get("parameters", {}).get("retry_after", 1)
+                )
                 time.sleep(retry_after)
                 raise HTTPError("429 Too Many Requests", response=response)
             status_check(response, source)
@@ -134,6 +136,10 @@ def send_post_request_with_retry(
 
         except allowed_exceptions as e:  # noqa: PERF203
             if attempt < max_retries - 1:
+                files = kwargs.get("files")
+                if files is not None:
+                    for file in files.values():
+                        file.seek(0)
                 wait = backoff_factor * (2**attempt)
                 status_check(
                     None,
@@ -502,7 +508,6 @@ def load_to_anomaly_base(data, model, timeout=60):
                 source=f"individual_sending_to_{tg_id_data}",
             )
             if status_check(res, f"individual sending to {tg_id_data}"):
-                time.sleep(1.0)
                 res = send_post_request_with_retry(
                     session=session,
                     url=f"https://api.telegram.org/bot{os.environ['ANOMALY_TG_TOKEN']}/sendMessage",
@@ -515,7 +520,6 @@ def load_to_anomaly_base(data, model, timeout=60):
                     source=f"button_individual_sending_to_{tg_id_data}",
                 )
                 status_check(res, f"button individual sending to {tg_id_data}")
-            time.sleep(1.0)
 
 
 def get_oid(ra, dec):
