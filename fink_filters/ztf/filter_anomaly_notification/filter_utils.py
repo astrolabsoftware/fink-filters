@@ -21,7 +21,7 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 import json
-from requests.exceptions import Timeout, ConnectionError
+from requests.exceptions import Timeout, ConnectionError, HTTPError
 
 
 import matplotlib.pyplot as plt
@@ -74,8 +74,7 @@ def send_post_request_with_retry(
     timeout=60,
     max_retries=3,
     backoff_factor=2,
-    allowed_exceptions=(Timeout, ConnectionError),
-    raise_on_http_error=False,
+    allowed_exceptions=(Timeout, ConnectionError, HTTPError),
     source="not defined",
     **kwargs,
 ) -> requests.Response:
@@ -102,8 +101,6 @@ def send_post_request_with_retry(
         Default is 2.
     allowed_exceptions : tuple, optional
         Tuple of exceptions that trigger a retry. Defaults to (Timeout, ConnectionError).
-    raise_on_http_error : bool, optional
-        Whether to raise exceptions for HTTP errors (4xx/5xx status codes). Default is True.
     source : str
         source of request
     **kwargs
@@ -128,10 +125,11 @@ def send_post_request_with_retry(
                     timeout=timeout,
                     **kwargs,
                 )
-            if raise_on_http_error:
-                response.raise_for_status()
-            else:
-                status_check(response, source)
+            if response.status_code == 429:
+                retry_after = response.json().get("parameters", {}).get("retry_after", 1)
+                time.sleep(retry_after)
+                raise HTTPError("429 Too Many Requests", response=response)
+            status_check(response, source)
             return response
 
         except allowed_exceptions as e:  # noqa: PERF203
