@@ -175,7 +175,7 @@ def get_an_history(delta_date=90):
     session = requests.Session()
     history_data = send_post_request_with_retry(
         session=session,
-        url="https://api.fink-portal.org/api/v1/anomaly",
+        url="https://api.ztf.fink-portal.org/api/v1/anomaly",
         json={
             "n": 100000000,
             "columns": "i:objectId",
@@ -571,7 +571,7 @@ def get_cutout(ztf_id):
     """
     # transfer cutout data
     r = requests.post(
-        "https://api.fink-portal.org/api/v1/cutouts",
+        "https://api.ztf.fink-portal.org/api/v1/cutouts",
         json={"objectId": ztf_id, "kind": "Science", "output-format": "array"},
     )
     if not status_check(r, "get cutouts"):
@@ -602,7 +602,7 @@ def get_curve(ztf_id, last_days=None):
             light curve picture
     """
     r = requests.post(
-        "https://api.fink-portal.org/api/v1/objects",
+        "https://api.ztf.fink-portal.org/api/v1/objects",
         json={"objectId": ztf_id, "withupperlim": "True"},
     )
     if not status_check(r, "getting curve"):

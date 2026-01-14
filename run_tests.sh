@@ -94,15 +94,23 @@ do
 done
 
 
-# Run the test suite for after the night filters
-for filename in fink_filters/${SURVEY}/filter_*/*.py
-do
-  echo $filename
-  # Run test suite + coverage
-  coverage run \
-    --source=${ROOTPATH} \
-    --rcfile ${ROOTPATH}/.coveragerc $filename
-done
+# Check if any filter files exist
+shopt -s nullglob  # Enable nullglob to ensure empty array if no files match
+files=(fink_filters/${SURVEY}/filter_*/*.py)
+
+if [ ${#files[@]} -eq 0 ]; then
+    echo "No filter files found."
+else
+    # Run the test suite for after the night filters
+    for filename in "${files[@]}"
+    do
+      echo $filename
+      # Run test suite + coverage
+      coverage run \
+        --source=${ROOTPATH} \
+        --rcfile ${ROOTPATH}/.coveragerc "$filename"
+    done
+fi
 
 # Run the test suite for livestream filters
 for filename in fink_filters/${SURVEY}/livestream/*/*.py

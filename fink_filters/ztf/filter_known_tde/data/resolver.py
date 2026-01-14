@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 
-APIURL = "https://api.fink-portal.org"
+APIURL = 'https://api.ztf.fink-portal.org'
 
 data = {"name": [], "ra": [], "dec": []}
 
