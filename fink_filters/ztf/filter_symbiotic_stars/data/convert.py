@@ -7,4 +7,4 @@ pdf2["source"] = "cataclysmic_variables"
 
 pdf = pd.concat((pdf1, pdf2))
 print(pdf)
-pdf.to_parquet('symbiotic_and_cataclysmic.parquet', index=None)
+pdf.to_parquet("symbiotic_and_cataclysmic.parquet", index=None)
