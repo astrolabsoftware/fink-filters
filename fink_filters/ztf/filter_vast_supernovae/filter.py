@@ -43,13 +43,13 @@ def vast_supernovae_(lum_dist, dec, tns) -> pd.Series:
     >>> import numpy as np
     >>> lum_dist = pd.Series([100, 50, 10, np.nan, None])
     >>> dec = pd.Series([20, -30, -20, 10, 0])
-    >>> tns = pd.Series(["Unknown", "SN Ia", "Unknown", "Unknown", "Unknown"])
+    >>> tns = pd.Series(["", "SN Ia", "Unknown", "Unknown", "Unknown"])
     >>> list(vast_supernovae_(lum_dist, dec, tns).values)
     [False, True, False, False, False]
     """
     f1 = lum_dist < 200
     f2 = dec < -10
-    f3 = tns != "Unknown"
+    f3 = ~tns.isin(["", "Unknown"])
 
     return f1 & f2 & f3
 
