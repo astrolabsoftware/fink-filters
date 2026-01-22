@@ -18,7 +18,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 
 
-def is_solar_system(is_sso):
+def b_is_solar_system(is_sso):
     """Return alerts that are asteroids according to Rubin
 
     Parameters
@@ -29,7 +29,7 @@ def is_solar_system(is_sso):
     return is_sso
 
 
-def outside_galactic_plane(ra, dec):
+def b_outside_galactic_plane(ra, dec):
     """Return alerts outside the galactic plane (+/- |20| deg)
 
     Parameters
