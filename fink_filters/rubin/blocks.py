@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Blocks used to build filters"""
+
 import pandas as pd
 import numpy as np
 from astropy.coordinates import SkyCoord
 
 
-def b_is_solar_system(is_sso):
+def b_is_solar_system(is_sso: pd.Series) -> pd.Series:
     """Return alerts that are asteroids according to Rubin
 
     Parameters
@@ -29,7 +30,7 @@ def b_is_solar_system(is_sso):
     return is_sso
 
 
-def b_outside_galactic_plane(ra, dec):
+def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
     """Return alerts outside the galactic plane (+/- |20| deg)
 
     Parameters
