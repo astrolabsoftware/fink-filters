@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Blocks used to build filters"""
-
+import pandas as pd
 import numpy as np
 from astropy.coordinates import SkyCoord
 
@@ -47,4 +47,4 @@ def b_outside_galactic_plane(ra, dec):
     coords = SkyCoord(ra.astype(float), dec.astype(float), unit="deg")
     b = coords.galactic.b.deg
     mask_away_from_galactic_plane = np.abs(b) > 20
-    return mask_away_from_galactic_plane
+    return pd.Series(mask_away_from_galactic_plane)
