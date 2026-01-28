@@ -158,7 +158,7 @@ def b_xmatched_vsx(vsxxmatch: pd.Series) -> pd.Series:
     return f_vsx
 
 
-def b_is_rising(psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series) -> bool:
+def b_is_rising(psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series) -> pd.Series:
     """Return True if rising light curve in one filter.
     
     Uses any one flux measurement compared to its mean object
@@ -179,13 +179,12 @@ def b_is_rising(psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMea
         True if rising, False otherwise
     """
     diff = psfFlux - band_psfFluxMean
-    f_rising = False
-    if np.abs(diff) > band_psfFluxMeanErr:
-        if diff >0:
-            f_rising = True
-    return f_rising
+    is_significant = np.abs(diff) > band_psfFluxMeanErr
+    is_rising = is_significant & (diff > 0)  
 
-def b_is_fading(psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series) -> bool:
+    return is_rising
+
+def b_is_fading(psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series) -> pd.Series:
     """Return True if fading light curve in one filter.
     
     Uses any one flux measurement compared to its mean object
@@ -205,10 +204,9 @@ def b_is_fading(psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMea
     bool
         True if fading, False otherwise
     """
-    f_fading = False
     diff = psfFlux - band_psfFluxMean
-    if np.abs(diff) > band_psfFluxMeanErr:
-        if diff < 0:
-            f_fading = True
-    return f_fading
+    is_significant = np.abs(diff) > band_psfFluxMeanErr
+    is_fading = is_significant & (diff < 0)  
+
+    return is_fading
 
