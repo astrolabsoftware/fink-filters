@@ -20,6 +20,8 @@ from astropy.coordinates import SkyCoord
 from fink_utils.xmatch.simbad import return_list_of_eg_host
 from fink_utils.xmatch.vsx import return_list_of_stellar, return_list_of_nonstellar
 
+BAD_VALUES = ["Unknown", "Fail", "Fail 504", None, np.nan]
+
 
 def b_is_solar_system(is_sso: pd.Series) -> pd.Series:
     """Return alerts that are asteroids according to Rubin
@@ -66,7 +68,7 @@ def b_xmatched_simbad_galaxy(simbad_otype: pd.Series) -> pd.Series:
     out: pd.Series of bool
         Boolean series indicating galaxy or failed matches
     """
-    f_galaxy = simbad_otype.isin(return_list_of_eg_host)
+    f_galaxy = simbad_otype.isin(return_list_of_eg_host())
     return f_galaxy
 
 
@@ -83,7 +85,7 @@ def b_xmatched_simbad_unknown(simbad_otype: pd.Series) -> pd.Series:
     out: pd.Series of bool
         Boolean series indicating unknown or failed matches
     """
-    f_unknown = simbad_otype.isin(["Unknown", "Fail", "Fail 504", None, np.nan])
+    f_unknown = simbad_otype.isin(BAD_VALUES)
     return f_unknown
 
 
@@ -125,13 +127,7 @@ def b_xmatched_gaia_star(
     pd.Series of bool
         Boolean series indicating stellar sources with good parallax (Plx/e_Plx > 5)
     """
-    f_xmatched_star = ~gaiadr3_DR3Name.isin([
-        "Unknown",
-        "Fail",
-        "Fail 504",
-        None,
-        np.nan,
-    ])
+    f_xmatched_star = ~gaiadr3_DR3Name.isin(BAD_VALUES)
     f_plx = gaiadr3_Plx / gaiadr3_e_Plx > 5  # select good parallaxes
 
     f_gaia = f_xmatched_star & f_plx
@@ -152,7 +148,7 @@ def b_xmatched_vsx_star(vsx_Type: pd.Series) -> pd.Series:
         Boolean series indicating stellar variable sources
     """
     # All known tags except AGN
-    f_vsx = vsx_Type.isin(return_list_of_stellar)
+    f_vsx = vsx_Type.isin(return_list_of_stellar())
     return f_vsx
 
 
@@ -169,7 +165,7 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
     pd.Series of bool
         Boolean series indicating successful VSX matches
     """
-    f_vsx = vsx_Type.isin(return_list_of_nonstellar + return_list_of_stellar)
+    f_vsx = vsx_Type.isin(return_list_of_nonstellar() + return_list_of_stellar())
     return f_vsx
 
 
