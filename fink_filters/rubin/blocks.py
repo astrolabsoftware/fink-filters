@@ -99,7 +99,7 @@ def b_xmatched_mangrove(mangrove_lum_dist: pd.Series) -> pd.Series:
 
     Returns
     -------
-    pd.Series of bool
+    out: pd.Series of booleans
         Boolean series indicating extragalactic sources with mangrove_lum_dist > 0
     """
     f_mangrove = mangrove_lum_dist > 0
@@ -124,7 +124,7 @@ def b_xmatched_gaia_star(
 
     Returns
     -------
-    pd.Series of bool
+    out: pd.Series of booleans
         Boolean series indicating stellar sources with good parallax (Plx/e_Plx > 5)
     """
     f_xmatched_star = ~gaiadr3_DR3Name.isin(BAD_VALUES)
@@ -144,7 +144,7 @@ def b_xmatched_vsx_star(vsx_Type: pd.Series) -> pd.Series:
 
     Returns
     -------
-    pd.Series of bool
+    out: pd.Series of booleans
         Boolean series indicating stellar variable sources
     """
     # All known tags except AGN
@@ -162,7 +162,7 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
 
     Returns
     -------
-    pd.Series of bool
+    out: pd.Series of booleans
         Boolean series indicating successful VSX matches
     """
     f_vsx = vsx_Type.isin(return_list_of_nonstellar() + return_list_of_stellar())
@@ -172,23 +172,23 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
 def b_is_rising(
     psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
 ) -> pd.Series:
-    """Return True if rising light curve in one filter.
+    """Return alerts with rising lightcurve in one filter.
 
     Uses any one flux measurement compared to its mean object
     measurement, taking into account errors.
 
     Parameters
     ----------
-    psfFlux : pd.Series of float
+    psfFlux : pd.Series
         DiffImage flux in nJy
-    band_psfFluxMean : pd.Series of float
+    band_psfFluxMean : pd.Series
         Mean flux in nJy for a given band
-    band_psfFluxMeanErr : pd.Series of float
+    band_psfFluxMeanErr : pd.Series
         Error of mean flux in nJy for a given band
 
     Returns
     -------
-    bool
+    out: pd.Series of booleans
         True if rising, False otherwise
     """
     diff = psfFlux - band_psfFluxMean
@@ -201,23 +201,23 @@ def b_is_rising(
 def b_is_fading(
     psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
 ) -> pd.Series:
-    """Return True if fading light curve in one filter.
+    """Return alerts with fading lightcurve in one filter.
 
     Uses any one flux measurement compared to its mean object
     measurement, taking into account errors.
 
     Parameters
     ----------
-    psfFlux : pd.Series of float
+    psfFlux : pd.Series
         DiffImage flux in nJy
-    band_psfFluxMean : pd.Series of float
+    band_psfFluxMean : pd.Series
         Mean flux in nJy for a given band
-    band_psfFluxMeanErr : pd.Series of float
+    band_psfFluxMeanErr : pd.Series
         Error of mean flux in nJy for a given band
 
     Returns
     -------
-    bool
+    out: pd.Series of booleans
         True if fading, False otherwise
     """
     diff = psfFlux - band_psfFluxMean
@@ -225,3 +225,41 @@ def b_is_fading(
     is_fading = is_significant & (diff < 0)
 
     return is_fading
+
+
+def b_is_new(midpointMjdTai: pd.Series, midpointMjdTaiFink: pd.Series) -> pd.Series:
+    """Return alerts for which the underlying object is seen for the first time by Rubin
+
+    Parameters
+    ----------
+    midpointMjdTai: pd.Series
+        Alert emission date
+    midpointMjdTaiFink: pd.Series
+        MJD for the first detection by Rubin. Temporary
+        replacement for diaObject.firstDiaSourceMjdTai
+        which is not yet populated by the project.
+
+    Returns
+    -------
+    out: pd.Series of booleans
+        True if new. False otherwise
+    """
+    is_new = (midpointMjdTai - midpointMjdTaiFink) == 0
+    return is_new
+
+
+def b_in_tns(tns_type: pd.Series) -> pd.Series:
+    """Return alerts for with a known counterpart in TNS at the time of emission by Rubin
+
+    Parameters
+    ----------
+    tns_type: pd.Series
+        Type according to TNS (string or null).
+
+    Returns
+    -------
+    out: pd.Series of booleans
+        True if in TNS. False otherwise
+    """
+    in_tns = tns_type.apply(lambda x: x is not None)
+    return in_tns
