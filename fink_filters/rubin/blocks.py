@@ -246,20 +246,3 @@ def b_is_new(midpointMjdTai: pd.Series, midpointMjdTaiFink: pd.Series) -> pd.Ser
     """
     is_new = (midpointMjdTai - midpointMjdTaiFink) == 0
     return is_new
-
-
-def b_in_tns(tns_type: pd.Series) -> pd.Series:
-    """Return alerts for with a known counterpart in TNS at the time of emission by Rubin
-
-    Parameters
-    ----------
-    tns_type: pd.Series
-        Type according to TNS (string or null).
-
-    Returns
-    -------
-    out: pd.Series of booleans
-        True if in TNS. False otherwise
-    """
-    in_tns = tns_type.apply(lambda x: x is not None)
-    return in_tns
