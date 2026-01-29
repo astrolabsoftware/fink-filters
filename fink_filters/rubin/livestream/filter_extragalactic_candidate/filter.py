@@ -67,8 +67,8 @@ def extragalactic_candidate(
         False otherwise.
     """
     # Xmatch galaxy or Unknown
-    f_in_galaxy_simbad = fb.xmatched_to_galaxy_simbad(simbad_otype)
-    f_in_galaxy_mangrove = fb.extragalactic_mangrove_filter(mangrove_lum_dist)
+    f_in_galaxy_simbad = fb.b_xmatched_simbad_galaxy(simbad_otype)
+    f_in_galaxy_mangrove = fb.b_xmatched_mangrove(mangrove_lum_dist)
     f_unknown_simbad = fb.b_xmatched_simbad_unknown(simbad_otype)
 
     # Outside galactic plane
