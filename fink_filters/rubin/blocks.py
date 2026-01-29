@@ -246,3 +246,51 @@ def b_is_new(midpointMjdTai: pd.Series, midpointMjdTaiFink: pd.Series) -> pd.Ser
     """
     is_new = (midpointMjdTai - midpointMjdTaiFink) == 0
     return is_new
+
+def b_good_quality(
+    isDipole: pd.Series,
+    shape_flag: pd.Series, 
+    forced_PsfFlux_flag: pd.Series, 
+    psfFlux_flag: pd.Series, 
+    apFlux_flag: pd.Series, 
+    centroid_flag: pd.Series, 
+    pixelFlags_interpolated: pd.Series, 
+    pixelFlags_cr: pd.Series, 
+    forced_PsfFlux_flag_edge : pd.Series, 
+    pixelFlags_bad : pd.Series) -> pd.Series:
+    """_summary_
+
+    Parameters
+    ----------
+    isDipole : pd.Series
+        Dipole well fit for source flag
+    shape_flag : pd.Series
+        Shape photometry flag
+    forced_PsfFlux_flag : pd.Series
+        Science forced photometry flag
+    psfFlux_flag : pd.Series
+        Psf model failure flag
+    apFlux_flag : pd.Series
+        Aperture failure flag
+    centroid_flag : pd.Series
+        Centroid failure flag
+    pixelFlags_interpolated : pd.Series
+        Interpolated pixel in footprint
+    pixelFlags_cr : pd.Series
+        Cosmic ray
+    forced_PsfFlux_flag_edge : pd.Series
+        Science coordinate too close to edge
+    pixelFlags_bad : pd.Series
+        Bad pixel in footprint
+
+    Returns
+    -------
+    pd.Series of booleans
+        True if good quality. False otherwise
+    """
+
+    mask_flagged = isDipole | shape_flag | forced_PsfFlux_flag | psfFlux_flag | centroid_flag \
+        | apFlux_flag | pixelFlags_interpolated | pixelFlags_cr | forced_PsfFlux_flag_edge | pixelFlags_bad
+    
+    f_good_quality = ~mask_flagged
+    return f_good_quality
