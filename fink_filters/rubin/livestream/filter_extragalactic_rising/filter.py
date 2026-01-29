@@ -59,44 +59,44 @@ def extragalactic_rising_candidate(
     ra: pd.Series,
     dec: pd.Series,
     is_sso: pd.Series,
-    gaiaxmatch_DR3Name: pd.Series,
-    gaiaxmatch_Plx: pd.Series,
-    gaiaxmatch_e_Plx: pd.Series,
-    vsxxmatch: pd.Series,
+    gaiadr3_DR3Name: pd.Series,
+    gaiadr3_Plx: pd.Series,
+    gaiadr3_e_Plx: pd.Series,
+    vsx_Type: pd.Series,
     psfFlux: pd.Series,
-    band_psfFluxMean: pd.Series,
-    band_psfFluxErrMean: pd.Series,
+    band_psfFluxMean: pd.Series,  # FIXME: does not exist in the alert packet!
+    band_psfFluxErrMean: pd.Series,  # FIXME: does not exist in the alert packet!
     nDiaSources: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are new and rising extragalactic candidates
 
     Parameters
     ----------
-    simbad_otype : pd.Series
+    simbad_otype: pd.Series
         Type xmatched SIMBAD
-    mangrove_lum_dist : pd.Series
+    mangrove_lum_dist: pd.Series
         Luminosity distance of xmatch with Mangrove
-    ra : pd.Series
+    ra: pd.Series
         Right ascension
-    dec : pd.Series
+    dec: pd.Series
         Declination
-    is_sso : pd.Series
+    is_sso: pd.Series
         Asteroid tag
-    gaiaxmatch_DR3Name : pd.Series
-        Gaia xmatch name
-    gaiaxmatch_Plx : pd.Series
-        Gaia xmatch Parallax
-    gaiaxmatch_e_Plx : pd.Series
-        Gaia xmatch Parallax error
-    vsxxmatch : pd.Series
-        VSX xmatch type
-    psfFlux : pd.Series
+    gaiadr3_DR3Name: pd.Series
+        Series containing Gaia DR3 names from `xm.gaiadr3_DR3Name`
+    gaiadr3_Plx: pd.Series
+        Series containing parallax values from `xm.gaiadr3_Plx`
+    gaiadr3_e_Plx: pd.Series
+        Series containing parallax errors from `xm.gaiadr3_e_Plx`
+    vsx_Type: pd.Series
+        Series containing VSX variable star catalog matches
+    psfFlux: pd.Series
         Alert difference image flux
-    band_psfFluxMean : pd.Series
+    band_psfFluxMean: pd.Series
         Alert mean flux in appropiate band
-    band_psfFluxErrMean : pd.Series
+    band_psfFluxErrMean: pd.Series
         Alert mean flux error in appropiate band
-    nDiaSources : pd.Series
+    nDiaSources: pd.Series
         Number of alerts per object
 
     Returns
@@ -111,10 +111,10 @@ def extragalactic_rising_candidate(
         ra,
         dec,
         is_sso,
-        gaiaxmatch_DR3Name,
-        gaiaxmatch_Plx,
-        gaiaxmatch_e_Plx,
-        vsxxmatch,
+        gaiadr3_DR3Name,
+        gaiadr3_Plx,
+        gaiadr3_e_Plx,
+        vsx_Type,
         psfFlux,
     )
     # Rising in at least one band

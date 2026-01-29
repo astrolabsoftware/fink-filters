@@ -27,10 +27,10 @@ def extragalactic_candidate(
     ra: pd.Series,
     dec: pd.Series,
     is_sso: pd.Series,
-    gaiaxmatch_DR3Name: pd.Series,
-    gaiaxmatch_Plx: pd.Series,
-    gaiaxmatch_e_Plx: pd.Series,
-    vsxxmatch: pd.Series,
+    gaiadr3_DR3Name: pd.Series,
+    gaiadr3_Plx: pd.Series,
+    gaiadr3_e_Plx: pd.Series,
+    vsx_Type: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are extragalactic candidates
 
@@ -51,13 +51,13 @@ def extragalactic_candidate(
         Series containing floats from `diaObject.dec`
     is_sso: pd.Series
         Series containing booleans from solar system object classification
-    gaiaxmatch_DR3Name: pd.Series
-        Series containing Gaia DR3 names from `xm.gaiaxmatch_DR3Name`
-    gaiaxmatch_Plx: pd.Series
-        Series containing parallax values from `xm.gaiaxmatch_Plx`
-    gaiaxmatch_e_Plx: pd.Series
-        Series containing parallax errors from `xm.gaiaxmatch_e_Plx`
-    vsxxmatch: pd.Series
+    gaiadr3_DR3Name: pd.Series
+        Series containing Gaia DR3 names from `xm.gaiadr3_DR3Name`
+    gaiadr3_Plx: pd.Series
+        Series containing parallax values from `xm.gaiadr3_Plx`
+    gaiadr3_e_Plx: pd.Series
+        Series containing parallax errors from `xm.gaiadr3_e_Plx`
+    vsx_Type: pd.Series
         Series containing VSX variable star catalog matches
 
     Returns
@@ -78,10 +78,8 @@ def extragalactic_candidate(
     f_roid = fb.b_is_solar_system(is_sso)
 
     # Not a catalogued star
-    f_in_gaia = fb.b_xmatched_gaia_star(
-        gaiaxmatch_DR3Name, gaiaxmatch_Plx, gaiaxmatch_e_Plx
-    )
-    f_in_vsx_star = fb.b_xmatched_vsx_star(vsxxmatch)
+    f_in_gaia = fb.b_xmatched_gaia_star(gaiadr3_DR3Name, gaiadr3_Plx, gaiadr3_e_Plx)
+    f_in_vsx_star = fb.b_xmatched_vsx_star(vsx_Type)
     f_not_star = ~f_in_gaia & ~f_in_vsx_star
 
     f_extragalactic = (

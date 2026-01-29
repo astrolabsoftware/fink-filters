@@ -53,12 +53,12 @@ def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
     return pd.Series(mask_away_from_galactic_plane)
 
 
-def b_xmatched_simbad_galaxy(cdsxmatch: pd.Series) -> pd.Series:
+def b_xmatched_simbad_galaxy(simbad_otype: pd.Series) -> pd.Series:
     """Return alerts xmatched to a galaxy with SIMBAD.
 
     Parameters
     ----------
-    cdsxmatch : pd.Series
+    simbad_otype : pd.Series
         Series of cross-matched SIMBAD types
 
     Returns
@@ -66,16 +66,16 @@ def b_xmatched_simbad_galaxy(cdsxmatch: pd.Series) -> pd.Series:
     out: pd.Series of bool
         Boolean series indicating galaxy or failed matches
     """
-    f_galaxy = cdsxmatch.isin(return_list_of_eg_host)
+    f_galaxy = simbad_otype.isin(return_list_of_eg_host)
     return f_galaxy
 
 
-def b_xmatched_simbad_unknown(cdsxmatch: pd.Series) -> pd.Series:
+def b_xmatched_simbad_unknown(simbad_otype: pd.Series) -> pd.Series:
     """Return alerts xmatched as unknown or failed with SIMBAD.
 
     Parameters
     ----------
-    cdsxmatch : pd.Series
+    simbad_otype : pd.Series
         Series of cross-matched SIMBAD types
 
     Returns
@@ -83,41 +83,41 @@ def b_xmatched_simbad_unknown(cdsxmatch: pd.Series) -> pd.Series:
     out: pd.Series of bool
         Boolean series indicating unknown or failed matches
     """
-    f_unknown = cdsxmatch.isin(["Unknown", "Fail", "Fail 504", None, np.nan])
+    f_unknown = simbad_otype.isin(["Unknown", "Fail", "Fail 504", None, np.nan])
     return f_unknown
 
 
-def b_xmatched_mangrove(lum_dist_values: pd.Series) -> pd.Series:
+def b_xmatched_mangrove(mangrove_lum_dist: pd.Series) -> pd.Series:
     """Return alerts xmatched with a Mangrove galaxy.
 
     Parameters
     ----------
-    lum_dist_values : pd.Series
+    mangrove_lum_dist : pd.Series
         Luminosity distance values from Mangrove/Glade catalog
 
     Returns
     -------
     pd.Series of bool
-        Boolean series indicating extragalactic sources with lum_dist > 0
+        Boolean series indicating extragalactic sources with mangrove_lum_dist > 0
     """
-    f_mangrove = lum_dist_values > 0
+    f_mangrove = mangrove_lum_dist > 0
     return f_mangrove
 
 
 def b_xmatched_gaia_star(
-    gaiaxmatch_DR3Name: pd.Series,
-    gaiaxmatch_Plx: pd.Series,
-    gaiaxmatch_e_Plx: pd.Series,
+    gaiadr3_DR3Name: pd.Series,
+    gaiadr3_Plx: pd.Series,
+    gaiadr3_e_Plx: pd.Series,
 ) -> pd.Series:
     """Return alerts xmatched to stars with good parallax with Gaia.
 
     Parameters
     ----------
-    gaiaxmatch_DR3Name : pd.Series
+    gaiadr3_DR3Name : pd.Series
         Gaia DR3 source names from cross-match
-    gaiaxmatch_Plx : pd.Series
+    gaiadr3_Plx : pd.Series
         Parallax values from Gaia cross-match
-    gaiaxmatch_e_Plx : pd.Series
+    gaiadr3_e_Plx : pd.Series
         Parallax errors from Gaia cross-match
 
     Returns
@@ -125,19 +125,25 @@ def b_xmatched_gaia_star(
     pd.Series of bool
         Boolean series indicating stellar sources with good parallax (Plx/e_Plx > 5)
     """
-    f_xmatched_star = gaiaxmatch_DR3Name != "nan"
-    f_plx = gaiaxmatch_Plx / gaiaxmatch_e_Plx > 5  # select good parallaxes
+    f_xmatched_star = ~gaiadr3_DR3Name.isin([
+        "Unknown",
+        "Fail",
+        "Fail 504",
+        None,
+        np.nan,
+    ])
+    f_plx = gaiadr3_Plx / gaiadr3_e_Plx > 5  # select good parallaxes
 
     f_gaia = f_xmatched_star & f_plx
     return f_gaia
 
 
-def b_xmatched_vsx_star(vsxxmatch: pd.Series) -> pd.Series:
+def b_xmatched_vsx_star(vsx_Type: pd.Series) -> pd.Series:
     """Return alerts xmatched with stellar sources from VSX catalogue.
 
     Parameters
     ----------
-    vsxxmatch : pd.Series
+    vsx_Type: pd.Series
         VSX cross-match results
 
     Returns
@@ -145,17 +151,17 @@ def b_xmatched_vsx_star(vsxxmatch: pd.Series) -> pd.Series:
     pd.Series of bool
         Boolean series indicating stellar variable sources
     """
-    # All known tags ecept AGN
-    f_vsx = vsxxmatch.isin(return_list_of_stellar)
+    # All known tags except AGN
+    f_vsx = vsx_Type.isin(return_list_of_stellar)
     return f_vsx
 
 
-def b_xmatched_vsx(vsxxmatch: pd.Series) -> pd.Series:
+def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
     """Return alerts xmatched with stellar and non-stellar sources from VSX catalogue.
 
     Parameters
     ----------
-    vsxxmatch : pd.Series
+    vsx_Type: pd.Series
         VSX cross-match results
 
     Returns
@@ -163,7 +169,7 @@ def b_xmatched_vsx(vsxxmatch: pd.Series) -> pd.Series:
     pd.Series of bool
         Boolean series indicating successful VSX matches
     """
-    f_vsx = vsxxmatch.isin(return_list_of_nonstellar + return_list_of_stellar)
+    f_vsx = vsx_Type.isin(return_list_of_nonstellar + return_list_of_stellar)
     return f_vsx
 
 
