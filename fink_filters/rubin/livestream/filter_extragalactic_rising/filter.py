@@ -16,53 +16,58 @@
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
-from fink_filters.rubin.livestream.filter_extragalactic import extragalactic_candidate
 
 
-DESCRIPTION = (
-    "Select alerts that are extragalactic, new and rising in at least one filter"
-)
-
-def processor_risingfading(df):
-    """_summary_
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Alert data with columns diaSource and diaObject
-
-    Returns
-    -------
-    out: pd.Series
-        Series with psfFlux and Mean fluxes per band with error
-    """
-    # Extract band from diaSource dictionary
-    df['band'] = df['diaSource'].apply(lambda x: x['band'])
-    df['psfFlux'] = df['diaSource'].apply(lambda x: x['psfFlux'])
-    bands=df.band.unique()
-    conditions = [df['band'] == band for band in bands]
-    # Get mean flux for each band from diaObject dictionary
-    choices_mean = [df['diaObject'].apply(lambda x: x[f'{band}_psfFluxMean']) for band in bands]
-    df['band_psfFluxMean'] = np.select(conditions, choices_mean, default=np.nan)
-    # Get mean flux error for each band from diaObject dictionary
-    choices_err = [df['diaObject'].apply(lambda x: x[f'{band}_psfFluxErrMean']) for band in bands]
-    df['band_psfFluxErrMean'] = np.select(conditions, choices_err, default=np.nan)
-
-    return df[['psfFlux','band_psfFluxMean','band_psfFluxErrMean']].values
+DESCRIPTION = "Select alerts that are extragalactic candidates, new and rising in at least one filter"
 
 
-def extragalactic_rising_candidate(simbad_otype: pd.Series, 
-                            mangrove_lum_dist: pd.Series, 
-                            ra: pd.Series, dec: pd.Series,
-                            is_sso: pd.Series,
-                            gaiaxmatch_DR3Name: pd.Series, 
-                            gaiaxmatch_Plx: pd.Series, gaiaxmatch_e_Plx: pd.Series,
-                            vsxxmatch: pd.Series,
-                            psfFlux: pd.Series,
-                            band_psfFluxMean:pd.Series,
-                            band_psfFluxErrMean:pd.Series,
-                            nDiaSources: pd.Series,
-                            ) -> pd.Series:
+# def processor_risingfading(df):
+#     """_summary_
+#
+#     Parameters
+#     ----------
+#     df : pd.DataFrame
+#         Alert data with columns diaSource and diaObject
+#
+#     Returns
+#     -------
+#     out: pd.Series
+#         Series with psfFlux and Mean fluxes per band with error
+#     """
+#     # Extract band from diaSource dictionary
+#     df["band"] = df["diaSource"].apply(lambda x: x["band"])
+#     df["psfFlux"] = df["diaSource"].apply(lambda x: x["psfFlux"])
+#     bands = df.band.unique()
+#     conditions = [df["band"] == band for band in bands]
+#     # Get mean flux for each band from diaObject dictionary
+#     choices_mean = [
+#         df["diaObject"].apply(lambda x: x[f"{band}_psfFluxMean"]) for band in bands
+#     ]
+#     df["band_psfFluxMean"] = np.select(conditions, choices_mean, default=np.nan)
+#     # Get mean flux error for each band from diaObject dictionary
+#     choices_err = [
+#         df["diaObject"].apply(lambda x: x[f"{band}_psfFluxErrMean"]) for band in bands
+#     ]
+#     df["band_psfFluxErrMean"] = np.select(conditions, choices_err, default=np.nan)
+#
+#     return df[["psfFlux", "band_psfFluxMean", "band_psfFluxErrMean"]].to_numpy()
+
+
+def extragalactic_rising_candidate(
+    simbad_otype: pd.Series,
+    mangrove_lum_dist: pd.Series,
+    ra: pd.Series,
+    dec: pd.Series,
+    is_sso: pd.Series,
+    gaiaxmatch_DR3Name: pd.Series,
+    gaiaxmatch_Plx: pd.Series,
+    gaiaxmatch_e_Plx: pd.Series,
+    vsxxmatch: pd.Series,
+    psfFlux: pd.Series,
+    band_psfFluxMean: pd.Series,
+    band_psfFluxErrMean: pd.Series,
+    nDiaSources: pd.Series,
+) -> pd.Series:
     """Flag for alerts in Rubin that are new and rising extragalactic candidates
 
     Parameters
@@ -72,7 +77,7 @@ def extragalactic_rising_candidate(simbad_otype: pd.Series,
     mangrove_lum_dist : pd.Series
         Luminosity distance of xmatch with Mangrove
     ra : pd.Series
-        Right ascension 
+        Right ascension
     dec : pd.Series
         Declination
     is_sso : pd.Series
@@ -100,18 +105,23 @@ def extragalactic_rising_candidate(simbad_otype: pd.Series,
         Alerts that are extragalactic and rising
     """
     # Extragalactic filter
-    f_extragalactic = extragalactic_rising_candidate(simbad_otype, mangrove_lum_dist, ra, dec,
-                                   is_sso,gaiaxmatch_DR3Name, gaiaxmatch_Plx, 
-                                   gaiaxmatch_e_Plx,vsxxmatch,psfFlux)
-    # Rising in at least one band
-    f_is_rising = fb.b_is_rising(
+    f_extragalactic = extragalactic_rising_candidate(
+        simbad_otype,
+        mangrove_lum_dist,
+        ra,
+        dec,
+        is_sso,
+        gaiaxmatch_DR3Name,
+        gaiaxmatch_Plx,
+        gaiaxmatch_e_Plx,
+        vsxxmatch,
         psfFlux,
-        band_psfFluxMean,
-        band_psfFluxErrMean
     )
+    # Rising in at least one band
+    f_is_rising = fb.b_is_rising(psfFlux, band_psfFluxMean, band_psfFluxErrMean)
 
-    f_new = nDiaSources<20 #should be lowered after first alerts
+    f_new = nDiaSources < 20  # should be lowered after first alerts
 
-    f_extragalactic_rising  = f_extragalactic & f_is_rising & f_new
+    f_extragalactic_rising = f_extragalactic & f_is_rising & f_new
 
     return f_extragalactic_rising
