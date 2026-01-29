@@ -227,14 +227,16 @@ def b_is_fading(
     return is_fading
 
 
-def b_is_new(midpointMjdTai: pd.Series, midpointMjdTaiFink: pd.Series) -> pd.Series:
+def b_is_new(
+    midpointMjdTai: pd.Series, firstDiaSourceMjdTaiFink: pd.Series
+) -> pd.Series:
     """Return alerts for which the underlying object is seen for the first time by Rubin
 
     Parameters
     ----------
     midpointMjdTai: pd.Series
         Alert emission date
-    midpointMjdTaiFink: pd.Series
+    firstDiaSourceMjdTaiFink: pd.Series
         MJD for the first detection by Rubin. Temporary
         replacement for diaObject.firstDiaSourceMjdTai
         which is not yet populated by the project.
@@ -244,5 +246,5 @@ def b_is_new(midpointMjdTai: pd.Series, midpointMjdTaiFink: pd.Series) -> pd.Ser
     out: pd.Series of booleans
         True if new. False otherwise
     """
-    is_new = (midpointMjdTai - midpointMjdTaiFink) == 0
+    is_new = (midpointMjdTai - firstDiaSourceMjdTaiFink) == 0
     return is_new
