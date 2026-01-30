@@ -54,6 +54,16 @@ DESCRIPTION = "Select alerts that are extragalactic candidates, new and rising i
 
 
 def extragalactic_rising_candidate(
+    isDipole: pd.Series,
+    shape_flag: pd.Series, 
+    forced_PsfFlux_flag: pd.Series, 
+    psfFlux_flag: pd.Series, 
+    apFlux_flag: pd.Series, 
+    centroid_flag: pd.Series, 
+    pixelFlags_interpolated: pd.Series, 
+    pixelFlags_cr: pd.Series, 
+    forced_PsfFlux_flag_edge : pd.Series, 
+    pixelFlags_bad : pd.Series,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
     ra: pd.Series,
@@ -72,6 +82,26 @@ def extragalactic_rising_candidate(
 
     Parameters
     ----------
+    isDipole : pd.Series
+        Dipole well fit for source flag
+    shape_flag : pd.Series
+        Shape photometry flag
+    forced_PsfFlux_flag : pd.Series
+        Science forced photometry flag
+    psfFlux_flag : pd.Series
+        Psf model failure flag
+    apFlux_flag : pd.Series
+        Aperture failure flag
+    centroid_flag : pd.Series
+        Centroid failure flag
+    pixelFlags_interpolated : pd.Series
+        Interpolated pixel in footprint
+    pixelFlags_cr : pd.Series
+        Cosmic ray
+    forced_PsfFlux_flag_edge : pd.Series
+        Science coordinate too close to edge
+    pixelFlags_bad : pd.Series
+        Bad pixel in footprint
     simbad_otype: pd.Series
         Type xmatched SIMBAD
     mangrove_lum_dist: pd.Series
@@ -104,6 +134,11 @@ def extragalactic_rising_candidate(
     pd.Series
         Alerts that are extragalactic and rising
     """
+    # Good quality
+    f_good_quality = fb.b_good_quality(isDipole,shape_flag, forced_PsfFlux_flag, psfFlux_flag, 
+                                       apFlux_flag, centroid_flag, pixelFlags_interpolated, pixelFlags_cr, 
+                                       forced_PsfFlux_flag_edge, pixelFlags_bad)
+    
     # Extragalactic filter
     f_extragalactic = extragalactic_rising_candidate(
         simbad_otype,
@@ -117,11 +152,12 @@ def extragalactic_rising_candidate(
         vsx_Type,
         psfFlux,
     )
+    
     # Rising in at least one band
     f_is_rising = fb.b_is_rising(psfFlux, band_psfFluxMean, band_psfFluxErrMean)
 
     f_new = nDiaSources < 20  # should be lowered after first alerts
 
-    f_extragalactic_rising = f_extragalactic & f_is_rising & f_new
+    f_extragalactic_rising = f_good_quality & f_extragalactic & f_is_rising & f_new
 
     return f_extragalactic_rising

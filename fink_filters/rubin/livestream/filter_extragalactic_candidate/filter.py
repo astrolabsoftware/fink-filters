@@ -22,6 +22,16 @@ DESCRIPTION = "Select alerts that are extragalactic candidates"
 
 
 def extragalactic_candidate(
+    isDipole: pd.Series,
+    shape_flag: pd.Series, 
+    forced_PsfFlux_flag: pd.Series, 
+    psfFlux_flag: pd.Series, 
+    apFlux_flag: pd.Series, 
+    centroid_flag: pd.Series, 
+    pixelFlags_interpolated: pd.Series, 
+    pixelFlags_cr: pd.Series, 
+    forced_PsfFlux_flag_edge : pd.Series, 
+    pixelFlags_bad : pd.Series,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
     ra: pd.Series,
@@ -36,11 +46,31 @@ def extragalactic_candidate(
 
     Notes
     -----
-    based on xmatch with catalogues, galactic coordinates,
+    based on source quality, xmatch with catalogues, galactic coordinates,
     and asteroid veto
 
     Parameters
     ----------
+    isDipole : pd.Series
+        Dipole well fit for source flag
+    shape_flag : pd.Series
+        Shape photometry flag
+    forced_PsfFlux_flag : pd.Series
+        Science forced photometry flag
+    psfFlux_flag : pd.Series
+        Psf model failure flag
+    apFlux_flag : pd.Series
+        Aperture failure flag
+    centroid_flag : pd.Series
+        Centroid failure flag
+    pixelFlags_interpolated : pd.Series
+        Interpolated pixel in footprint
+    pixelFlags_cr : pd.Series
+        Cosmic ray
+    forced_PsfFlux_flag_edge : pd.Series
+        Science coordinate too close to edge
+    pixelFlags_bad : pd.Series
+        Bad pixel in footprint
     simbad_otype: pd.Series
         Series containing labels from `xm.simbad_otype`
     mangrove_lum_dist: pd.Series
@@ -63,9 +93,15 @@ def extragalactic_candidate(
     Returns
     -------
     out: pd.Series
-        Booleans: True for alerts extragalactic candidates,
+        Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
     """
+    # Good quality
+    f_good_quality = fb.b_good_quality(isDipole,shape_flag, forced_PsfFlux_flag, psfFlux_flag, 
+                                       apFlux_flag, centroid_flag, pixelFlags_interpolated, pixelFlags_cr, 
+                                       forced_PsfFlux_flag_edge, pixelFlags_bad)
+    
+
     # Xmatch galaxy or Unknown
     f_in_galaxy_simbad = fb.b_xmatched_simbad_galaxy(simbad_otype)
     f_in_galaxy_mangrove = fb.b_xmatched_mangrove(mangrove_lum_dist)
@@ -83,7 +119,8 @@ def extragalactic_candidate(
     f_not_star = ~f_in_gaia & ~f_in_vsx_star
 
     f_extragalactic = (
-        (f_in_galaxy_simbad | f_in_galaxy_mangrove | f_unknown_simbad)
+        f_good_quality
+        & (f_in_galaxy_simbad | f_in_galaxy_mangrove | f_unknown_simbad)
         & (f_outside_galactic_plane)
         & ~f_roid
         & f_not_star
