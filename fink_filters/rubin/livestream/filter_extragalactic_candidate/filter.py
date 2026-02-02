@@ -23,15 +23,15 @@ DESCRIPTION = "Select alerts that are extragalactic candidates"
 
 def extragalactic_candidate(
     isDipole: pd.Series,
-    shape_flag: pd.Series, 
-    forced_PsfFlux_flag: pd.Series, 
-    psfFlux_flag: pd.Series, 
-    apFlux_flag: pd.Series, 
-    centroid_flag: pd.Series, 
-    pixelFlags_interpolated: pd.Series, 
-    pixelFlags_cr: pd.Series, 
-    forced_PsfFlux_flag_edge : pd.Series, 
-    pixelFlags_bad : pd.Series,
+    shape_flag: pd.Series,
+    forced_PsfFlux_flag: pd.Series,
+    psfFlux_flag: pd.Series,
+    apFlux_flag: pd.Series,
+    centroid_flag: pd.Series,
+    pixelFlags_interpolated: pd.Series,
+    pixelFlags_cr: pd.Series,
+    forced_PsfFlux_flag_edge: pd.Series,
+    pixelFlags_bad: pd.Series,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
     ra: pd.Series,
@@ -95,12 +95,27 @@ def extragalactic_candidate(
     out: pd.Series
         Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2.count()
+    14
     """
     # Good quality
-    f_good_quality = fb.b_good_quality(isDipole,shape_flag, forced_PsfFlux_flag, psfFlux_flag, 
-                                       apFlux_flag, centroid_flag, pixelFlags_interpolated, pixelFlags_cr, 
-                                       forced_PsfFlux_flag_edge, pixelFlags_bad)
-    
+    f_good_quality = fb.b_good_quality(
+        isDipole,
+        shape_flag,
+        forced_PsfFlux_flag,
+        psfFlux_flag,
+        apFlux_flag,
+        centroid_flag,
+        pixelFlags_interpolated,
+        pixelFlags_cr,
+        forced_PsfFlux_flag_edge,
+        pixelFlags_bad,
+    )
 
     # Xmatch galaxy or Unknown
     f_in_galaxy_simbad = fb.b_xmatched_simbad_galaxy(simbad_otype)
@@ -127,3 +142,13 @@ def extragalactic_candidate(
     )
 
     return f_extragalactic
+
+
+if __name__ == "__main__":
+    """Test suite for filters"""
+    # Run the test suite
+
+    from fink_filters.tester import spark_unit_tests
+
+    globs = globals()
+    spark_unit_tests(globs, load_rubin_df=True)

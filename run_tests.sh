@@ -83,7 +83,7 @@ if [[ $SURVEY == "" ]]; then
   exit 1
 fi
 
-# Run the test for classification
+# Run the test for classification & blocks
 for filename in fink_filters/${SURVEY}/*.py
 do
   echo $filename
