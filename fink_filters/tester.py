@@ -17,7 +17,9 @@ import doctest
 import numpy as np
 
 
-def spark_unit_tests(global_args: dict = None, verbose: bool = False):
+def spark_unit_tests(
+    global_args: dict = None, load_rubin_df: bool = False, verbose: bool = False
+):
     """Base commands for the Spark unit test suite
 
     Include this routine in the main of a module, and execute:
@@ -32,6 +34,8 @@ def spark_unit_tests(global_args: dict = None, verbose: bool = False):
     global_args: dict, optional
         Dictionary containing user-defined variables to
         be passed to the test suite. Default is None.
+    load_rubin_df: bool, optional
+        If True, load science data for Rubin in globals
     verbose: bool
         If True, print useful debug messages.
         Default is False.
@@ -73,8 +77,36 @@ def spark_unit_tests(global_args: dict = None, verbose: bool = False):
 
     global_args["spark"] = spark
 
+    if load_rubin_df:
+        df = spark.read.format("parquet").load("datatest/rubin_test_data_10_0.parquet")
+        global_args["df"] = df
+
     # Numpy introduced non-backward compatible change from v1.14.
     if np.__version__ >= "1.14.0":
         np.set_printoptions(legacy="1.13")
 
     sys.exit(doctest.testmod(globs=global_args, verbose=verbose)[0])
+
+
+def apply_block(df, function_name):
+    """Wrapper around FinkUDF to use in test suite
+
+    Parameters
+    ----------
+    df: Spark DataFrame
+    function_name: str
+        Path to the function module.module.function
+    """
+    from pyspark.sql.types import BooleanType
+    from fink_utils.spark.utils import (
+        expand_function_from_string,
+        FinkUDF,
+    )
+
+    filter_func, colnames = expand_function_from_string(df, function_name)
+    fink_filter = FinkUDF(
+        filter_func,
+        BooleanType(),
+        "",
+    )
+    return df.filter(fink_filter.for_spark(*colnames))

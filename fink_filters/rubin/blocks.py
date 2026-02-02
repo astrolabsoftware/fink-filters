@@ -20,6 +20,7 @@ from astropy.coordinates import SkyCoord
 from fink_utils.xmatch.simbad import return_list_of_eg_host
 from fink_utils.xmatch.vsx import return_list_of_stellar, return_list_of_nonstellar
 
+
 BAD_VALUES = ["Unknown", "Fail", "Fail 504", None, np.nan]
 
 
@@ -30,6 +31,13 @@ def b_is_solar_system(is_sso: pd.Series) -> pd.Series:
     ----------
     is_sso: pd.Series of booleans
         `pred.is_sso`
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_solar_system")
+    >>> df2.count()
+    3
     """
     return is_sso
 
@@ -48,6 +56,13 @@ def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
     -------
     out: pd.Series of booleans
         True if outside the plane. False otherwise
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane")
+    >>> df2.count()
+    27
     """
     coords = SkyCoord(ra.astype(float), dec.astype(float), unit="deg")
     b = coords.galactic.b.deg
@@ -67,6 +82,13 @@ def b_xmatched_simbad_galaxy(simbad_otype: pd.Series) -> pd.Series:
     -------
     out: pd.Series of bool
         Boolean series indicating galaxy or failed matches
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_simbad_galaxy")
+    >>> df2.count()
+    0
     """
     f_galaxy = simbad_otype.isin(return_list_of_eg_host())
     return f_galaxy
@@ -84,6 +106,13 @@ def b_xmatched_simbad_unknown(simbad_otype: pd.Series) -> pd.Series:
     -------
     out: pd.Series of bool
         Boolean series indicating unknown or failed matches
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_simbad_unknown")
+    >>> df2.count()
+    27
     """
     f_unknown = simbad_otype.isin(BAD_VALUES)
     return f_unknown
@@ -101,6 +130,13 @@ def b_xmatched_mangrove(mangrove_lum_dist: pd.Series) -> pd.Series:
     -------
     out: pd.Series of booleans
         Boolean series indicating extragalactic sources with mangrove_lum_dist > 0
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_mangrove")
+    >>> df2.count()
+    0
     """
     f_mangrove = mangrove_lum_dist > 0
     return f_mangrove
@@ -126,6 +162,13 @@ def b_xmatched_gaia_star(
     -------
     out: pd.Series of booleans
         Boolean series indicating stellar sources with good parallax (Plx/e_Plx > 5)
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_gaia_star")
+    >>> df2.count()
+    0
     """
     f_xmatched_star = ~gaiadr3_DR3Name.isin(BAD_VALUES)
     f_plx = gaiadr3_Plx / gaiadr3_e_Plx > 5  # select good parallaxes
@@ -146,6 +189,13 @@ def b_xmatched_vsx_star(vsx_Type: pd.Series) -> pd.Series:
     -------
     out: pd.Series of booleans
         Boolean series indicating stellar variable sources
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_vsx_star")
+    >>> df2.count()
+    0
     """
     # All known tags except AGN
     f_vsx = vsx_Type.isin(return_list_of_stellar())
@@ -164,67 +214,74 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
     -------
     out: pd.Series of booleans
         Boolean series indicating successful VSX matches
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_vsx")
+    >>> df2.count()
+    0
     """
     f_vsx = vsx_Type.isin(return_list_of_nonstellar() + return_list_of_stellar())
     return f_vsx
 
 
-def b_is_rising(
-    psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
-) -> pd.Series:
-    """Return alerts with rising lightcurve in one filter.
+# def b_is_rising(
+#     psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
+# ) -> pd.Series:
+#     """Return alerts with rising lightcurve in one filter.
 
-    Uses any one flux measurement compared to its mean object
-    measurement, taking into account errors.
+#     Uses any one flux measurement compared to its mean object
+#     measurement, taking into account errors.
 
-    Parameters
-    ----------
-    psfFlux : pd.Series
-        DiffImage flux in nJy
-    band_psfFluxMean : pd.Series
-        Mean flux in nJy for a given band
-    band_psfFluxMeanErr : pd.Series
-        Error of mean flux in nJy for a given band
+#     Parameters
+#     ----------
+#     psfFlux : pd.Series
+#         DiffImage flux in nJy
+#     band_psfFluxMean : pd.Series
+#         Mean flux in nJy for a given band
+#     band_psfFluxMeanErr : pd.Series
+#         Error of mean flux in nJy for a given band
 
-    Returns
-    -------
-    out: pd.Series of booleans
-        True if rising, False otherwise
-    """
-    diff = psfFlux - band_psfFluxMean
-    is_significant = np.abs(diff) > band_psfFluxMeanErr
-    is_rising = is_significant & (diff > 0)
+#     Returns
+#     -------
+#     out: pd.Series of booleans
+#         True if rising, False otherwise
+#     """
+#     diff = psfFlux - band_psfFluxMean
+#     is_significant = np.abs(diff) > band_psfFluxMeanErr
+#     is_rising = is_significant & (diff > 0)
 
-    return is_rising
+#     return is_rising
 
 
-def b_is_fading(
-    psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
-) -> pd.Series:
-    """Return alerts with fading lightcurve in one filter.
+# def b_is_fading(
+#     psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
+# ) -> pd.Series:
+#     """Return alerts with fading lightcurve in one filter.
 
-    Uses any one flux measurement compared to its mean object
-    measurement, taking into account errors.
+#     Uses any one flux measurement compared to its mean object
+#     measurement, taking into account errors.
 
-    Parameters
-    ----------
-    psfFlux : pd.Series
-        DiffImage flux in nJy
-    band_psfFluxMean : pd.Series
-        Mean flux in nJy for a given band
-    band_psfFluxMeanErr : pd.Series
-        Error of mean flux in nJy for a given band
+#     Parameters
+#     ----------
+#     psfFlux : pd.Series
+#         DiffImage flux in nJy
+#     band_psfFluxMean : pd.Series
+#         Mean flux in nJy for a given band
+#     band_psfFluxMeanErr : pd.Series
+#         Error of mean flux in nJy for a given band
 
-    Returns
-    -------
-    out: pd.Series of booleans
-        True if fading, False otherwise
-    """
-    diff = psfFlux - band_psfFluxMean
-    is_significant = np.abs(diff) > band_psfFluxMeanErr
-    is_fading = is_significant & (diff < 0)
+#     Returns
+#     -------
+#     out: pd.Series of booleans
+#         True if fading, False otherwise
+#     """
+#     diff = psfFlux - band_psfFluxMean
+#     is_significant = np.abs(diff) > band_psfFluxMeanErr
+#     is_fading = is_significant & (diff < 0)
 
-    return is_fading
+#     return is_fading
 
 
 def b_is_new(
@@ -245,22 +302,31 @@ def b_is_new(
     -------
     out: pd.Series of booleans
         True if new. False otherwise
+
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_new")
+    >>> df2.count()
+    26
     """
-    is_new = (midpointMjdTai - firstDiaSourceMjdTaiFink) == 0
+    is_new = midpointMjdTai == firstDiaSourceMjdTaiFink
     return is_new
+
 
 def b_good_quality(
     isDipole: pd.Series,
-    shape_flag: pd.Series, 
-    forced_PsfFlux_flag: pd.Series, 
-    psfFlux_flag: pd.Series, 
-    apFlux_flag: pd.Series, 
-    centroid_flag: pd.Series, 
-    pixelFlags_interpolated: pd.Series, 
-    pixelFlags_cr: pd.Series, 
-    forced_PsfFlux_flag_edge : pd.Series, 
-    pixelFlags_bad : pd.Series) -> pd.Series:
-    """_summary_
+    shape_flag: pd.Series,
+    forced_PsfFlux_flag: pd.Series,
+    psfFlux_flag: pd.Series,
+    apFlux_flag: pd.Series,
+    centroid_flag: pd.Series,
+    pixelFlags_interpolated: pd.Series,
+    pixelFlags_cr: pd.Series,
+    forced_PsfFlux_flag_edge: pd.Series,
+    pixelFlags_bad: pd.Series,
+) -> pd.Series:
+    """Select alerts with good quality for science
 
     Parameters
     ----------
@@ -289,10 +355,36 @@ def b_good_quality(
     -------
     pd.Series of booleans
         True if good quality. False otherwise
-    """
 
-    mask_flagged = isDipole | shape_flag | forced_PsfFlux_flag | psfFlux_flag | centroid_flag \
-        | apFlux_flag | pixelFlags_interpolated | pixelFlags_cr | forced_PsfFlux_flag_edge | pixelFlags_bad
-    
+    Examples
+    --------
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_good_quality")
+    >>> df2.count()
+    17
+    """
+    mask_flagged = (
+        isDipole
+        | shape_flag
+        | forced_PsfFlux_flag
+        | psfFlux_flag
+        | centroid_flag
+        | apFlux_flag
+        | pixelFlags_interpolated
+        | pixelFlags_cr
+        | forced_PsfFlux_flag_edge
+        | pixelFlags_bad
+    )
+
     f_good_quality = ~mask_flagged
     return f_good_quality
+
+
+if __name__ == "__main__":
+    """Test suite for blocks"""
+    # Run the test suite
+
+    from fink_filters.tester import spark_unit_tests
+
+    globs = globals()
+    spark_unit_tests(globs, load_rubin_df=True)
