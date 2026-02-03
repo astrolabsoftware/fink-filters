@@ -21,38 +21,6 @@ import fink_filters.rubin.blocks as fb
 DESCRIPTION = "Select alerts that are extragalactic candidates, new and rising in at least one filter"
 
 
-# def processor_risingfading(df):
-#     """_summary_
-#
-#     Parameters
-#     ----------
-#     df : pd.DataFrame
-#         Alert data with columns diaSource and diaObject
-#
-#     Returns
-#     -------
-#     out: pd.Series
-#         Series with psfFlux and Mean fluxes per band with error
-#     """
-#     # Extract band from diaSource dictionary
-#     df["band"] = df["diaSource"].apply(lambda x: x["band"])
-#     df["psfFlux"] = df["diaSource"].apply(lambda x: x["psfFlux"])
-#     bands = df.band.unique()
-#     conditions = [df["band"] == band for band in bands]
-#     # Get mean flux for each band from diaObject dictionary
-#     choices_mean = [
-#         df["diaObject"].apply(lambda x: x[f"{band}_psfFluxMean"]) for band in bands
-#     ]
-#     df["band_psfFluxMean"] = np.select(conditions, choices_mean, default=np.nan)
-#     # Get mean flux error for each band from diaObject dictionary
-#     choices_err = [
-#         df["diaObject"].apply(lambda x: x[f"{band}_psfFluxErrMean"]) for band in bands
-#     ]
-#     df["band_psfFluxErrMean"] = np.select(conditions, choices_err, default=np.nan)
-#
-#     return df[["psfFlux", "band_psfFluxMean", "band_psfFluxErrMean"]].to_numpy()
-
-
 def extragalactic_rising_candidate(
     isDipole: pd.Series,
     shape_flag: pd.Series,
