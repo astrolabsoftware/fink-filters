@@ -49,12 +49,12 @@ def hostless_candidate(
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_hostless_candidate.filter.hostless_candidate")
     >>> df2.count()
-    14
+    12
     """
     # Good quality
     f_good_quality = fb.b_good_quality(diaSource)
 
-    f_hostless = f_good_quality & (elephant_kstest_template < 3.0)
+    f_hostless = f_good_quality & (elephant_kstest_template < 0.3)
 
     return f_hostless
 
