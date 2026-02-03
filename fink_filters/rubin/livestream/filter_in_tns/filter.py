@@ -38,7 +38,22 @@ def in_tns(tns_type: pd.Series) -> pd.Series:
     --------
     >>> s = pd.Series(["SN Ia", None, None])
     >>> out = in_tns(s)
-    >>> out.sum() == 1
+    >>> assert out.sum() == 1, out.sum()
+
+    >>> from fink_filters.tester import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_in_tns.filter.in_tns")
+    >>> df2.count()
+    0
     """
     in_tns = tns_type.apply(lambda x: x is not None)
     return in_tns
+
+
+if __name__ == "__main__":
+    """Test suite for filters"""
+    # Run the test suite
+
+    from fink_filters.tester import spark_unit_tests
+
+    globs = globals()
+    spark_unit_tests(globs, load_rubin_df=True)
