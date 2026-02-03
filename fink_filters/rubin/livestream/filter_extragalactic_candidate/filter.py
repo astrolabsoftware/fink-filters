@@ -22,20 +22,9 @@ DESCRIPTION = "Select alerts that are extragalactic candidates"
 
 
 def extragalactic_candidate(
-    isDipole: pd.Series,
-    shape_flag: pd.Series,
-    forced_PsfFlux_flag: pd.Series,
-    psfFlux_flag: pd.Series,
-    apFlux_flag: pd.Series,
-    centroid_flag: pd.Series,
-    pixelFlags_interpolated: pd.Series,
-    pixelFlags_cr: pd.Series,
-    forced_PsfFlux_flag_edge: pd.Series,
-    pixelFlags_bad: pd.Series,
+    diaSource: pd.DataFrame,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
-    ra: pd.Series,
-    dec: pd.Series,
     is_sso: pd.Series,
     gaiadr3_DR3Name: pd.Series,
     gaiadr3_Plx: pd.Series,
@@ -51,34 +40,12 @@ def extragalactic_candidate(
 
     Parameters
     ----------
-    isDipole : pd.Series
-        Dipole well fit for source flag
-    shape_flag : pd.Series
-        Shape photometry flag
-    forced_PsfFlux_flag : pd.Series
-        Science forced photometry flag
-    psfFlux_flag : pd.Series
-        Psf model failure flag
-    apFlux_flag : pd.Series
-        Aperture failure flag
-    centroid_flag : pd.Series
-        Centroid failure flag
-    pixelFlags_interpolated : pd.Series
-        Interpolated pixel in footprint
-    pixelFlags_cr : pd.Series
-        Cosmic ray
-    forced_PsfFlux_flag_edge : pd.Series
-        Science coordinate too close to edge
-    pixelFlags_bad : pd.Series
-        Bad pixel in footprint
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
     simbad_otype: pd.Series
         Series containing labels from `xm.simbad_otype`
     mangrove_lum_dist: pd.Series
         Series containing floats from `xm.mangrove_lum_dist`
-    ra: pd.Series
-        Series containing floats from `diaObject.ra`
-    dec: pd.Series
-        Series containing floats from `diaObject.dec`
     is_sso: pd.Series
         Series containing booleans from solar system object classification
     gaiadr3_DR3Name: pd.Series
@@ -104,18 +71,7 @@ def extragalactic_candidate(
     14
     """
     # Good quality
-    f_good_quality = fb.b_good_quality(
-        isDipole,
-        shape_flag,
-        forced_PsfFlux_flag,
-        psfFlux_flag,
-        apFlux_flag,
-        centroid_flag,
-        pixelFlags_interpolated,
-        pixelFlags_cr,
-        forced_PsfFlux_flag_edge,
-        pixelFlags_bad,
-    )
+    f_good_quality = fb.b_good_quality(diaSource)
 
     # Xmatch galaxy or Unknown
     f_in_galaxy_simbad = fb.b_xmatched_simbad_galaxy(simbad_otype)
@@ -123,7 +79,7 @@ def extragalactic_candidate(
     f_unknown_simbad = fb.b_xmatched_simbad_unknown(simbad_otype)
 
     # Outside galactic plane
-    f_outside_galactic_plane = fb.b_outside_galactic_plane(ra, dec)
+    f_outside_galactic_plane = fb.b_outside_galactic_plane(diaSource.ra, diaSource.dec)
 
     # Not a roid
     f_roid = fb.b_is_solar_system(is_sso)

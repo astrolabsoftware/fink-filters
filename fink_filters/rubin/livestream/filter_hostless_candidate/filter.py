@@ -22,16 +22,7 @@ DESCRIPTION = "Select LSST alerts that are hostless according to ELEPHANT. See h
 
 
 def hostless_candidate(
-    isDipole: pd.Series,
-    shape_flag: pd.Series,
-    forced_PsfFlux_flag: pd.Series,
-    psfFlux_flag: pd.Series,
-    apFlux_flag: pd.Series,
-    centroid_flag: pd.Series,
-    pixelFlags_interpolated: pd.Series,
-    pixelFlags_cr: pd.Series,
-    forced_PsfFlux_flag_edge: pd.Series,
-    pixelFlags_bad: pd.Series,
+    diaSource: pd.DataFrame,
     elephant_kstest_template: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are hostless
@@ -42,26 +33,8 @@ def hostless_candidate(
 
     Parameters
     ----------
-    isDipole : pd.Series
-        Dipole well fit for source flag
-    shape_flag : pd.Series
-        Shape photometry flag
-    forced_PsfFlux_flag : pd.Series
-        Science forced photometry flag
-    psfFlux_flag : pd.Series
-        Psf model failure flag
-    apFlux_flag : pd.Series
-        Aperture failure flag
-    centroid_flag : pd.Series
-        Centroid failure flag
-    pixelFlags_interpolated : pd.Series
-        Interpolated pixel in footprint
-    pixelFlags_cr : pd.Series
-        Cosmic ray
-    forced_PsfFlux_flag_edge : pd.Series
-        Science coordinate too close to edge
-    pixelFlags_bad : pd.Series
-        Bad pixel in footprint
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
     elephant_kstest_template: pd.Series
         KS test for the template image
 
@@ -73,24 +46,13 @@ def hostless_candidate(
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_hostless_candidate.filter.hostless_candidate")
     >>> df2.count()
     14
     """
     # Good quality
-    f_good_quality = fb.b_good_quality(
-        isDipole,
-        shape_flag,
-        forced_PsfFlux_flag,
-        psfFlux_flag,
-        apFlux_flag,
-        centroid_flag,
-        pixelFlags_interpolated,
-        pixelFlags_cr,
-        forced_PsfFlux_flag_edge,
-        pixelFlags_bad,
-    )
+    f_good_quality = fb.b_good_quality(diaSource)
 
     f_hostless = f_good_quality & (elephant_kstest_template < 3.0)
 

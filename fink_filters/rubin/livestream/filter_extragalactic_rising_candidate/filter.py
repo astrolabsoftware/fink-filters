@@ -24,62 +24,28 @@ DESCRIPTION = "Select alerts that are extragalactic candidates, recent and risin
 
 
 def extragalactic_rising_candidate(
-    isDipole: pd.Series,
-    shape_flag: pd.Series,
-    forced_PsfFlux_flag: pd.Series,
-    psfFlux_flag: pd.Series,
-    apFlux_flag: pd.Series,
-    centroid_flag: pd.Series,
-    pixelFlags_interpolated: pd.Series,
-    pixelFlags_cr: pd.Series,
-    forced_PsfFlux_flag_edge: pd.Series,
-    pixelFlags_bad: pd.Series,
+    diaSource: pd.DataFrame,
+    diaObject: pd.DataFrame,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
-    ra: pd.Series,
-    dec: pd.Series,
     is_sso: pd.Series,
     gaiadr3_DR3Name: pd.Series,
     gaiadr3_Plx: pd.Series,
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
-    psfFlux: pd.Series,
-    nDiaSources: pd.Series,
-    diaSource: pd.DataFrame,
-    diaObject: pd.DataFrame,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are new and rising extragalactic candidates
 
     Parameters
     ----------
-    isDipole : pd.Series
-        Dipole well fit for source flag
-    shape_flag : pd.Series
-        Shape photometry flag
-    forced_PsfFlux_flag : pd.Series
-        Science forced photometry flag
-    psfFlux_flag : pd.Series
-        Psf model failure flag
-    apFlux_flag : pd.Series
-        Aperture failure flag
-    centroid_flag : pd.Series
-        Centroid failure flag
-    pixelFlags_interpolated : pd.Series
-        Interpolated pixel in footprint
-    pixelFlags_cr : pd.Series
-        Cosmic ray
-    forced_PsfFlux_flag_edge : pd.Series
-        Science coordinate too close to edge
-    pixelFlags_bad : pd.Series
-        Bad pixel in footprint
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
+    diaObject: pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
     simbad_otype: pd.Series
         Type xmatched SIMBAD
     mangrove_lum_dist: pd.Series
         Luminosity distance of xmatch with Mangrove
-    ra: pd.Series
-        Right ascension
-    dec: pd.Series
-        Declination
     is_sso: pd.Series
         Asteroid tag
     gaiadr3_DR3Name: pd.Series
@@ -90,10 +56,6 @@ def extragalactic_rising_candidate(
         Series containing parallax errors from `xm.gaiadr3_e_Plx`
     vsx_Type: pd.Series
         Series containing VSX variable star catalog matches
-    psfFlux: pd.Series
-        Alert difference image flux
-    nDiaSources: pd.Series
-        Number of alerts per object
 
     Returns
     -------
@@ -108,35 +70,13 @@ def extragalactic_rising_candidate(
     0
     """
     # Good quality
-    f_good_quality = fb.b_good_quality(
-        isDipole,
-        shape_flag,
-        forced_PsfFlux_flag,
-        psfFlux_flag,
-        apFlux_flag,
-        centroid_flag,
-        pixelFlags_interpolated,
-        pixelFlags_cr,
-        forced_PsfFlux_flag_edge,
-        pixelFlags_bad,
-    )
+    f_good_quality = fb.b_good_quality(diaSource)
 
     # Extragalactic filter
     f_extragalactic = extragalactic_candidate(
-        isDipole,
-        shape_flag,
-        forced_PsfFlux_flag,
-        psfFlux_flag,
-        apFlux_flag,
-        centroid_flag,
-        pixelFlags_interpolated,
-        pixelFlags_cr,
-        forced_PsfFlux_flag_edge,
-        pixelFlags_bad,
+        diaSource,
         simbad_otype,
         mangrove_lum_dist,
-        ra,
-        dec,
         is_sso,
         gaiadr3_DR3Name,
         gaiadr3_Plx,
@@ -147,7 +87,7 @@ def extragalactic_rising_candidate(
     # Rising in at least one band
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
 
-    f_new = nDiaSources < 20  # should be lowered after first alerts
+    f_new = diaObject.nDiaSources < 20  # should be lowered after first alerts
 
     f_extragalactic_rising = f_good_quality & f_extragalactic & f_is_rising & f_new
 

@@ -341,42 +341,13 @@ def b_is_new(
     return is_new
 
 
-def b_good_quality(
-    isDipole: pd.Series,
-    shape_flag: pd.Series,
-    forced_PsfFlux_flag: pd.Series,
-    psfFlux_flag: pd.Series,
-    apFlux_flag: pd.Series,
-    centroid_flag: pd.Series,
-    pixelFlags_interpolated: pd.Series,
-    pixelFlags_cr: pd.Series,
-    forced_PsfFlux_flag_edge: pd.Series,
-    pixelFlags_bad: pd.Series,
-) -> pd.Series:
+def b_good_quality(diaSource) -> pd.Series:
     """Select alerts with good quality for science
 
     Parameters
     ----------
-    isDipole : pd.Series
-        Dipole well fit for source flag
-    shape_flag : pd.Series
-        Shape photometry flag
-    forced_PsfFlux_flag : pd.Series
-        Science forced photometry flag
-    psfFlux_flag : pd.Series
-        Psf model failure flag
-    apFlux_flag : pd.Series
-        Aperture failure flag
-    centroid_flag : pd.Series
-        Centroid failure flag
-    pixelFlags_interpolated : pd.Series
-        Interpolated pixel in footprint
-    pixelFlags_cr : pd.Series
-        Cosmic ray
-    forced_PsfFlux_flag_edge : pd.Series
-        Science coordinate too close to edge
-    pixelFlags_bad : pd.Series
-        Bad pixel in footprint
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
 
     Returns
     -------
@@ -391,16 +362,16 @@ def b_good_quality(
     17
     """
     mask_flagged = (
-        isDipole
-        | shape_flag
-        | forced_PsfFlux_flag
-        | psfFlux_flag
-        | centroid_flag
-        | apFlux_flag
-        | pixelFlags_interpolated
-        | pixelFlags_cr
-        | forced_PsfFlux_flag_edge
-        | pixelFlags_bad
+        diaSource.isDipole
+        | diaSource.shape_flag
+        | diaSource.forced_PsfFlux_flag
+        | diaSource.psfFlux_flag
+        | diaSource.centroid_flag
+        | diaSource.apFlux_flag
+        | diaSource.pixelFlags_interpolated
+        | diaSource.pixelFlags_cr
+        | diaSource.forced_PsfFlux_flag_edge
+        | diaSource.pixelFlags_bad
     )
 
     f_good_quality = ~mask_flagged
