@@ -16,9 +16,11 @@
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
+from fink_filters.rubin.livestream.filter_extragalactic_candidate.filter import (
+    extragalactic_candidate,
+)
 
-
-DESCRIPTION = "Select alerts that are extragalactic candidates, new and rising in at least one filter"
+DESCRIPTION = "Select alerts that are extragalactic candidates, recent and rising in at least one filter"
 
 
 def extragalactic_rising_candidate(
@@ -42,9 +44,9 @@ def extragalactic_rising_candidate(
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
     psfFlux: pd.Series,
-    band_psfFluxMean: pd.Series,  # FIXME: does not exist in the alert packet!
-    band_psfFluxErrMean: pd.Series,  # FIXME: does not exist in the alert packet!
     nDiaSources: pd.Series,
+    diaSource: pd.DataFrame,
+    diaObject: pd.DataFrame,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are new and rising extragalactic candidates
 
@@ -90,10 +92,6 @@ def extragalactic_rising_candidate(
         Series containing VSX variable star catalog matches
     psfFlux: pd.Series
         Alert difference image flux
-    band_psfFluxMean: pd.Series
-        Alert mean flux in appropiate band
-    band_psfFluxErrMean: pd.Series
-        Alert mean flux error in appropiate band
     nDiaSources: pd.Series
         Number of alerts per object
 
@@ -101,6 +99,13 @@ def extragalactic_rising_candidate(
     -------
     pd.Series
         Alerts that are extragalactic and rising
+
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_rising_candidate.filter.extragalactic_rising_candidate")
+    >>> df2.count()
+    0
     """
     # Good quality
     f_good_quality = fb.b_good_quality(
@@ -117,7 +122,17 @@ def extragalactic_rising_candidate(
     )
 
     # Extragalactic filter
-    f_extragalactic = extragalactic_rising_candidate(
+    f_extragalactic = extragalactic_candidate(
+        isDipole,
+        shape_flag,
+        forced_PsfFlux_flag,
+        psfFlux_flag,
+        apFlux_flag,
+        centroid_flag,
+        pixelFlags_interpolated,
+        pixelFlags_cr,
+        forced_PsfFlux_flag_edge,
+        pixelFlags_bad,
         simbad_otype,
         mangrove_lum_dist,
         ra,
@@ -127,14 +142,23 @@ def extragalactic_rising_candidate(
         gaiadr3_Plx,
         gaiadr3_e_Plx,
         vsx_Type,
-        psfFlux,
     )
 
     # Rising in at least one band
-    f_is_rising = fb.b_is_rising(psfFlux, band_psfFluxMean, band_psfFluxErrMean)
+    f_is_rising = fb.b_is_rising(diaSource, diaObject)
 
     f_new = nDiaSources < 20  # should be lowered after first alerts
 
     f_extragalactic_rising = f_good_quality & f_extragalactic & f_is_rising & f_new
 
     return f_extragalactic_rising
+
+
+if __name__ == "__main__":
+    """Test suite for filters"""
+    # Run the test suite
+
+    from fink_filters.tester import spark_unit_tests
+
+    globs = globals()
+    spark_unit_tests(globs, load_rubin_df=True)

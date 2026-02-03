@@ -98,7 +98,7 @@ def extragalactic_candidate(
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
     >>> df2.count()
     14
