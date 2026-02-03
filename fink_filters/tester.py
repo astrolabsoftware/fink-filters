@@ -86,27 +86,3 @@ def spark_unit_tests(
         np.set_printoptions(legacy="1.13")
 
     sys.exit(doctest.testmod(globs=global_args, verbose=verbose)[0])
-
-
-def apply_block(df, function_name):
-    """Wrapper around FinkUDF to use in test suite
-
-    Parameters
-    ----------
-    df: Spark DataFrame
-    function_name: str
-        Path to the function module.module.function
-    """
-    from pyspark.sql.types import BooleanType
-    from fink_utils.spark.utils import (
-        expand_function_from_string,
-        FinkUDF,
-    )
-
-    filter_func, colnames = expand_function_from_string(df, function_name)
-    fink_filter = FinkUDF(
-        filter_func,
-        BooleanType(),
-        "",
-    )
-    return df.filter(fink_filter.for_spark(*colnames))

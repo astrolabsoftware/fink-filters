@@ -16,13 +16,16 @@
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
+from fink_filters.rubin.livestream.filter_extragalactic_candidate.filter import (
+    extragalactic_candidate,
+)
+
+DESCRIPTION = "Select alerts that are extragalactic candidates, recent and rising in at least one filter"
 
 
-DESCRIPTION = "Select alerts that are extragalactic candidates"
-
-
-def extragalactic_candidate(
+def extragalactic_rising_candidate(
     diaSource: pd.DataFrame,
+    diaObject: pd.DataFrame,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
     is_sso: pd.Series,
@@ -31,23 +34,20 @@ def extragalactic_candidate(
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
 ) -> pd.Series:
-    """Flag for alerts in Rubin that are extragalactic candidates
-
-    Notes
-    -----
-    based on source quality, xmatch with catalogues, galactic coordinates,
-    and asteroid veto
+    """Flag for alerts in Rubin that are new and rising extragalactic candidates
 
     Parameters
     ----------
     diaSource: pd.DataFrame
         Full diaSource section of an alert (dictionary exploded)
+    diaObject: pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
     simbad_otype: pd.Series
-        Series containing labels from `xm.simbad_otype`
+        Type xmatched SIMBAD
     mangrove_lum_dist: pd.Series
-        Series containing floats from `xm.mangrove_lum_dist`
+        Luminosity distance of xmatch with Mangrove
     is_sso: pd.Series
-        Series containing booleans from solar system object classification
+        Asteroid tag
     gaiadr3_DR3Name: pd.Series
         Series containing Gaia DR3 names from `xm.gaiadr3_DR3Name`
     gaiadr3_Plx: pd.Series
@@ -59,45 +59,39 @@ def extragalactic_candidate(
 
     Returns
     -------
-    out: pd.Series
-        Booleans: True for good quality alerts extragalactic candidates,
-        False otherwise.
+    pd.Series
+        Alerts that are extragalactic and rising
 
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_rising_candidate.filter.extragalactic_rising_candidate")
     >>> df2.count()
-    14
+    0
     """
     # Good quality
     f_good_quality = fb.b_good_quality(diaSource)
 
-    # Xmatch galaxy or Unknown
-    f_in_galaxy_simbad = fb.b_xmatched_simbad_galaxy(simbad_otype)
-    f_in_galaxy_mangrove = fb.b_xmatched_mangrove(mangrove_lum_dist)
-    f_unknown_simbad = fb.b_xmatched_simbad_unknown(simbad_otype)
-
-    # Outside galactic plane
-    f_outside_galactic_plane = fb.b_outside_galactic_plane(diaSource.ra, diaSource.dec)
-
-    # Not a roid
-    f_roid = fb.b_is_solar_system(is_sso)
-
-    # Not a catalogued star
-    f_in_gaia = fb.b_xmatched_gaia_star(gaiadr3_DR3Name, gaiadr3_Plx, gaiadr3_e_Plx)
-    f_in_vsx_star = fb.b_xmatched_vsx_star(vsx_Type)
-    f_not_star = ~f_in_gaia & ~f_in_vsx_star
-
-    f_extragalactic = (
-        f_good_quality
-        & (f_in_galaxy_simbad | f_in_galaxy_mangrove | f_unknown_simbad)
-        & (f_outside_galactic_plane)
-        & ~f_roid
-        & f_not_star
+    # Extragalactic filter
+    f_extragalactic = extragalactic_candidate(
+        diaSource,
+        simbad_otype,
+        mangrove_lum_dist,
+        is_sso,
+        gaiadr3_DR3Name,
+        gaiadr3_Plx,
+        gaiadr3_e_Plx,
+        vsx_Type,
     )
 
-    return f_extragalactic
+    # Rising in at least one band
+    f_is_rising = fb.b_is_rising(diaSource, diaObject)
+
+    f_new = diaObject.nDiaSources < 20  # should be lowered after first alerts
+
+    f_extragalactic_rising = f_good_quality & f_extragalactic & f_is_rising & f_new
+
+    return f_extragalactic_rising
 
 
 if __name__ == "__main__":

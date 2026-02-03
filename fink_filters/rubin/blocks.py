@@ -17,9 +17,14 @@
 import pandas as pd
 import numpy as np
 from astropy.coordinates import SkyCoord
+
 from fink_utils.xmatch.simbad import return_list_of_eg_host
 from fink_utils.xmatch.vsx import return_list_of_stellar, return_list_of_nonstellar
 
+from fink_filters.rubin.utils import (
+    compute_diff_flux_from_mean,
+    extract_flux_information_static,
+)
 
 BAD_VALUES = ["Unknown", "Fail", "Fail 504", None, np.nan]
 
@@ -34,7 +39,7 @@ def b_is_solar_system(is_sso: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_solar_system")
     >>> df2.count()
     3
@@ -59,7 +64,7 @@ def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane")
     >>> df2.count()
     27
@@ -85,7 +90,7 @@ def b_xmatched_simbad_galaxy(simbad_otype: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_simbad_galaxy")
     >>> df2.count()
     0
@@ -109,7 +114,7 @@ def b_xmatched_simbad_unknown(simbad_otype: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_simbad_unknown")
     >>> df2.count()
     27
@@ -133,7 +138,7 @@ def b_xmatched_mangrove(mangrove_lum_dist: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_mangrove")
     >>> df2.count()
     0
@@ -165,7 +170,7 @@ def b_xmatched_gaia_star(
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_gaia_star")
     >>> df2.count()
     0
@@ -192,7 +197,7 @@ def b_xmatched_vsx_star(vsx_Type: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_vsx_star")
     >>> df2.count()
     0
@@ -217,7 +222,7 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_xmatched_vsx")
     >>> df2.count()
     0
@@ -226,62 +231,84 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
     return f_vsx
 
 
-# def b_is_rising(
-#     psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
-# ) -> pd.Series:
-#     """Return alerts with rising lightcurve in one filter.
+def b_is_rising(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
+    """Return alerts with rising lightcurve in one filter.
 
-#     Uses any one flux measurement compared to its mean object
-#     measurement, taking into account errors.
+    Notes
+    -----
+    Uses any current flux measurement compared to its mean object
+    measurement, taking into account errors.
 
-#     Parameters
-#     ----------
-#     psfFlux : pd.Series
-#         DiffImage flux in nJy
-#     band_psfFluxMean : pd.Series
-#         Mean flux in nJy for a given band
-#     band_psfFluxMeanErr : pd.Series
-#         Error of mean flux in nJy for a given band
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
+    diaObject: pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
 
-#     Returns
-#     -------
-#     out: pd.Series of booleans
-#         True if rising, False otherwise
-#     """
-#     diff = psfFlux - band_psfFluxMean
-#     is_significant = np.abs(diff) > band_psfFluxMeanErr
-#     is_rising = is_significant & (diff > 0)
+    Returns
+    -------
+    out: pd.Series of booleans
+        True if rising, False otherwise
 
-#     return is_rising
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_rising")
+    >>> df2.count()
+    1
+    """
+    # FIXME: get rid of SSO?
+    psfFlux, band_psfFluxMean, band_psfFluxMeanErr = extract_flux_information_static(
+        diaSource, diaObject
+    )
+
+    diff, is_significant = compute_diff_flux_from_mean(
+        psfFlux, band_psfFluxMean, band_psfFluxMeanErr
+    )
+    is_rising = is_significant & (diff > 0)
+
+    return is_rising
 
 
-# def b_is_fading(
-#     psfFlux: pd.Series, band_psfFluxMean: pd.Series, band_psfFluxMeanErr: pd.Series
-# ) -> pd.Series:
-#     """Return alerts with fading lightcurve in one filter.
+def b_is_fading(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
+    """Return alerts with fading lightcurve in one filter.
 
-#     Uses any one flux measurement compared to its mean object
-#     measurement, taking into account errors.
+    Notes
+    -----
+    Uses any current flux measurement compared to its mean object
+    measurement, taking into account errors.
 
-#     Parameters
-#     ----------
-#     psfFlux : pd.Series
-#         DiffImage flux in nJy
-#     band_psfFluxMean : pd.Series
-#         Mean flux in nJy for a given band
-#     band_psfFluxMeanErr : pd.Series
-#         Error of mean flux in nJy for a given band
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
+    diaObject: pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
 
-#     Returns
-#     -------
-#     out: pd.Series of booleans
-#         True if fading, False otherwise
-#     """
-#     diff = psfFlux - band_psfFluxMean
-#     is_significant = np.abs(diff) > band_psfFluxMeanErr
-#     is_fading = is_significant & (diff < 0)
+    Returns
+    -------
+    out: pd.Series of booleans
+        True if fading, False otherwise
 
-#     return is_fading
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_fading")
+    >>> df2.count()
+    0
+    """
+    # FIXME: get rid of SSO?
+    psfFlux, band_psfFluxMean, band_psfFluxMeanErr = extract_flux_information_static(
+        diaSource, diaObject
+    )
+
+    diff, is_significant = compute_diff_flux_from_mean(
+        psfFlux, band_psfFluxMean, band_psfFluxMeanErr
+    )
+    is_fading = is_significant & (diff < 0)
+
+    return is_fading
 
 
 def b_is_new(
@@ -305,7 +332,7 @@ def b_is_new(
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_new")
     >>> df2.count()
     26
@@ -314,42 +341,13 @@ def b_is_new(
     return is_new
 
 
-def b_good_quality(
-    isDipole: pd.Series,
-    shape_flag: pd.Series,
-    forced_PsfFlux_flag: pd.Series,
-    psfFlux_flag: pd.Series,
-    apFlux_flag: pd.Series,
-    centroid_flag: pd.Series,
-    pixelFlags_interpolated: pd.Series,
-    pixelFlags_cr: pd.Series,
-    forced_PsfFlux_flag_edge: pd.Series,
-    pixelFlags_bad: pd.Series,
-) -> pd.Series:
+def b_good_quality(diaSource) -> pd.Series:
     """Select alerts with good quality for science
 
     Parameters
     ----------
-    isDipole : pd.Series
-        Dipole well fit for source flag
-    shape_flag : pd.Series
-        Shape photometry flag
-    forced_PsfFlux_flag : pd.Series
-        Science forced photometry flag
-    psfFlux_flag : pd.Series
-        Psf model failure flag
-    apFlux_flag : pd.Series
-        Aperture failure flag
-    centroid_flag : pd.Series
-        Centroid failure flag
-    pixelFlags_interpolated : pd.Series
-        Interpolated pixel in footprint
-    pixelFlags_cr : pd.Series
-        Cosmic ray
-    forced_PsfFlux_flag_edge : pd.Series
-        Science coordinate too close to edge
-    pixelFlags_bad : pd.Series
-        Bad pixel in footprint
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
 
     Returns
     -------
@@ -358,22 +356,22 @@ def b_good_quality(
 
     Examples
     --------
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_good_quality")
     >>> df2.count()
     17
     """
     mask_flagged = (
-        isDipole
-        | shape_flag
-        | forced_PsfFlux_flag
-        | psfFlux_flag
-        | centroid_flag
-        | apFlux_flag
-        | pixelFlags_interpolated
-        | pixelFlags_cr
-        | forced_PsfFlux_flag_edge
-        | pixelFlags_bad
+        diaSource.isDipole
+        | diaSource.shape_flag
+        | diaSource.forced_PsfFlux_flag
+        | diaSource.psfFlux_flag
+        | diaSource.centroid_flag
+        | diaSource.apFlux_flag
+        | diaSource.pixelFlags_interpolated
+        | diaSource.pixelFlags_cr
+        | diaSource.forced_PsfFlux_flag_edge
+        | diaSource.pixelFlags_bad
     )
 
     f_good_quality = ~mask_flagged

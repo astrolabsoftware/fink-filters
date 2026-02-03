@@ -40,7 +40,7 @@ def in_tns(tns_type: pd.Series) -> pd.Series:
     >>> out = in_tns(s)
     >>> assert out.sum() == 1, out.sum()
 
-    >>> from fink_filters.tester import apply_block
+    >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_in_tns.filter.in_tns")
     >>> df2.count()
     0
