@@ -33,6 +33,7 @@ def extragalactic_rising_candidate(
     gaiadr3_Plx: pd.Series,
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
+    legacydr8_zphot: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are new and rising extragalactic candidates
 
@@ -56,6 +57,8 @@ def extragalactic_rising_candidate(
         Series containing parallax errors from `xm.gaiadr3_e_Plx`
     vsx_Type: pd.Series
         Series containing VSX variable star catalog matches
+    legacydr8_zphot: pd.Series
+        Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
 
     Returns
     -------
@@ -82,6 +85,7 @@ def extragalactic_rising_candidate(
         gaiadr3_Plx,
         gaiadr3_e_Plx,
         vsx_Type,
+        legacydr8_zphot        
     )
 
     # Rising in at least one band
