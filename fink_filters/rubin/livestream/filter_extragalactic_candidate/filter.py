@@ -30,6 +30,7 @@ def extragalactic_candidate(
     gaiadr3_Plx: pd.Series,
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
+    legacydr8_zphot: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are extragalactic candidates
 
@@ -56,6 +57,8 @@ def extragalactic_candidate(
         Series containing parallax errors from `xm.gaiadr3_e_Plx`
     vsx_Type: pd.Series
         Series containing VSX variable star catalog matches
+    legacydr8_zphot: pd.Series
+        Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
 
     Returns
     -------
@@ -89,9 +92,14 @@ def extragalactic_candidate(
     f_in_vsx_star = fb.b_xmatched_vsx_star(vsx_Type)
     f_not_star = ~f_in_gaia & ~f_in_vsx_star
 
+    # Xmatched to a source with photometric redshift
+    f_in_legacy = legacydr8_zphot>0
+    # Keep only if not catalogued as star in simbad
+    f_legacy_valid = (f_in_legacy  & (f_unknown_simbad | f_in_galaxy_simbad))
+    
     f_extragalactic = (
         f_good_quality
-        & (f_in_galaxy_simbad | f_in_galaxy_mangrove | f_unknown_simbad)
+        & (f_in_galaxy_simbad | f_in_galaxy_mangrove | f_legacy_valid)
         & (f_outside_galactic_plane)
         & ~f_roid
         & f_not_star
