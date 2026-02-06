@@ -375,6 +375,8 @@ def b_good_quality(diaSource) -> pd.Series:
         | diaSource.pixelFlags_saturated
         | diaSource.pixelFlags_streakCenter
         | diaSource.pixelFlags_streakCenter
+        | diaSource.psfFlux<0
+        | diaSource.psfFlux/diaSource.psfFluxErr<6
     )
 
     f_good_quality = ~mask_flagged
