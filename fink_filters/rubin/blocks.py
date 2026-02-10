@@ -344,6 +344,10 @@ def b_is_new(
 def b_good_quality(diaSource) -> pd.Series:
     """Select alerts with good quality for science
 
+    Notes
+    ----------
+    psfFlux/psfFluxErr is used as a clear snr ratio
+
     Parameters
     ----------
     diaSource: pd.DataFrame
