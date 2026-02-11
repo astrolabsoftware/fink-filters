@@ -18,11 +18,16 @@ from pyspark.sql.types import BooleanType
 
 import pandas as pd
 import numpy as np
+from astropy.cosmology import FlatLambdaCDM
 
 from fink_utils.spark.utils import (
     expand_function_from_string,
     FinkUDF,
 )
+
+# AB magnitude zero-point for flux in nJy
+# m_AB = -2.5 * log10(flux_nJy) + ZP_NJY
+ZP_NJY = 31.4
 
 
 def safe_diaobject_extract(container: dict, key: str):
@@ -127,3 +132,132 @@ def apply_block(df, function_name):
         "",
     )
     return df.filter(fink_filter.for_spark(*colnames))
+
+
+def extract_max_flux(diaObject: pd.DataFrame) -> pd.Series:
+    """Extract the maximum psfFluxMax across all bands for each diaObject
+
+    Parameters
+    ----------
+    diaObject: pd.DataFrame
+        Full diaObject section of alerts. Must contain columns
+        {band}_psfFluxMax for bands
+
+    Returns
+    -------
+    max_flux: pd.Series
+        Maximum psfFluxMax in nJy across all bands per row.
+        Returns NaN for rows where all bands are missing.
+    """
+    BANDS = ["g", "i", "r", "u", "z", "y"]
+
+    flux_cols = ["{}_psfFluxMax".format(band) for band in BANDS]
+
+    available = [col for col in flux_cols if col in diaObject.columns]
+    if not available:
+        return pd.Series(np.nan, index=diaObject.index)
+
+    max_flux = diaObject[available].max(axis=1)
+
+    return max_flux
+
+
+def flux_to_apparent_mag(flux_nJy: np.ndarray) -> np.ndarray:
+    """Convert flux in nanoJansky to AB apparent magnitude
+
+    Parameters
+    ----------
+    flux_nJy: np.ndarray
+        Flux in nJy
+
+    Returns
+    -------
+    mag: np.ndarray
+        AB apparent magnitude. NaN where flux <= 0 or non-finite.
+    """
+    flux = np.atleast_1d(np.asarray(flux_nJy, dtype=float))
+    mag = np.full_like(flux, np.nan)
+
+    valid = (flux > 0) & np.isfinite(flux)
+    mag[valid] = -2.5 * np.log10(flux[valid]) + ZP_NJY
+
+    return mag
+
+
+def obs_to_abs_mag(m_obs: np.ndarray, z: np.ndarray, H0: float = 70, Om0: float = 0.3) -> np.ndarray:
+    """Convert observed apparent magnitude to absolute magnitude
+
+    Parameters
+    ----------
+    m_obs: np.ndarray
+        Observed apparent magnitude
+    z: np.ndarray
+        Redshift
+    H0: float, optional
+        Hubble constant in km/s/Mpc (default: 70)
+    Om0: float, optional
+        Matter density parameter (default: 0.3)
+
+    Returns
+    -------
+    M_abs: np.ndarray
+        Absolute magnitude. NaN where redshift or magnitude is invalid.
+    """
+    cosmo = FlatLambdaCDM(H0=H0, Om0=Om0)
+
+    mag = np.atleast_1d(np.asarray(m_obs, dtype=float))
+    z = np.atleast_1d(np.asarray(z, dtype=float))
+
+    result = np.full_like(z, np.nan, dtype=float)
+    valid = (z > 0) & np.isfinite(z) & np.isfinite(mag)
+
+    if np.any(valid):
+        dl_pc = cosmo.luminosity_distance(z[valid]).to("pc").value
+        mu = 5 * np.log10(dl_pc / 10)
+        result[valid] = mag[valid] - mu
+
+    return result
+
+
+def compute_peak_absolute_magnitude(
+    diaObject: pd.DataFrame,
+    legacydr8_zphot: pd.Series,
+    H0: float = 70,
+    Om0: float = 0.3,
+) -> pd.Series:
+    """Compute peak absolute magnitude from max flux across bands
+
+    Extracts the maximum psfFluxMax across g, i, r, u, z, y bands,
+    converts to apparent magnitude, then to absolute magnitude using
+    the photo-z from legacydr8_zphot.
+
+    Notes
+    -----
+    Returns NaN for objects with no valid redshift, no positive flux,
+    or missing band data. Output preserves the input row ordering.
+
+    Parameters
+    ----------
+    diaObject: pd.DataFrame
+        Full diaObject section of alerts. Must contain columns
+        {band}_psfFluxMax for bands g, i, r, u, z, y.
+    legacydr8_zphot: pd.Series
+        Photometric redshift from Legacy DR8 cross-match
+    H0: float, optional
+        Hubble constant in km/s/Mpc (default: 70)
+    Om0: float, optional
+        Matter density parameter (default: 0.3)
+
+    Returns
+    -------
+    out: pd.Series
+        Peak absolute magnitude per row, ordered as input.
+        NaN where conversion is not possible.
+    """
+    max_flux = extract_max_flux(diaObject)
+    apparent_mag = flux_to_apparent_mag(max_flux.values)
+    absolute_mag = obs_to_abs_mag(
+        apparent_mag, legacydr8_zphot.values, H0=H0, Om0=Om0
+    )
+
+    return pd.Series(absolute_mag, name="estimated_absoluteMagnitude")

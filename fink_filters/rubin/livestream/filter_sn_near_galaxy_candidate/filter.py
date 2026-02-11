@@ -12,17 +12,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Return LSST alerts with matches in catalogs to a galaxy"""
+"""Return LSST alerts with matches in catalogs to a galaxy and properties consistent with SNe"""
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
+import fink_filters.rubin.utils as fu
 
 
-DESCRIPTION = "Select alerts that are extragalactic candidates"
+DESCRIPTION = "Select alerts that are SN extragalactic candidates with host-galaxy"
 
 
-def extragalactic_candidate(
+def is_sn_extragalactic(
     diaSource: pd.DataFrame,
+    diaObject: pd.DataFrame,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
     is_sso: pd.Series,
@@ -30,18 +32,21 @@ def extragalactic_candidate(
     gaiadr3_Plx: pd.Series,
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
+    legacydr8_zphot: pd.Series,
 ) -> pd.Series:
-    """Flag for alerts in Rubin that are extragalactic candidates
+    """Flag for alerts in Rubin that are SN extragalactic candidates with host-galaxy
 
     Notes
     -----
-    based on source quality, xmatch with catalogues, galactic coordinates,
-    and asteroid veto
+    based on a near galaxy extragalactic block and absolute magnitude
+    Beware, this filter is not robust for close-by candidates due to xm association radius.
 
     Parameters
     ----------
     diaSource: pd.DataFrame
         Full diaSource section of an alert (dictionary exploded)
+    diaObject: pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
     simbad_otype: pd.Series
         Series containing labels from `xm.simbad_otype`
     mangrove_lum_dist: pd.Series
@@ -56,48 +61,39 @@ def extragalactic_candidate(
         Series containing parallax errors from `xm.gaiadr3_e_Plx`
     vsx_Type: pd.Series
         Series containing VSX variable star catalog matches
+    legacydr8_zphot: pd.Series
+        Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
 
     Returns
     -------
     out: pd.Series
-        Booleans: True for good quality alerts extragalactic candidates,
+        Booleans: True for good quality alerts sn candidates,
         False otherwise.
 
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_sn_near_galaxy_candidate.filter.sn_near_galaxy_candidate")
     >>> df2.count()
     14
     """
-    # Good quality
-    f_good_quality = fb.b_good_quality(diaSource)
+    # Loose extragalactic candidate
+    f_extragalactic_near_galaxy = fb.b_sn_near_galaxy_candidate(diaSource, 
+    simbad_otype, mangrove_lum_dist, is_sso, gaiadr3_DR3Name, 
+    gaiadr3_Plx, gaiadr3_e_Plx, vsx_Type, legacydr8_zphot)  # Xmatch galaxy
 
-    # Xmatch galaxy or Unknown
-    f_in_galaxy_simbad = fb.b_xmatched_simbad_galaxy(simbad_otype)
-    f_in_galaxy_mangrove = fb.b_xmatched_mangrove(mangrove_lum_dist)
-    f_unknown_simbad = fb.b_xmatched_simbad_unknown(simbad_otype)
+    # Minimum photometric sampling
+    f_min_sampling = diaObject.nDiaSources > 5
 
-    # Outside galactic plane
-    f_outside_galactic_plane = fb.b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+    # All SNe types and lower Mabs to account not yet at max SNe
+    estimated_absoluteMagnitude = fu.compute_peak_absolute_magnitude(diaObject,legacydr8_zphot)
 
-    # Not a roid
-    f_roid = fb.b_is_solar_system(is_sso)
+    f_sn_Mabs = estimated_absoluteMagnitude>-23 & estimated_absoluteMagnitude<-13
+    
+    # TO DO: can improve with (f_sn_Mabs | f_sn_ML) when SNN is robust
+    f_sn_near_galaxy = (f_extragalactic_near_galaxy & f_min_sampling & f_sn_Mabs)
 
-    # Not a catalogued star
-    f_in_gaia = fb.b_xmatched_gaia_star(gaiadr3_DR3Name, gaiadr3_Plx, gaiadr3_e_Plx)
-    f_in_vsx_star = fb.b_xmatched_vsx_star(vsx_Type)
-    f_not_star = ~f_in_gaia & ~f_in_vsx_star
-
-    f_extragalactic = (
-        f_good_quality
-        & (f_in_galaxy_simbad | f_in_galaxy_mangrove | f_unknown_simbad)
-        & (f_outside_galactic_plane)
-        & ~f_roid
-        & f_not_star
-    )
-
-    return f_extragalactic
+    return f_sn_near_galaxy
 
 
 if __name__ == "__main__":

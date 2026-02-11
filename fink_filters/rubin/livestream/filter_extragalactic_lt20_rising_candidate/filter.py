@@ -12,18 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Return LSST alerts with matches in catalogs to a galaxy"""
+"""Return LSST alerts rising, bright and potentially extragalactic"""
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
-from fink_filters.rubin.livestream.filter_extragalactic_candidate.filter import (
-    extragalactic_candidate,
-)
-
-DESCRIPTION = "Select alerts that are extragalactic candidates, recent and rising in at least one filter"
+import fink_filters.rubin.utils as fu
 
 
-def extragalactic_rising_candidate(
+DESCRIPTION = "Select alerts that are rising and bright extragalactic candidates"
+
+
+def extragalactic_lt20mag_candidate(
     diaSource: pd.DataFrame,
     diaObject: pd.DataFrame,
     simbad_otype: pd.Series,
@@ -33,8 +32,13 @@ def extragalactic_rising_candidate(
     gaiadr3_Plx: pd.Series,
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
+    legacydr8_zphot: pd.Series,
 ) -> pd.Series:
-    """Flag for alerts in Rubin that are new and rising extragalactic candidates
+    """Flag for alerts in Rubin that are rising and bright extragalactic candidates
+
+    Notes
+    -----
+    based on a loose extragalactic block, rising light-curve and a magnitude cut
 
     Parameters
     ----------
@@ -43,11 +47,11 @@ def extragalactic_rising_candidate(
     diaObject: pd.DataFrame
         Full diaObject section of an alert (dictionary exploded)
     simbad_otype: pd.Series
-        Type xmatched SIMBAD
+        Series containing labels from `xm.simbad_otype`
     mangrove_lum_dist: pd.Series
-        Luminosity distance of xmatch with Mangrove
+        Series containing floats from `xm.mangrove_lum_dist`
     is_sso: pd.Series
-        Asteroid tag
+        Series containing booleans from solar system object classification
     gaiadr3_DR3Name: pd.Series
         Series containing Gaia DR3 names from `xm.gaiadr3_DR3Name`
     gaiadr3_Plx: pd.Series
@@ -56,42 +60,34 @@ def extragalactic_rising_candidate(
         Series containing parallax errors from `xm.gaiadr3_e_Plx`
     vsx_Type: pd.Series
         Series containing VSX variable star catalog matches
+    legacydr8_zphot: pd.Series
+        Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
 
     Returns
     -------
-    pd.Series
-        Alerts that are extragalactic and rising
+    out: pd.Series
+        Booleans: True for good quality alerts extragalactic candidates,
+        False otherwise.
 
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_rising_candidate.filter.extragalactic_rising_candidate")
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_lt20mag_candidate.filter.extragalactic_lt20mag_candidate")
     >>> df2.count()
-    0
+    14
     """
-    # Good quality
-    f_good_quality = fb.b_good_quality(diaSource)
+    # Loose extragalactic candidate
+    f_extragalactic = fb.b_extragalactic_loose_candidate(diaSource, 
+    simbad_otype, mangrove_lum_dist, is_sso, gaiadr3_DR3Name, 
+    gaiadr3_Plx, gaiadr3_e_Plx, vsx_Type, legacydr8_zphot)  # Xmatch galaxy or Unknown
 
-    # Extragalactic filter
-    f_extragalactic = extragalactic_candidate(
-        diaSource,
-        simbad_otype,
-        mangrove_lum_dist,
-        is_sso,
-        gaiadr3_DR3Name,
-        gaiadr3_Plx,
-        gaiadr3_e_Plx,
-        vsx_Type,
-    )
+    f_bright = fu.psfFlux2mag(diaSource.psfFlux )<20
 
-    # Rising in at least one band
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
+    
+    f_extragalactic_gt20mag_rising = (f_extragalactic & f_bright & f_is_rising)
 
-    f_new = diaObject.nDiaSources < 20  # should be lowered after first alerts
-
-    f_extragalactic_rising = f_good_quality & f_extragalactic & f_is_rising & f_new
-
-    return f_extragalactic_rising
+    return f_extragalactic_gt20mag_rising
 
 
 if __name__ == "__main__":

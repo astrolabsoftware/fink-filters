@@ -344,6 +344,10 @@ def b_is_new(
 def b_good_quality(diaSource) -> pd.Series:
     """Select alerts with good quality for science
 
+    Notes
+    ----------
+    psfFlux/psfFluxErr is used as a clear snr ratio
+
     Parameters
     ----------
     diaSource: pd.DataFrame
@@ -372,11 +376,189 @@ def b_good_quality(diaSource) -> pd.Series:
         | diaSource.pixelFlags_cr
         | diaSource.forced_PsfFlux_flag_edge
         | diaSource.pixelFlags_bad
+        | diaSource.pixelFlags_saturated
+        | diaSource.pixelFlags_streakCenter
+        | diaSource.pixelFlags_streakCenter
+        | diaSource.psfFlux<0
+        | diaSource.psfFlux/diaSource.psfFluxErr<6
     )
 
     f_good_quality = ~mask_flagged
     return f_good_quality
 
+
+def b_extragalactic_near_galaxy_candidate(
+    diaSource: pd.DataFrame,
+    simbad_otype: pd.Series,
+    mangrove_lum_dist: pd.Series,
+    is_sso: pd.Series,
+    gaiadr3_DR3Name: pd.Series,
+    gaiadr3_Plx: pd.Series,
+    gaiadr3_e_Plx: pd.Series,
+    vsx_Type: pd.Series,
+    legacydr8_zphot: pd.Series,
+) -> pd.Series:
+    """Flag for alerts in Rubin that are extragalactic candidates near a known galaxy
+
+    Notes
+    -----
+    based on source quality, xmatch with catalogues, galactic coordinates,
+    and asteroid veto
+    Beware, due to cross-match radius of 1.5'' this is not realiable for close-by galaxies
+
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
+    simbad_otype: pd.Series
+        Series containing labels from `xm.simbad_otype`
+    mangrove_lum_dist: pd.Series
+        Series containing floats from `xm.mangrove_lum_dist`
+    is_sso: pd.Series
+        Series containing booleans from solar system object classification
+    gaiadr3_DR3Name: pd.Series
+        Series containing Gaia DR3 names from `xm.gaiadr3_DR3Name`
+    gaiadr3_Plx: pd.Series
+        Series containing parallax values from `xm.gaiadr3_Plx`
+    gaiadr3_e_Plx: pd.Series
+        Series containing parallax errors from `xm.gaiadr3_e_Plx`
+    vsx_Type: pd.Series
+        Series containing VSX variable star catalog matches
+    legacydr8_zphot: pd.Series
+        Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
+
+    Returns
+    -------
+    out: pd.Series
+        Booleans: True for good quality alerts extragalactic candidates,
+        False otherwise.
+
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2.count()
+    14
+    """
+    # Good quality
+    mask_good_quality = b_good_quality(diaSource)
+
+    # Xmatch galaxy or Unknown
+    mask_in_galaxy_simbad = b_xmatched_simbad_galaxy(simbad_otype)
+    mask_in_galaxy_mangrove = b_xmatched_mangrove(mangrove_lum_dist)
+    mask_unknown_simbad = b_xmatched_simbad_unknown(simbad_otype)
+
+    # Outside galactic plane
+    mask_outside_galactic_plane = b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+
+    # Not a roid
+    mask_roid = b_is_solar_system(is_sso)
+
+    # Not a catalogued star
+    mask_in_gaia = b_xmatched_gaia_star(gaiadr3_DR3Name, gaiadr3_Plx, gaiadr3_e_Plx)
+    mask_in_vsx_star = b_xmatched_vsx_star(vsx_Type)
+    mask_not_star = ~mask_in_gaia & ~mask_in_vsx_star
+
+    # Xmatched to a source with photometric redshift
+    mask_in_legacy = legacydr8_zphot>0
+    # Keep only if not catalogued as star in simbad
+    mask_legacy_valid = (mask_in_legacy  & (mask_unknown_simbad | mask_in_galaxy_simbad))
+    
+    f_extragalactic_near_galaxy = (
+        mask_good_quality
+        & (mask_in_galaxy_simbad | mask_in_galaxy_mangrove | mask_legacy_valid)
+        & (mask_outside_galactic_plane)
+        & ~mask_roid
+        & mask_not_star
+    )
+
+    return f_extragalactic_near_galaxy
+
+def b_extragalactic_loose_candidate(
+    diaSource: pd.DataFrame,
+    simbad_otype: pd.Series,
+    mangrove_lum_dist: pd.Series,
+    is_sso: pd.Series,
+    gaiadr3_DR3Name: pd.Series,
+    gaiadr3_Plx: pd.Series,
+    gaiadr3_e_Plx: pd.Series,
+    vsx_Type: pd.Series,
+    legacydr8_zphot: pd.Series,
+) -> pd.Series:
+    """Flag for alerts in Rubin that are extragalactic candidates
+
+    Notes
+    -----
+    based on source quality, xmatch with catalogues, galactic coordinates,
+    and asteroid veto
+
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
+    simbad_otype: pd.Series
+        Series containing labels from `xm.simbad_otype`
+    mangrove_lum_dist: pd.Series
+        Series containing floats from `xm.mangrove_lum_dist`
+    is_sso: pd.Series
+        Series containing booleans from solar system object classification
+    gaiadr3_DR3Name: pd.Series
+        Series containing Gaia DR3 names from `xm.gaiadr3_DR3Name`
+    gaiadr3_Plx: pd.Series
+        Series containing parallax values from `xm.gaiadr3_Plx`
+    gaiadr3_e_Plx: pd.Series
+        Series containing parallax errors from `xm.gaiadr3_e_Plx`
+    vsx_Type: pd.Series
+        Series containing VSX variable star catalog matches
+    legacydr8_zphot: pd.Series
+        Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
+
+    Returns
+    -------
+    out: pd.Series
+        Booleans: True for good quality alerts extragalactic candidates,
+        False otherwise.
+
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2.count()
+    14
+    """
+    # Good quality
+    mask_good_quality = b_good_quality(diaSource)
+
+    # Xmatch galaxy or Unknown
+    mask_in_galaxy_simbad = b_xmatched_simbad_galaxy(simbad_otype)
+    mask_in_galaxy_mangrove = b_xmatched_mangrove(mangrove_lum_dist)
+    mask_unknown_simbad = b_xmatched_simbad_unknown(simbad_otype)
+
+    # Outside galactic plane
+    mask_outside_galactic_plane = b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+
+    # Not a roid
+    mask_roid = b_is_solar_system(is_sso)
+
+    # Not a catalogued star
+    mask_in_gaia = b_xmatched_gaia_star(gaiadr3_DR3Name, gaiadr3_Plx, gaiadr3_e_Plx)
+    mask_in_vsx_star = b_xmatched_vsx_star(vsx_Type)
+    mask_not_star = ~mask_in_gaia & ~mask_in_vsx_star
+
+    # Xmatched to a source with photometric redshift
+    mask_in_legacy = legacydr8_zphot>0
+    # Keep only if not catalogued as star in simbad
+    mask_legacy_valid = (mask_in_legacy  & (mask_unknown_simbad | mask_in_galaxy_simbad))
+    
+    f_extragalactic_loose = (
+        mask_good_quality
+        & (mask_in_galaxy_simbad | mask_in_galaxy_mangrove | mask_legacy_valid | mask_unknown_simbad)
+        & (mask_outside_galactic_plane)
+        & ~mask_roid
+        & mask_not_star
+    )
+
+    return f_extragalactic_loose
 
 if __name__ == "__main__":
     """Test suite for blocks"""
