@@ -12,14 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Return LSST alerts rising, bright and potentially extragalactic"""
+"""Return LSST alerts rising, bright (mag < 20) and potentially extragalactic"""
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
 
-DESCRIPTION = "Select alerts that are rising and bright extragalactic candidates"
+DESCRIPTION = (
+    "Select alerts that are rising, bright (mag < 20), and extragalactic candidates"
+)
 
 
 def extragalactic_lt20mag_candidate(
@@ -34,7 +36,7 @@ def extragalactic_lt20mag_candidate(
     vsx_Type: pd.Series,
     legacydr8_zphot: pd.Series,
 ) -> pd.Series:
-    """Flag for alerts in Rubin that are rising and bright extragalactic candidates
+    """Flag for alerts in Rubin that are rising, bright (mag < 20), and extragalactic candidates
 
     Notes
     -----
@@ -74,18 +76,26 @@ def extragalactic_lt20mag_candidate(
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_lt20mag_candidate.filter.extragalactic_lt20mag_candidate")
     >>> df2.count()
-    14
+    0
     """
     # Loose extragalactic candidate
-    f_extragalactic = fb.b_extragalactic_loose_candidate(diaSource, 
-    simbad_otype, mangrove_lum_dist, is_sso, gaiadr3_DR3Name, 
-    gaiadr3_Plx, gaiadr3_e_Plx, vsx_Type, legacydr8_zphot)  # Xmatch galaxy or Unknown
+    f_extragalactic = fb.b_extragalactic_loose_candidate(
+        diaSource,
+        simbad_otype,
+        mangrove_lum_dist,
+        is_sso,
+        gaiadr3_DR3Name,
+        gaiadr3_Plx,
+        gaiadr3_e_Plx,
+        vsx_Type,
+        legacydr8_zphot,
+    )  # Xmatch galaxy or Unknown
 
-    f_bright = fu.psfFlux2mag(diaSource.psfFlux )<20
+    f_bright = fu.flux_to_apparent_mag(diaSource.psfFlux) < 20
 
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
-    
-    f_extragalactic_gt20mag_rising = (f_extragalactic & f_bright & f_is_rising)
+
+    f_extragalactic_gt20mag_rising = f_extragalactic & f_bright & f_is_rising
 
     return f_extragalactic_gt20mag_rising
 
