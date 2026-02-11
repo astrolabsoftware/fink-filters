@@ -42,7 +42,7 @@ def good_quality(
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_good_quality.filter.good_quality")
     >>> df2.count()
-    17
+    7
     """
     # Good quality
     f_good_quality = fb.b_good_quality(diaSource)

@@ -12,17 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Select alerts with a known counterpart in TNS at the time of emission by Rubin"""
+"""Select alerts with a known counterpart in TNS (AT or confirmed) at the time of emission by Rubin"""
 
 import pandas as pd
 
-DESCRIPTION = (
-    "Select alerts with a known counterpart in TNS at the time of emission by Rubin"
-)
+DESCRIPTION = "Select alerts with a known counterpart in TNS (AT or confirmed) at the time of emission by Rubin"
 
 
 def in_tns(tns_type: pd.Series) -> pd.Series:
-    """Return alerts with a known counterpart in TNS at the time of emission by Rubin
+    """Return alerts with a known counterpart in TNS (AT or confirmed) at the time of emission by Rubin
 
     Parameters
     ----------

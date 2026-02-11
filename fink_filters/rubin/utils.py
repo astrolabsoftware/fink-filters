@@ -184,7 +184,9 @@ def flux_to_apparent_mag(flux_nJy: np.ndarray) -> np.ndarray:
     return mag
 
 
-def obs_to_abs_mag(m_obs: np.ndarray, z: np.ndarray, H0: float = 70, Om0: float = 0.3) -> np.ndarray:
+def obs_to_abs_mag(
+    m_obs: np.ndarray, z: np.ndarray, H0: float = 70, Om0: float = 0.3
+) -> np.ndarray:
     """Convert observed apparent magnitude to absolute magnitude
 
     Parameters
@@ -256,8 +258,6 @@ def compute_peak_absolute_magnitude(
     """
     max_flux = extract_max_flux(diaObject)
     apparent_mag = flux_to_apparent_mag(max_flux.values)
-    absolute_mag = obs_to_abs_mag(
-        apparent_mag, legacydr8_zphot.values, H0=H0, Om0=Om0
-    )
+    absolute_mag = obs_to_abs_mag(apparent_mag, legacydr8_zphot.values, H0=H0, Om0=Om0)
 
     return pd.Series(absolute_mag, name="estimated_absoluteMagnitude")
