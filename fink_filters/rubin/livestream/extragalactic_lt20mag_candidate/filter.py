@@ -77,15 +77,23 @@ def extragalactic_lt20mag_candidate(
     14
     """
     # Loose extragalactic candidate
-    f_extragalactic = fb.b_extragalactic_loose_candidate(diaSource, 
-    simbad_otype, mangrove_lum_dist, is_sso, gaiadr3_DR3Name, 
-    gaiadr3_Plx, gaiadr3_e_Plx, vsx_Type, legacydr8_zphot)  # Xmatch galaxy or Unknown
+    f_extragalactic = fb.b_extragalactic_loose_candidate(
+        diaSource,
+        simbad_otype,
+        mangrove_lum_dist,
+        is_sso,
+        gaiadr3_DR3Name,
+        gaiadr3_Plx,
+        gaiadr3_e_Plx,
+        vsx_Type,
+        legacydr8_zphot,
+    )  # Xmatch galaxy or Unknown
 
-    f_bright = fu.psfFlux2mag(diaSource.psfFlux )<20
+    f_bright = fu.psfFlux2mag(diaSource.psfFlux) < 20
 
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
-    
-    f_extragalactic_gt20mag_rising = (f_extragalactic & f_bright & f_is_rising)
+
+    f_extragalactic_gt20mag_rising = f_extragalactic & f_bright & f_is_rising
 
     return f_extragalactic_gt20mag_rising
 
