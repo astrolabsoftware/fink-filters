@@ -345,7 +345,7 @@ def b_good_quality(diaSource) -> pd.Series:
     """Select alerts with good quality for science
 
     Notes
-    ----------
+    -----
     psfFlux/psfFluxErr is used as a clear snr ratio
 
     Parameters
@@ -363,7 +363,7 @@ def b_good_quality(diaSource) -> pd.Series:
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_good_quality")
     >>> df2.count()
-    17
+    7
     """
     mask_flagged = (
         diaSource.isDipole
@@ -379,8 +379,8 @@ def b_good_quality(diaSource) -> pd.Series:
         | diaSource.pixelFlags_saturated
         | diaSource.pixelFlags_streakCenter
         | diaSource.pixelFlags_streakCenter
-        | diaSource.psfFlux<0
-        | diaSource.psfFlux/diaSource.psfFluxErr<6
+        | (diaSource.psfFlux < 0)
+        | (diaSource.psfFlux / diaSource.psfFluxErr < 6)
     )
 
     f_good_quality = ~mask_flagged
@@ -436,9 +436,9 @@ def b_extragalactic_near_galaxy_candidate(
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_extragalactic_near_galaxy_candidate")
     >>> df2.count()
-    14
+    0
     """
     # Good quality
     mask_good_quality = b_good_quality(diaSource)
@@ -460,10 +460,10 @@ def b_extragalactic_near_galaxy_candidate(
     mask_not_star = ~mask_in_gaia & ~mask_in_vsx_star
 
     # Xmatched to a source with photometric redshift
-    mask_in_legacy = legacydr8_zphot>0
+    mask_in_legacy = legacydr8_zphot > 0
     # Keep only if not catalogued as star in simbad
-    mask_legacy_valid = (mask_in_legacy  & (mask_unknown_simbad | mask_in_galaxy_simbad))
-    
+    mask_legacy_valid = mask_in_legacy & (mask_unknown_simbad | mask_in_galaxy_simbad)
+
     f_extragalactic_near_galaxy = (
         mask_good_quality
         & (mask_in_galaxy_simbad | mask_in_galaxy_mangrove | mask_legacy_valid)
@@ -473,6 +473,7 @@ def b_extragalactic_near_galaxy_candidate(
     )
 
     return f_extragalactic_near_galaxy
+
 
 def b_extragalactic_loose_candidate(
     diaSource: pd.DataFrame,
@@ -522,9 +523,9 @@ def b_extragalactic_loose_candidate(
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_candidate.filter.extragalactic_candidate")
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_extragalactic_loose_candidate")
     >>> df2.count()
-    14
+    4
     """
     # Good quality
     mask_good_quality = b_good_quality(diaSource)
@@ -546,19 +547,25 @@ def b_extragalactic_loose_candidate(
     mask_not_star = ~mask_in_gaia & ~mask_in_vsx_star
 
     # Xmatched to a source with photometric redshift
-    mask_in_legacy = legacydr8_zphot>0
+    mask_in_legacy = legacydr8_zphot > 0
     # Keep only if not catalogued as star in simbad
-    mask_legacy_valid = (mask_in_legacy  & (mask_unknown_simbad | mask_in_galaxy_simbad))
-    
+    mask_legacy_valid = mask_in_legacy & (mask_unknown_simbad | mask_in_galaxy_simbad)
+
     f_extragalactic_loose = (
         mask_good_quality
-        & (mask_in_galaxy_simbad | mask_in_galaxy_mangrove | mask_legacy_valid | mask_unknown_simbad)
+        & (
+            mask_in_galaxy_simbad
+            | mask_in_galaxy_mangrove
+            | mask_legacy_valid
+            | mask_unknown_simbad
+        )
         & (mask_outside_galactic_plane)
         & ~mask_roid
         & mask_not_star
     )
 
     return f_extragalactic_loose
+
 
 if __name__ == "__main__":
     """Test suite for blocks"""
