@@ -12,14 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Return LSST alerts rising, bright and potentially extragalactic"""
+"""Return LSST alerts rising, bright (mag < 20) and potentially extragalactic"""
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
 
-DESCRIPTION = "Select alerts that are rising and bright extragalactic candidates"
+DESCRIPTION = "Select alerts that are rising, bright (mag < 20), and extragalactic candidates"
 
 
 def extragalactic_lt20mag_candidate(
@@ -34,7 +34,7 @@ def extragalactic_lt20mag_candidate(
     vsx_Type: pd.Series,
     legacydr8_zphot: pd.Series,
 ) -> pd.Series:
-    """Flag for alerts in Rubin that are rising and bright extragalactic candidates
+    """Flag for alerts in Rubin that are rising, bright (mag < 20), and extragalactic candidates
 
     Notes
     -----
