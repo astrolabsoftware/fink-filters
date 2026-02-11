@@ -19,7 +19,9 @@ import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
 
-DESCRIPTION = "Select alerts matching in catalogs to a galaxy and properties consistent with SNe"
+DESCRIPTION = (
+    "Select alerts matching in catalogs to a galaxy and properties consistent with SNe"
+)
 
 
 def sn_near_galaxy_candidate(
@@ -98,7 +100,9 @@ def sn_near_galaxy_candidate(
         diaObject, legacydr8_zphot
     )
 
-    f_sn_Mabs = (estimated_absoluteMagnitude > -23) & (estimated_absoluteMagnitude < -13)
+    f_sn_Mabs = (estimated_absoluteMagnitude > -23) & (
+        estimated_absoluteMagnitude < -13
+    )
 
     # TO DO: can improve with (f_sn_Mabs | f_sn_ML) when SNN is robust
     f_sn_near_galaxy = f_extragalactic_near_galaxy & f_min_sampling & f_sn_Mabs

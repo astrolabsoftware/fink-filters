@@ -19,7 +19,9 @@ import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
 
-DESCRIPTION = "Select alerts that are rising, bright (mag < 20), and extragalactic candidates"
+DESCRIPTION = (
+    "Select alerts that are rising, bright (mag < 20), and extragalactic candidates"
+)
 
 
 def extragalactic_lt20mag_candidate(
