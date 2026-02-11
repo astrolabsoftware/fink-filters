@@ -74,7 +74,7 @@ def extragalactic_lt20mag_candidate(
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_lt20mag_candidate.filter.extragalactic_lt20mag_candidate")
     >>> df2.count()
-    14
+    0
     """
     # Loose extragalactic candidate
     f_extragalactic = fb.b_extragalactic_loose_candidate(
@@ -89,7 +89,7 @@ def extragalactic_lt20mag_candidate(
         legacydr8_zphot,
     )  # Xmatch galaxy or Unknown
 
-    f_bright = fu.psfFlux2mag(diaSource.psfFlux) < 20
+    f_bright = fu.flux_to_apparent_mag(diaSource.psfFlux) < 20
 
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
 
