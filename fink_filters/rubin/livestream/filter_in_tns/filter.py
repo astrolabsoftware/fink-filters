@@ -19,13 +19,13 @@ import pandas as pd
 DESCRIPTION = "Select alerts with a known counterpart in TNS (AT or confirmed) at the time of emission by Rubin"
 
 
-def in_tns(tns_type: pd.Series) -> pd.Series:
+def in_tns(tns_fullname: pd.Series) -> pd.Series:
     """Return alerts with a known counterpart in TNS (AT or confirmed) at the time of emission by Rubin
 
     Parameters
     ----------
-    tns_type: pd.Series
-        Type according to TNS (string or null).
+    tns_fullname: pd.Series
+        Name according to TNS (string or null).
 
     Returns
     -------
@@ -34,16 +34,16 @@ def in_tns(tns_type: pd.Series) -> pd.Series:
 
     Examples
     --------
-    >>> s = pd.Series(["SN Ia", None, None])
+    >>> s = pd.Series(["SN toto", None, "AT titi"])
     >>> out = in_tns(s)
-    >>> assert out.sum() == 1, out.sum()
+    >>> assert out.sum() == 2, out.sum()
 
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_in_tns.filter.in_tns")
     >>> df2.count()
     0
     """
-    in_tns = tns_type.apply(lambda x: x is not None)
+    in_tns = tns_fullname.apply(lambda x: x is not None)
     return in_tns
 
 
