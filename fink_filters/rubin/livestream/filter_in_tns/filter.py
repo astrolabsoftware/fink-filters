@@ -39,6 +39,8 @@ def in_tns(tns_fullname: pd.Series) -> pd.Series:
     >>> assert out.sum() == 2, out.sum()
 
     >>> from fink_filters.rubin.utils import apply_block
+    >>> import pyspark.sql.functions as F
+    >>> df = df.withColumn("tns_fullname", F.lit(None).astype("string"))
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_in_tns.filter.in_tns")
     >>> df2.count()
     0
