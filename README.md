@@ -6,7 +6,7 @@
 
 # Fink filters
 
-This repository contains filters used to flag particular parts of the full stream to be distributed to Fink users. More information about available topics and how to create your filter at [https://fink-broker.readthedocs.io/en/latest/science/filters](https://fink-broker.readthedocs.io/en/latest/science/filters/).
+This repository contains filters used to flag particular parts of the full stream to be distributed to Fink users. More information about available topics and how to create your filter at [https://doc.ztf.fink-broker.org/en/latest/broker/filters/](https://doc.ztf.fink-broker.org/en/latest/broker/filters/).
 
 ## Installation
 
