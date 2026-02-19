@@ -162,6 +162,34 @@ def extract_max_flux(diaObject: pd.DataFrame) -> pd.Series:
     return max_flux
 
 
+def extract_min_flux(diaObject: pd.DataFrame) -> pd.Series:
+    """Extract the min psfFluxMax across all bands for each diaObject
+
+    Parameters
+    ----------
+    diaObject: pd.DataFrame
+        Full diaObject section of alerts. Must contain columns
+        {band}_psfFluxMin for bands
+
+    Returns
+    -------
+    min_flux: pd.Series
+        Minimum psfFluxMin in nJy across all bands per row.
+        Returns NaN for rows where all bands are missing.
+    """
+    BANDS = ["g", "i", "r", "u", "z", "y"]
+
+    flux_cols = ["{}_psfFluxMin".format(band) for band in BANDS]
+
+    available = [col for col in flux_cols if col in diaObject.columns]
+    if not available:
+        return pd.Series(np.nan, index=diaObject.index)
+
+    min_flux = diaObject[available].min(axis=1)
+
+    return min_flux
+
+
 def flux_to_apparent_mag(flux_nJy: np.ndarray) -> np.ndarray:
     """Convert flux in nanoJansky to AB apparent magnitude
 
