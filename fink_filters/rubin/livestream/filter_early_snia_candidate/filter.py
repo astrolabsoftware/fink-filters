@@ -20,8 +20,9 @@ import fink_filters.rubin.utils as fu
 DESCRIPTION = "Select alerts with a early SN Ia classifier score above 0.5. See https://arxiv.org/abs/2404.08798."
 
 
-def early_snia_candidate(earlySNIa_score: pd.Series, 
-                         diaObject: pd.DataFrame) -> pd.Series:
+def early_snia_candidate(
+    earlySNIa_score: pd.Series, diaObject: pd.DataFrame
+) -> pd.Series:
     """Select alerts using the early SN Ia classifier. See https://arxiv.org/abs/2404.08798.
 
     Parameters
@@ -49,13 +50,15 @@ def early_snia_candidate(earlySNIa_score: pd.Series,
     0
     """
     # calculate delta magnitude
-    delta_mag = np.log10(fu.extract_max_flux(diaObject) / fu.extract_min_flux(diaObject))
+    delta_mag = np.log10(
+        fu.extract_max_flux(diaObject) / fu.extract_min_flux(diaObject)
+    )
 
-    f_delta_mag = delta_mag > 0.5                             
+    f_delta_mag = delta_mag > 0.5
     f_good_early_snia = earlySNIa_score > 0.76
     f_medium_early_snia = np.logical_and(earlySNIa_score > 0.5, f_delta_mag)
-                             
-    return np.logical_or(f_good_early_snia, f_medium_early_snia) 
+
+    return np.logical_or(f_good_early_snia, f_medium_early_snia)
 
 
 if __name__ == "__main__":
