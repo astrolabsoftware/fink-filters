@@ -15,22 +15,27 @@
 """Select alerts with a early SN Ia classifier score above 0.5. See https://arxiv.org/abs/2404.08798."""
 
 import pandas as pd
+import fink_filters.rubin.utils as fu
 
 DESCRIPTION = "Select alerts with a early SN Ia classifier score above 0.5. See https://arxiv.org/abs/2404.08798."
 
 
-def early_snia_candidate(earlySNIa_score: pd.Series) -> pd.Series:
-    """Select alerts with a early SN Ia classifier score above 0.5. See https://arxiv.org/abs/2404.08798.
+def early_snia_candidate(earlySNIa_score: pd.Series, 
+                         diaObject: pd.DataFrame) -> pd.Series:
+    """Select alerts using the early SN Ia classifier. See https://arxiv.org/abs/2404.08798.
 
     Parameters
     ----------
     earlySNIa_score: pd.Series
         Score (0...1) from the early SN Ia classifier
+    diaObject: pd.DataFrame
+        Full diaObject section of alerts. Must contain columns
+        {band}_psfFluxMin and {band}_psfFluxMax for bands
 
     Returns
     -------
     out: pd.Series of booleans
-        True if score above 0.5. False otherwise
+        True if score > 0.76 OR score > 0.5 & delta_mag > 0.5.
 
     Examples
     --------
@@ -43,8 +48,14 @@ def early_snia_candidate(earlySNIa_score: pd.Series) -> pd.Series:
     >>> df2.count()
     0
     """
-    f_early_snia = earlySNIa_score > 0.5
-    return f_early_snia
+    # calculate delta magnitude
+    delta_mag = np.log10(fu.extract_max_flux(diaObject) / fu.extract_min_flux(diaObject))
+
+    f_delta_mag = delta_mag > 0.5                             
+    f_good_early_snia = earlySNIa_score > 0.76
+    f_medium_early_snia = np.logical_and(earlySNIa_score > 0.5, f_delta_mag)
+                             
+    return np.logical_or(f_good_early_snia, f_medium_early_snia) 
 
 
 if __name__ == "__main__":
