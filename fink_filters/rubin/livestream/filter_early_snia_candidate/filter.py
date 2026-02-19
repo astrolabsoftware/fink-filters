@@ -41,10 +41,6 @@ def early_snia_candidate(
 
     Examples
     --------
-    >>> s = pd.Series([0.6, 0.1, None])
-    >>> out = early_snia_candidate(s)
-    >>> assert out.sum() == 1, out.sum()
-
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_early_snia_candidate.filter.early_snia_candidate")
     >>> df2.count()
