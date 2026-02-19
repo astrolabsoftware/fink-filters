@@ -12,12 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Select alerts with a early SN Ia classifier score above 0.5. See https://arxiv.org/abs/2404.08798."""
+"""Select alerts with a early SN Ia classifier score above 0.76 OR those with socre above 0.5 and log10(delta_flux) above 0.5. See https://arxiv.org/abs/2404.08798 for classifier algorithm."""
 
+import numpy as np
 import pandas as pd
 import fink_filters.rubin.utils as fu
 
-DESCRIPTION = "Select alerts with a early SN Ia classifier score above 0.5. See https://arxiv.org/abs/2404.08798."
+DESCRIPTION = "Select alerts with a early SN Ia classifier score above 0.76 OR those with socre above 0.5 and log10(delta_flux) above 0.5. See https://arxiv.org/abs/2404.08798 for classifier algorithm."
 
 
 def early_snia_candidate(
