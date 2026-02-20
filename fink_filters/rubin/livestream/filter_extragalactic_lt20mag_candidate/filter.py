@@ -95,7 +95,9 @@ def extragalactic_lt20mag_candidate(
 
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
 
-    f_extragalactic_gt20mag_rising = f_extragalactic & f_bright & f_is_rising
+    f_sampling = (diaSource.nDiaSources>4) & (diaSource.midPointMjdTai - diaObject.firstDiaSourceMjdTaiFink > 1)
+
+    f_extragalactic_gt20mag_rising = f_extragalactic & f_bright & f_is_rising & f_sampling
 
     return f_extragalactic_gt20mag_rising
 
