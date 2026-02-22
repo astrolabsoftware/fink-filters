@@ -402,7 +402,7 @@ def early_tde_candidates(
             # Metadata
             fields = []
             fields.append(
-                f"*<https://fink-portal.org/{cand['objectId']}|{cand['objectId']}>*\nFink: *{cand['classification']}*"
+                f"*<https://ztf.fink-portal.org/{cand['objectId']}|{cand['objectId']}>*\nFink: *{cand['classification']}*"
             )
             fields.append(f"*{time_str}*\nDetections: *{ndet}* Limits: *{nlim}*")
             fields.append(f"*RA/Dec*: {sc_equ}\n*Gal:* {sc_gal}")
@@ -443,7 +443,7 @@ def early_tde_candidates(
             # Metadata
             fields = []
             fields.append(
-                f"[*{cand['objectId']}*](https://fink-portal.org/{cand['objectId']}) : *{escape(cand['classification'])}*"
+                f"[*{cand['objectId']}*](https://ztf.fink-portal.org/{cand['objectId']}) : *{escape(cand['classification'])}*"
             )
             fields.append(
                 f"*{escape(time_str)}*\nDetections: *{ndet}* Limits: *{nlim}*"
