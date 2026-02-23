@@ -35,6 +35,7 @@ def extragalactic_lt20mag_candidate(
     gaiadr3_e_Plx: pd.Series,
     vsx_Type: pd.Series,
     legacydr8_zphot: pd.Series,
+    firstDiaSourceMjdTaiFink: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are rising, bright (mag < 20), and extragalactic candidates
 
@@ -64,6 +65,8 @@ def extragalactic_lt20mag_candidate(
         Series containing VSX variable star catalog matches
     legacydr8_zphot: pd.Series
         Series containing photometric redshift from `xm.legacydr8_zphot` (Duncan 2022)
+    firstDiaSourceMjdTaiFink: pd.Series
+        FIrst time the object was seen by Rubin, as derived by Fink.
 
     Returns
     -------
@@ -95,9 +98,13 @@ def extragalactic_lt20mag_candidate(
 
     f_is_rising = fb.b_is_rising(diaSource, diaObject)
 
-    f_sampling = (diaSource.nDiaSources>4) & (diaSource.midPointMjdTai - diaObject.firstDiaSourceMjdTaiFink > 1)
+    f_sampling = (diaObject.nDiaSources > 4) & (
+        diaSource.midPointMjdTai - firstDiaSourceMjdTaiFink > 1
+    )
 
-    f_extragalactic_gt20mag_rising = f_extragalactic & f_bright & f_is_rising & f_sampling
+    f_extragalactic_gt20mag_rising = (
+        f_extragalactic & f_bright & f_is_rising & f_sampling
+    )
 
     return f_extragalactic_gt20mag_rising
 
