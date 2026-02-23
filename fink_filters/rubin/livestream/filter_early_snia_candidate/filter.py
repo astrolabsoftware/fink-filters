@@ -47,7 +47,7 @@ def early_snia_candidate(
     0
     """
     # calculate log flux ratio
-    f_min = min(10, min(abs(fu.extract_min_flux(diaObject))))
+    f_min = min(10, abs(fu.extract_min_flux(diaObject)))
     flux_ratio = np.log10(
         fu.extract_max_flux(diaObject) / f_min
     )
