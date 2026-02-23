@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import fink_filters.rubin.utils as fu
 
-DESCRIPTION = "Select alerts with a early SN Ia classifier score above 0.76 OR those with socre above 0.5 and log10(delta_flux) above 0.5. See https://arxiv.org/abs/2404.08798 for classifier algorithm."
+DESCRIPTION = "Select alerts with a early SN Ia classifier score above 0.76 OR those with score above 0.5 and log10(ratio_flux) above 0.5. See https://arxiv.org/abs/2404.08798 for classifier algorithm."
 
 
 def early_snia_candidate(
@@ -37,7 +37,7 @@ def early_snia_candidate(
     Returns
     -------
     out: pd.Series of booleans
-        True if score > 0.76 OR score > 0.5 & delta_mag > 0.5.
+        True if score > 0.76 OR score > 0.5 & log10(flux_ratio) > 0.5.
 
     Examples
     --------
@@ -46,14 +46,14 @@ def early_snia_candidate(
     >>> df2.count()
     0
     """
-    # calculate delta magnitude
-    delta_mag = np.log10(
+    # calculate log flux ratio
+    flux_ratio = np.log10(
         fu.extract_max_flux(diaObject) / fu.extract_min_flux(diaObject)
     )
 
-    f_delta_mag = delta_mag > 0.5
+    f_flux_ratio = flux_ratio > 0.5
     f_good_early_snia = earlySNIa_score > 0.76
-    f_medium_early_snia = np.logical_and(earlySNIa_score > 0.5, f_delta_mag)
+    f_medium_early_snia = np.logical_and(earlySNIa_score > 0.5, f_flux_ratio)
 
     return np.logical_or(f_good_early_snia, f_medium_early_snia)
 
