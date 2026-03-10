@@ -53,8 +53,10 @@ def hostless_candidate(
     """
     # Good quality
     f_good_quality = fb.b_good_quality(diaSource)
-
-    f_hostless = f_good_quality & (elephant_kstest_template < 0.3)
+    f_outside_galactic_plant = fb.b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+    f_hostless = (
+        f_good_quality & (elephant_kstest_template < 0.95) & f_outside_galactic_plant
+    )
 
     return f_hostless
 

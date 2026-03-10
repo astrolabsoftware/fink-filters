@@ -549,7 +549,7 @@ def get_oid(ra, dec):
         return None
     if not status_check(r, "get cross from snad"):
         return None
-    oids = [key for key, _ in r.json().items()]
+    oids = list(r.json().keys())
     if oids:
         return oids[0]
     return None
