@@ -246,17 +246,17 @@ def b_is_rising(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
     out: pd.Series of booleans
         True if rising, False otherwise
 
+    Notes
+    -----
+    Uses any current flux measurement compared to its mean object
+    measurement, taking into account errors.
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_rising")
     >>> df2.count()
     1
-
-    Notes
-    -----
-    Uses any current flux measurement compared to its mean object
-    measurement, taking into account errors.
     """
     # FIXME: get rid of SSO?
     psfFlux, band_psfFluxMean, band_psfFluxMeanErr = extract_flux_information_static(
@@ -286,17 +286,17 @@ def b_is_fading(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
     out: pd.Series of booleans
         True if fading, False otherwise
 
+    Notes
+    -----
+    Uses any current flux measurement compared to its mean object
+    measurement, taking into account errors.
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_fading")
     >>> df2.count()
     0
-
-    Notes
-    -----
-    Uses any current flux measurement compared to its mean object
-    measurement, taking into account errors.
     """
     # FIXME: get rid of SSO?
     psfFlux, band_psfFluxMean, band_psfFluxMeanErr = extract_flux_information_static(
@@ -354,16 +354,16 @@ def b_good_quality(diaSource) -> pd.Series:
     pd.Series of booleans
         True if good quality. False otherwise
 
+    Notes
+    -----
+    psfFlux/psfFluxErr is used as a clear snr ratio
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_good_quality")
     >>> df2.count()
     7
-
-    Notes
-    -----
-    psfFlux/psfFluxErr is used as a clear snr ratio
     """
     mask_flagged = (
         diaSource.isDipole
@@ -432,6 +432,11 @@ def extragalactic_base(
         Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
 
+    Notes
+    -----
+    This is not a block. Based on `kind`, the selection is refined.
+    flavor is type str. In the signature, we use pd.Series for type inference in Spark.
+
     Examples
     --------
     >>> import pyspark.sql.functions as F
@@ -441,14 +446,6 @@ def extragalactic_base(
     >>> df2 = df.filter(extragalactic_base_spark(*cols))
     >>> df2.count()
     4
-
-    Notes
-    -----
-    This is not a block. Based on `kind`, the selection is refined.
-
-    Notes
-    -----
-    flavor is type str. In the signature, we use pd.Series for type inference in Spark.
     """
     # Good quality
     mask_good_quality = b_good_quality(diaSource)
@@ -540,18 +537,18 @@ def b_extragalactic_near_galaxy_candidate(
         Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
 
+    Notes
+    -----
+    based on source quality, xmatch with catalogues, galactic coordinates,
+    and asteroid veto. Beware, due to cross-match radius of 1.5'' this is not
+    realiable for close-by galaxies
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_extragalactic_near_galaxy_candidate")
     >>> df2.count()
     0
-
-    Notes
-    -----
-    based on source quality, xmatch with catalogues, galactic coordinates,
-    and asteroid veto. Beware, due to cross-match radius of 1.5'' this is not
-    realiable for close-by galaxies
     """
     f_extragalactic = extragalactic_base(
         diaSource,
@@ -609,17 +606,17 @@ def b_extragalactic_loose_candidate(
         Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
 
+    Notes
+    -----
+    based on source quality, xmatch with catalogues, galactic coordinates,
+    and asteroid veto
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_extragalactic_loose_candidate")
     >>> df2.count()
     4
-
-    Notes
-    -----
-    based on source quality, xmatch with catalogues, galactic coordinates,
-    and asteroid veto
     """
     f_extragalactic = extragalactic_base(
         diaSource,
