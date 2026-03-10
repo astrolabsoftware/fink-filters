@@ -51,10 +51,6 @@ def extract_flux_information_static(
 ) -> pd.Series:
     """Extract flux, mean flux, and error on mean flux for the current observation
 
-    Notes
-    -----
-    Objects with no diaObject, such as SSO, return NaN
-
     Parameters
     ----------
     diaSource: pd.DataFrame
@@ -66,6 +62,10 @@ def extract_flux_information_static(
     -------
     out: pd.Series
         Series with psfFlux and Mean fluxes per band with error
+
+    Notes
+    -----
+    Objects with no diaObject, such as SSO, return NaN
     """
     # psfFlux = diaSource.apply(lambda x: x["psfFlux"])
     psfFlux = diaSource["psfFlux"]
@@ -115,15 +115,15 @@ def compute_diff_flux_from_mean(
 def apply_block(df, function_name):
     """Wrapper around FinkUDF
 
-    Notes
-    -----
-    This is a convenient wrapper for tests
-
     Parameters
     ----------
     df: Spark DataFrame
     function_name: str
         Path to the function module.module.function
+
+    Notes
+    -----
+    This is a convenient wrapper for tests
     """
     filter_func, colnames = expand_function_from_string(df, function_name)
     fink_filter = FinkUDF(
@@ -261,11 +261,6 @@ def compute_peak_absolute_magnitude(
     converts to apparent magnitude, then to absolute magnitude using
     the photo-z from legacydr8_zphot.
 
-    Notes
-    -----
-    Returns NaN for objects with no valid redshift, no positive flux,
-    or missing band data. Output preserves the input row ordering.
-
     Parameters
     ----------
     diaObject: pd.DataFrame
@@ -283,6 +278,11 @@ def compute_peak_absolute_magnitude(
     out: pd.Series
         Peak absolute magnitude per row, ordered as input.
         NaN where conversion is not possible.
+
+    Notes
+    -----
+    Returns NaN for objects with no valid redshift, no positive flux,
+    or missing band data. Output preserves the input row ordering.
     """
     max_flux = extract_max_flux(diaObject)
     apparent_mag = flux_to_apparent_mag(max_flux.values)
