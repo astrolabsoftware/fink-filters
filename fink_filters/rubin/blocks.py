@@ -234,11 +234,6 @@ def b_xmatched_vsx(vsx_Type: pd.Series) -> pd.Series:
 def b_is_rising(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
     """Return alerts with rising lightcurve in one filter.
 
-    Notes
-    -----
-    Uses any current flux measurement compared to its mean object
-    measurement, taking into account errors.
-
     Parameters
     ----------
     diaSource: pd.DataFrame
@@ -257,6 +252,11 @@ def b_is_rising(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_rising")
     >>> df2.count()
     1
+
+    Notes
+    -----
+    Uses any current flux measurement compared to its mean object
+    measurement, taking into account errors.
     """
     # FIXME: get rid of SSO?
     psfFlux, band_psfFluxMean, band_psfFluxMeanErr = extract_flux_information_static(
@@ -273,11 +273,6 @@ def b_is_rising(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
 
 def b_is_fading(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
     """Return alerts with fading lightcurve in one filter.
-
-    Notes
-    -----
-    Uses any current flux measurement compared to its mean object
-    measurement, taking into account errors.
 
     Parameters
     ----------
@@ -297,6 +292,11 @@ def b_is_fading(diaSource: pd.DataFrame, diaObject: pd.DataFrame) -> pd.Series:
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_is_fading")
     >>> df2.count()
     0
+
+    Notes
+    -----
+    Uses any current flux measurement compared to its mean object
+    measurement, taking into account errors.
     """
     # FIXME: get rid of SSO?
     psfFlux, band_psfFluxMean, band_psfFluxMeanErr = extract_flux_information_static(
@@ -344,10 +344,6 @@ def b_is_new(
 def b_good_quality(diaSource) -> pd.Series:
     """Select alerts with good quality for science
 
-    Notes
-    -----
-    psfFlux/psfFluxErr is used as a clear snr ratio
-
     Parameters
     ----------
     diaSource: pd.DataFrame
@@ -364,6 +360,10 @@ def b_good_quality(diaSource) -> pd.Series:
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_good_quality")
     >>> df2.count()
     7
+
+    Notes
+    -----
+    psfFlux/psfFluxErr is used as a clear snr ratio
     """
     mask_flagged = (
         diaSource.isDipole
@@ -400,14 +400,6 @@ def extragalactic_base(
     flavor: pd.Series = "loose",
 ) -> pd.Series:
     """Base function for selecting extragalactic candidates
-
-    Notes
-    -----
-    This is not a block. Based on `kind`, the selection is refined.
-
-    Notes
-    -----
-    flavor is type str. In the signature, we use pd.Series for type inference in Spark.
 
     Parameters
     ----------
@@ -449,6 +441,14 @@ def extragalactic_base(
     >>> df2 = df.filter(extragalactic_base_spark(*cols))
     >>> df2.count()
     4
+
+    Notes
+    -----
+    This is not a block. Based on `kind`, the selection is refined.
+
+    Notes
+    -----
+    flavor is type str. In the signature, we use pd.Series for type inference in Spark.
     """
     # Good quality
     mask_good_quality = b_good_quality(diaSource)
@@ -513,12 +513,6 @@ def b_extragalactic_near_galaxy_candidate(
 ) -> pd.Series:
     """Flag for alerts in Rubin that are extragalactic candidates near a known galaxy
 
-    Notes
-    -----
-    based on source quality, xmatch with catalogues, galactic coordinates,
-    and asteroid veto. Beware, due to cross-match radius of 1.5'' this is not
-    realiable for close-by galaxies
-
     Parameters
     ----------
     diaSource: pd.DataFrame
@@ -552,6 +546,12 @@ def b_extragalactic_near_galaxy_candidate(
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_extragalactic_near_galaxy_candidate")
     >>> df2.count()
     0
+
+    Notes
+    -----
+    based on source quality, xmatch with catalogues, galactic coordinates,
+    and asteroid veto. Beware, due to cross-match radius of 1.5'' this is not
+    realiable for close-by galaxies
     """
     f_extragalactic = extragalactic_base(
         diaSource,
@@ -581,11 +581,6 @@ def b_extragalactic_loose_candidate(
     legacydr8_zphot: pd.Series,
 ) -> pd.Series:
     """Flag for alerts in Rubin that are extragalactic candidates
-
-    Notes
-    -----
-    based on source quality, xmatch with catalogues, galactic coordinates,
-    and asteroid veto
 
     Parameters
     ----------
@@ -620,6 +615,11 @@ def b_extragalactic_loose_candidate(
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_extragalactic_loose_candidate")
     >>> df2.count()
     4
+
+    Notes
+    -----
+    based on source quality, xmatch with catalogues, galactic coordinates,
+    and asteroid veto
     """
     f_extragalactic = extragalactic_base(
         diaSource,
