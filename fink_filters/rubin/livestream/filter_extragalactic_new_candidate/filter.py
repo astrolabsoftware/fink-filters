@@ -1,5 +1,5 @@
 # Copyright 2019-2026 AstroLab Software
-# Author: Julien Peloton
+# Author: Julien Peloton, Camille Douzet
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Select LSST alerts new (< 48h first apparition) and potentially extragalactic"""
+"""Select LSST alerts new (< 48h first apparition with a minimum of 2 points) and potentially extragalactic"""
 
 import pandas as pd
+
 import fink_filters.rubin.blocks as fb
 
-
-DESCRIPTION = (
-    "Select LSST alerts new (< 48h first apparition) and potentially extragalactic"
-)
+DESCRIPTION = "Select LSST alerts new (< 48h first apparition with a minimum of 2 points) and potentially extragalactic"
 
 
 def extragalactic_new_candidate(
     diaSource: pd.DataFrame,
+    diaObject: pd.DataFrame,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
     is_sso: pd.Series,
@@ -35,7 +34,7 @@ def extragalactic_new_candidate(
     legacydr8_zphot: pd.Series,
     firstDiaSourceMjdTaiFink: pd.Series,
 ) -> pd.Series:
-    """Select LSST alerts new (< 48h first apparition) and potentially extragalactic
+    """Select LSST alerts new (< 48h first apparition with a minimum of 2 points) and potentially extragalactic
 
     Notes
     -----
@@ -98,7 +97,10 @@ def extragalactic_new_candidate(
     # 48h maximum
     f_new = (diaSource.midpointMjdTai - firstDiaSourceMjdTaiFink) < 2.0
 
-    f_extragalactic_new = f_extragalactic_near_galaxy & f_new
+    # Minimum 2 points
+    f_sampling = diaObject.nDiaSources > 2
+
+    f_extragalactic_new = f_extragalactic_near_galaxy & f_new & f_sampling
 
     return f_extragalactic_new
 
