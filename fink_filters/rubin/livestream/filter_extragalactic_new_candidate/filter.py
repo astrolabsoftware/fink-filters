@@ -98,7 +98,7 @@ def extragalactic_new_candidate(
     f_new = (diaSource.midpointMjdTai - firstDiaSourceMjdTaiFink) < 2.0
 
     # Minimum 2 points
-    f_sampling = diaObject.nDiaSources > 2
+    f_sampling = diaObject.nDiaSources >= 2
 
     f_extragalactic_new = f_extragalactic_near_galaxy & f_new & f_sampling
 
