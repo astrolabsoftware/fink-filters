@@ -193,8 +193,8 @@ def anomaly_notification_(
             ra=row.ra * u.degree, dec=row.dec * u.degree, frame="icrs"
         ).galactic
         oid = filter_utils.get_oid(row.ra, row.dec)
-        t1a = f"**ID**: [{row.objectId}](https://fink-portal.org/{row.objectId})"
-        t1b = f"ID: <https://fink-portal.org/{row.objectId}|{row.objectId}>"
+        t1a = f"**ID**: [{row.objectId}](https://ztf.fink-portal.org/{row.objectId})"
+        t1b = f"ID: <https://ztf.fink-portal.org/{row.objectId}|{row.objectId}>"
         t_oid_1a = f"**DR OID (<1'')**: [{oid}](https://ztf.snad.space/view/{oid})"
         t_oid_1b = f"DR OID (<1''): <https://ztf.snad.space/view/{oid}|{oid}>"
         t2_ = f"**GAL coordinates**: {round(gal.l.deg, 6)},   {round(gal.b.deg, 6)}"
