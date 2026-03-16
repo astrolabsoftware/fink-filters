@@ -14,23 +14,20 @@
 # limitations under the License.
 """Return alerts considered as KN candidates from machine learning consideration"""
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
+import datetime
+import logging
+import os
 
 import numpy as np
 import pandas as pd
-import datetime
 import requests
-import os
-import logging
-
-from astropy.coordinates import SkyCoord
-from astropy.coordinates import Angle
 from astropy import units as u
+from astropy.coordinates import Angle, SkyCoord
 from astropy.time import Time
-
 from fink_utils.photometry.conversion import dc_mag
 from fink_utils.xmatch.simbad import return_list_of_eg_host
+from pyspark.sql.functions import PandasUDFType, pandas_udf
+from pyspark.sql.types import BooleanType
 
 from fink_filters.tester import spark_unit_tests
 
@@ -242,16 +239,18 @@ def kn_candidates(
         if sum(m) < 2:
             continue
         # DC mag (history + last measurement)
-        mag_hist, err_hist = np.array([
-            dc_mag(k[0], k[1], k[2], k[3], k[4])
-            for k in zip(
-                cmagpsfc[f_kn].to_numpy()[i][m][-2:],
-                csigmapsfc[f_kn].to_numpy()[i][m][-2:],
-                cmagnrc[f_kn].to_numpy()[i][m][-2:],
-                csigmagnrc[f_kn].to_numpy()[i][m][-2:],
-                cisdiffposc[f_kn].to_numpy()[i][m][-2:],
-            )
-        ]).T
+        mag_hist, err_hist = np.array(
+            [
+                dc_mag(k[0], k[1], k[2], k[3], k[4])
+                for k in zip(
+                    cmagpsfc[f_kn].to_numpy()[i][m][-2:],
+                    csigmapsfc[f_kn].to_numpy()[i][m][-2:],
+                    cmagnrc[f_kn].to_numpy()[i][m][-2:],
+                    csigmagnrc[f_kn].to_numpy()[i][m][-2:],
+                    cisdiffposc[f_kn].to_numpy()[i][m][-2:],
+                )
+            ]
+        ).T
 
         # Grab the last measurement and its error estimate
         mag = mag_hist[-1]
@@ -269,7 +268,7 @@ def kn_candidates(
 
         # information to send
         alert_text = """
-            *Fink Science Portal:* <https://fink-portal.org/{}|{}>
+            *Fink Science Portal:* <https://ztf.fink-portal.org/{}|{}>
             """.format(alertID, alertID)
         skyportal_text = """
             *SkyPortal:* <https://skyportal-icare.ijclab.in2p3.fr/source/{}|{}>

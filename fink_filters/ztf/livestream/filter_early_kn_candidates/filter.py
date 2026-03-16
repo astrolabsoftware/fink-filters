@@ -14,23 +14,20 @@
 # limitations under the License.
 """Return alerts considered as KN candidates from contextual consideration"""
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
-
-import numpy as np
-import pandas as pd
 import datetime
-import requests
 import logging
 import os
 
-from astropy.coordinates import SkyCoord
-from astropy.coordinates import Angle
+import numpy as np
+import pandas as pd
+import requests
 from astropy import units as u
+from astropy.coordinates import Angle, SkyCoord
 from astropy.time import Time
 from astroquery.sdss import SDSS
-
 from fink_utils.xmatch.simbad import return_list_of_eg_host
+from pyspark.sql.functions import PandasUDFType, pandas_udf
+from pyspark.sql.types import BooleanType
 
 from fink_filters import __file__
 from fink_filters.tester import spark_unit_tests
@@ -79,13 +76,15 @@ def perform_classification(
             dec=np.array(pdf_mangrove.dec, dtype=float) * u.degree,
         )
 
-        pdf = pd.DataFrame.from_dict({
-            "fid": fid[f_kn],
-            "ra": ra[f_kn],
-            "dec": dec[f_kn],
-            "mag": magpsf[f_kn],
-            "err_mag": sigmapsf[f_kn],
-        })
+        pdf = pd.DataFrame.from_dict(
+            {
+                "fid": fid[f_kn],
+                "ra": ra[f_kn],
+                "dec": dec[f_kn],
+                "mag": magpsf[f_kn],
+                "err_mag": sigmapsf[f_kn],
+            }
+        )
 
         # identify galaxy somehow close to each alert. Distances are in Mpc
         idx_mangrove, idxself, _, _ = SkyCoord(
@@ -380,7 +379,7 @@ def early_kn_candidates(
     for i, alertID in enumerate(objectId[mask_filter].to_numpy()):
         # information to send
         alert_text = """
-            *Fink Science Portal:* <https://fink-portal.org/{}|{}>
+            *Fink Science Portal:* <https://ztf.fink-portal.org/{}|{}>
             """.format(alertID, alertID)
         skyportal_text = """
             *SkyPortal:* <https://skyportal-icare.ijclab.in2p3.fr/source/{}|{}>
