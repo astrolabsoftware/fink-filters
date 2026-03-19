@@ -14,18 +14,15 @@
 # limitations under the License.
 """Return alerts with a counterpart in TNS"""
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
+import os
+
+import pandas as pd
+from astropy.coordinates import SkyCoord, get_constellation
+from fink_utils.tg_bot.utils import get_curve, get_cutout, msg_handler_tg
+from pyspark.sql.functions import PandasUDFType, pandas_udf
 from pyspark.sql.types import BooleanType
 
-from fink_utils.tg_bot.utils import get_curve
-from fink_utils.tg_bot.utils import get_cutout
-from fink_utils.tg_bot.utils import msg_handler_tg
-
 from fink_filters.tester import spark_unit_tests
-
-from astropy.coordinates import SkyCoord, get_constellation
-import pandas as pd
-import os
 
 
 def extract_url_from_class(tns: str) -> str:
@@ -162,13 +159,15 @@ def tns_match(
     """
     series = tns_match_(tns, jd, jdstarthist)
 
-    pdf = pd.DataFrame({
-        "objectId": objectId,
-        "ra": ra,
-        "dec": dec,
-        "tns": tns,
-        "dt": jd - jdstarthist,
-    })
+    pdf = pd.DataFrame(
+        {
+            "objectId": objectId,
+            "ra": ra,
+            "dec": dec,
+            "tns": tns,
+            "dt": jd - jdstarthist,
+        }
+    )
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
@@ -187,7 +186,7 @@ def tns_match(
             text = """
 🔭 Appeared {:.0f} days ago
 
-*Object name*: {} (inspect it on the [portal](https://fink-portal.org/{}))
+*Object name*: {} (inspect it on the [portal](https://ztf.fink-portal.org/{}))
 *Classification*: [{}]({})
 *Constellation*: {}
             """.format(

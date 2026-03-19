@@ -14,22 +14,18 @@
 # limitations under the License.
 """Return alerts with a match in a magnetic cataclysmic variables catalog"""
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
-
-from fink_science.ztf.xmatch.utils import cross_match_astropy
-from fink_filters import __file__
-
-from fink_utils.tg_bot.utils import get_curve
-from fink_utils.tg_bot.utils import msg_handler_tg
-
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-
 import os
+
 import numpy as np
 import pandas as pd
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from fink_science.ztf.xmatch.utils import cross_match_astropy
+from fink_utils.tg_bot.utils import get_curve, msg_handler_tg
+from pyspark.sql.functions import PandasUDFType, pandas_udf
+from pyspark.sql.types import BooleanType
 
+from fink_filters import __file__
 from fink_filters.tester import spark_unit_tests
 
 
@@ -45,7 +41,7 @@ def send_to_telegram(pdf, channel):
             )
 
             text = """
-*Object ID*: [{}](https://fink-portal.org/{})
+*Object ID*: [{}](https://ztf.fink-portal.org/{})
 *Name*: {}
 *RA/Dec coordinates*: {} {}
             """.format(
@@ -93,11 +89,13 @@ def magnetic_cvs_(ra, dec):
     curdir = os.path.dirname(os.path.abspath(__file__))
     pdf_mcvs = pd.read_csv(curdir + "/data/magnetic_cataclysmic_variables.csv")
 
-    pdf = pd.DataFrame({
-        "ra": ra.to_numpy(),
-        "dec": dec.to_numpy(),
-        "candid": range(len(ra)),
-    })
+    pdf = pd.DataFrame(
+        {
+            "ra": ra.to_numpy(),
+            "dec": dec.to_numpy(),
+            "candid": range(len(ra)),
+        }
+    )
 
     # create catalogs
     catalog_ztf = SkyCoord(
@@ -166,12 +164,14 @@ def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
 
     mask = names != "Unknown"
     if len(names[mask]) > 0:
-        pdf = pd.DataFrame({
-            "objectId": objectId[mask],
-            "ra": ra[mask],
-            "dec": dec[mask],
-            "name": names[mask],
-        })
+        pdf = pd.DataFrame(
+            {
+                "objectId": objectId[mask],
+                "ra": ra[mask],
+                "dec": dec[mask],
+                "name": names[mask],
+            }
+        )
         send_to_telegram(pdf, channel="@fink_magnetic_cv_stars")
 
     return pd.Series(mask)

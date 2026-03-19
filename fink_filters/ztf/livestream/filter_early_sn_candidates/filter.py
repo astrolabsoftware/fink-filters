@@ -14,18 +14,15 @@
 # limitations under the License.
 """Return alerts considered as Early SN Ia candidates"""
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
-
-from fink_utils.xmatch.simbad import return_list_of_eg_host
-from fink_utils.tg_bot.utils import get_curve
-from fink_utils.tg_bot.utils import get_cutout
-from fink_utils.tg_bot.utils import msg_handler_tg
-
-from fink_filters.tester import spark_unit_tests
+import os
 
 import pandas as pd
-import os
+from fink_utils.tg_bot.utils import get_curve, get_cutout, msg_handler_tg
+from fink_utils.xmatch.simbad import return_list_of_eg_host
+from pyspark.sql.functions import PandasUDFType, pandas_udf
+from pyspark.sql.types import BooleanType
+
+from fink_filters.tester import spark_unit_tests
 
 
 def early_sn_candidates_(
@@ -168,18 +165,20 @@ def early_sn_candidates(
         classtar,
     )
 
-    pdf = pd.DataFrame({
-        "objectId": objectId,
-        "magpsf": cmagpsfc,
-        "sigmapsf": csigmapsfc,
-        "diffmaglim": cdiffmaglimc,
-        "fid": cfidc,
-        "jd": cjdc,
-        "snn_snia_vs_nonia": snn_snia_vs_nonia,
-        "snn_sn_vs_all": snn_sn_vs_all,
-        "rf_snia_vs_nonia": rf_snia_vs_nonia,
-        "cstampDatac": cstampDatac,
-    })
+    pdf = pd.DataFrame(
+        {
+            "objectId": objectId,
+            "magpsf": cmagpsfc,
+            "sigmapsf": csigmapsfc,
+            "diffmaglim": cdiffmaglimc,
+            "fid": cfidc,
+            "jd": cjdc,
+            "snn_snia_vs_nonia": snn_snia_vs_nonia,
+            "snn_sn_vs_all": snn_sn_vs_all,
+            "rf_snia_vs_nonia": rf_snia_vs_nonia,
+            "cstampDatac": cstampDatac,
+        }
+    )
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":
@@ -198,7 +197,7 @@ def early_sn_candidates(
             cutout = get_cutout(cutout=alert["cstampDatac"])
 
             text = """
-*Object ID*: [{}](https://fink-portal.org/{})
+*Object ID*: [{}](https://ztf.fink-portal.org/{})
 *Scores:*\n- Early SN Ia: {:.2f}\n- Ia SN vs non-Ia SN: {:.2f}\n- SN Ia and Core-Collapse vs non-SN: {:.2f}
             """.format(
                 alert["objectId"],

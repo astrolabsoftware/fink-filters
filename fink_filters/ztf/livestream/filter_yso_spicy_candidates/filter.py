@@ -14,16 +14,15 @@
 # limitations under the License.
 """Return alerts with a match in the SPICY catalog"""
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
-from pyspark.sql.types import BooleanType
-
-from fink_utils.tg_bot.utils import get_curve, msg_handler_tg
-
-from fink_filters.tester import spark_unit_tests
+import os
 
 import numpy as np
 import pandas as pd
-import os
+from fink_utils.tg_bot.utils import get_curve, msg_handler_tg
+from pyspark.sql.functions import PandasUDFType, pandas_udf
+from pyspark.sql.types import BooleanType
+
+from fink_filters.tester import spark_unit_tests
 
 
 def r2_score(jd, magpsf, fid, min_points=5):
@@ -130,17 +129,19 @@ def yso_spicy_candidates(
     r2_lim = 0.6  # minimum required r2
 
     # convert to pandas
-    pdf = pd.DataFrame({
-        "objectId": objectId,
-        "magpsf": cmagpsfc,
-        "sigmapsf": csigmapsfc,
-        "diffmaglim": cdiffmaglimc,
-        "fid": cfidc,
-        "jd": cjdc,
-        "spicy_id": spicy_id,
-        "spicy_class": spicy_class,
-        "linear_fit_slope": linear_fit_slope,
-    })
+    pdf = pd.DataFrame(
+        {
+            "objectId": objectId,
+            "magpsf": cmagpsfc,
+            "sigmapsf": csigmapsfc,
+            "diffmaglim": cdiffmaglimc,
+            "fid": cfidc,
+            "jd": cjdc,
+            "spicy_id": spicy_id,
+            "spicy_class": spicy_class,
+            "linear_fit_slope": linear_fit_slope,
+        }
+    )
 
     # select spicy objecs, N
     mask_spicy = ~spicy_class.isin(["Unknown", None, np.nan])
@@ -165,7 +166,7 @@ def yso_spicy_candidates(
                 origin="API",
             )
 
-            hyperlink = "[{}](https://fink-portal.org/{}): ID {} ({})".format(
+            hyperlink = "[{}](https://ztf.fink-portal.org/{}): ID {} ({})".format(
                 alert["objectId"],
                 alert["objectId"],
                 alert["spicy_id"],
