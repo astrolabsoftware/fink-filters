@@ -16,6 +16,7 @@
 
 import pandas as pd
 import fink_filters.rubin.blocks as fb
+import fink_filters.rubin.utils as fu
 
 
 DESCRIPTION = "Select LSST alerts that are hostless according to ELEPHANT. See https://arxiv.org/abs/2404.18165."
@@ -49,13 +50,17 @@ def hostless_candidate(
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_hostless_candidate.filter.hostless_candidate")
     >>> df2.count()
-    4
+    0
     """
     # Good quality
     f_good_quality = fb.b_good_quality(diaSource)
     f_outside_galactic_plant = fb.b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+    f_bright = fu.flux_to_apparent_mag(diaSource.psfFlux) <= 21.5
     f_hostless = (
-        f_good_quality & (elephant_kstest_template < 0.95) & f_outside_galactic_plant
+        f_good_quality
+        & (elephant_kstest_template < 0.95)
+        & f_outside_galactic_plant
+        & f_bright
     )
 
     return f_hostless
