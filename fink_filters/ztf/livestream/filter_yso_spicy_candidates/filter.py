@@ -129,19 +129,17 @@ def yso_spicy_candidates(
     r2_lim = 0.6  # minimum required r2
 
     # convert to pandas
-    pdf = pd.DataFrame(
-        {
-            "objectId": objectId,
-            "magpsf": cmagpsfc,
-            "sigmapsf": csigmapsfc,
-            "diffmaglim": cdiffmaglimc,
-            "fid": cfidc,
-            "jd": cjdc,
-            "spicy_id": spicy_id,
-            "spicy_class": spicy_class,
-            "linear_fit_slope": linear_fit_slope,
-        }
-    )
+    pdf = pd.DataFrame({
+        "objectId": objectId,
+        "magpsf": cmagpsfc,
+        "sigmapsf": csigmapsfc,
+        "diffmaglim": cdiffmaglimc,
+        "fid": cfidc,
+        "jd": cjdc,
+        "spicy_id": spicy_id,
+        "spicy_class": spicy_class,
+        "linear_fit_slope": linear_fit_slope,
+    })
 
     # select spicy objecs, N
     mask_spicy = ~spicy_class.isin(["Unknown", None, np.nan])

@@ -165,20 +165,18 @@ def early_sn_candidates(
         classtar,
     )
 
-    pdf = pd.DataFrame(
-        {
-            "objectId": objectId,
-            "magpsf": cmagpsfc,
-            "sigmapsf": csigmapsfc,
-            "diffmaglim": cdiffmaglimc,
-            "fid": cfidc,
-            "jd": cjdc,
-            "snn_snia_vs_nonia": snn_snia_vs_nonia,
-            "snn_sn_vs_all": snn_sn_vs_all,
-            "rf_snia_vs_nonia": rf_snia_vs_nonia,
-            "cstampDatac": cstampDatac,
-        }
-    )
+    pdf = pd.DataFrame({
+        "objectId": objectId,
+        "magpsf": cmagpsfc,
+        "sigmapsf": csigmapsfc,
+        "diffmaglim": cdiffmaglimc,
+        "fid": cfidc,
+        "jd": cjdc,
+        "snn_snia_vs_nonia": snn_snia_vs_nonia,
+        "snn_sn_vs_all": snn_sn_vs_all,
+        "rf_snia_vs_nonia": rf_snia_vs_nonia,
+        "cstampDatac": cstampDatac,
+    })
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":

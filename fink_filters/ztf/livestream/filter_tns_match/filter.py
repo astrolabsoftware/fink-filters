@@ -159,15 +159,13 @@ def tns_match(
     """
     series = tns_match_(tns, jd, jdstarthist)
 
-    pdf = pd.DataFrame(
-        {
-            "objectId": objectId,
-            "ra": ra,
-            "dec": dec,
-            "tns": tns,
-            "dt": jd - jdstarthist,
-        }
-    )
+    pdf = pd.DataFrame({
+        "objectId": objectId,
+        "ra": ra,
+        "dec": dec,
+        "tns": tns,
+        "dt": jd - jdstarthist,
+    })
 
     # Loop over matches
     if ("FINK_TG_TOKEN" in os.environ) and os.environ["FINK_TG_TOKEN"] != "":

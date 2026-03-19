@@ -129,18 +129,16 @@ def perform_classification(
         if sum(m) < 2:
             continue
         # DC mag (history + last measurement)
-        mag_hist, err_hist = np.array(
-            [
-                dc_mag(k[0], k[1], k[2], k[3], k[4])
-                for k in zip(
-                    cmagpsfc[f_kn].to_numpy()[i][m],
-                    csigmapsfc[f_kn].to_numpy()[i][m],
-                    cmagnrc[f_kn].to_numpy()[i][m],
-                    csigmagnrc[f_kn].to_numpy()[i][m],
-                    cisdiffposc[f_kn].to_numpy()[i][m],
-                )
-            ]
-        ).T
+        mag_hist, err_hist = np.array([
+            dc_mag(k[0], k[1], k[2], k[3], k[4])
+            for k in zip(
+                cmagpsfc[f_kn].to_numpy()[i][m],
+                csigmapsfc[f_kn].to_numpy()[i][m],
+                cmagnrc[f_kn].to_numpy()[i][m],
+                csigmagnrc[f_kn].to_numpy()[i][m],
+                cisdiffposc[f_kn].to_numpy()[i][m],
+            )
+        ]).T
 
         # remove abnormal values
         mask_outliers = mag_hist < 21

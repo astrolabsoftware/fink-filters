@@ -89,13 +89,11 @@ def magnetic_cvs_(ra, dec):
     curdir = os.path.dirname(os.path.abspath(__file__))
     pdf_mcvs = pd.read_csv(curdir + "/data/magnetic_cataclysmic_variables.csv")
 
-    pdf = pd.DataFrame(
-        {
-            "ra": ra.to_numpy(),
-            "dec": dec.to_numpy(),
-            "candid": range(len(ra)),
-        }
-    )
+    pdf = pd.DataFrame({
+        "ra": ra.to_numpy(),
+        "dec": dec.to_numpy(),
+        "candid": range(len(ra)),
+    })
 
     # create catalogs
     catalog_ztf = SkyCoord(
@@ -164,14 +162,12 @@ def magnetic_cvs(objectId, isdiffpos, ra, dec) -> pd.Series:
 
     mask = names != "Unknown"
     if len(names[mask]) > 0:
-        pdf = pd.DataFrame(
-            {
-                "objectId": objectId[mask],
-                "ra": ra[mask],
-                "dec": dec[mask],
-                "name": names[mask],
-            }
-        )
+        pdf = pd.DataFrame({
+            "objectId": objectId[mask],
+            "ra": ra[mask],
+            "dec": dec[mask],
+            "name": names[mask],
+        })
         send_to_telegram(pdf, channel="@fink_magnetic_cv_stars")
 
     return pd.Series(mask)

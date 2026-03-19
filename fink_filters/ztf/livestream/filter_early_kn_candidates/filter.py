@@ -76,15 +76,13 @@ def perform_classification(
             dec=np.array(pdf_mangrove.dec, dtype=float) * u.degree,
         )
 
-        pdf = pd.DataFrame.from_dict(
-            {
-                "fid": fid[f_kn],
-                "ra": ra[f_kn],
-                "dec": dec[f_kn],
-                "mag": magpsf[f_kn],
-                "err_mag": sigmapsf[f_kn],
-            }
-        )
+        pdf = pd.DataFrame.from_dict({
+            "fid": fid[f_kn],
+            "ra": ra[f_kn],
+            "dec": dec[f_kn],
+            "mag": magpsf[f_kn],
+            "err_mag": sigmapsf[f_kn],
+        })
 
         # identify galaxy somehow close to each alert. Distances are in Mpc
         idx_mangrove, idxself, _, _ = SkyCoord(
