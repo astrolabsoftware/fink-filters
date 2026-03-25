@@ -92,7 +92,7 @@ def extragalactic_new_candidate(
 
     Notes
     -----
-    Based on an extragalactic block, time cut, sampling cut, and rate cut.
+    Based on a good quality block, an extragalactic block, time cut, sampling cut, and rate cut.
     Rising alerts must have rate < -0.2 mag/day and last less than 3 days.
     Fading alerts must have rate < 0.2 mag/day in r/i bands, or > 0.5 mag/day in g/u bands.
 
@@ -150,9 +150,12 @@ def extragalactic_new_candidate(
         legacydr8_zphot,
     )
 
+    f_good_quality = fb.b_good_quality(diaSource=diaSource)
+
     # 5 days maximum
     f_new = (diaSource.midpointMjdTai - firstDiaSourceMjdTaiFink) < 5.0
 
+    # Keep only bright alerts (mag < 24, i.e. brighter than magnitude 24)
     f_bright = fu.flux_to_apparent_mag(diaSource.psfFlux) < 24
 
     # Minimum 2 points
@@ -172,6 +175,8 @@ def extragalactic_new_candidate(
         prev_flux
     )
     delta_time = diaSource.midpointMjdTai - prev_time
+
+    # Check that the rising is less then 3 days
     delta_time_rising = diaSource.midpointMjdTai - firstDiaSourceMjdTaiFink
 
     rate = delta_mag / delta_time
@@ -183,51 +188,22 @@ def extragalactic_new_candidate(
     f_rate = f_rising | f_fading_ri | f_fading_gu
 
     f_extragalactic_new = (
-        f_extragalactic_near_galaxy & f_new & f_sampling & f_bright & f_rate
+        f_good_quality
+        & f_extragalactic_near_galaxy
+        & f_new
+        & f_sampling
+        & f_bright
+        & f_rate
     )
-
-    print(f"f_extragalactic_near_galaxy: {f_extragalactic_near_galaxy.sum()}")
-    print(f"f_new: {f_new.sum()}")
-    print(f"f_bright: {f_bright.sum()}")
-    print(f"f_sampling: {f_sampling.sum()}")
-    print(f"f_rate: {f_rate.sum()}")
-    print(f"extragalactic & new: {(f_extragalactic_near_galaxy & f_new).sum()}")
-    print(
-        f"extragalactic & new & bright: {(f_extragalactic_near_galaxy & f_new & f_bright).sum()}"
-    )
-    print(
-        f"extragalactic & new & bright & sampling: {(f_extragalactic_near_galaxy & f_new & f_bright & f_sampling).sum()}"
-    )
-    print(f"final: {f_extragalactic_new.sum()}")
-
-    with open("/home/libs/fink-filters/filter_stats.csv", "a") as f:
-        f.write(
-            f"{f_extragalactic_near_galaxy.sum()},"
-            f"{f_new.sum()},"
-            f"{f_bright.sum()},"
-            f"{f_sampling.sum()},"
-            f"{f_rate.sum()},"
-            f"{(f_extragalactic_near_galaxy & f_new).sum()},"
-            f"{(f_extragalactic_near_galaxy & f_new & f_bright).sum()},"
-            f"{(f_extragalactic_near_galaxy & f_new & f_bright & f_sampling).sum()},"
-            f"{f_extragalactic_new.sum()}\n"
-        )
 
     return f_extragalactic_new
 
 
 if __name__ == "__main__":
     """Test suite for filters"""
-    from pyspark.sql import SparkSession
+    # Run the test suite
 
     from fink_filters.tester import spark_unit_tests
 
-    data_path = "file:///home/libs/fink-filters/ftransfer_lsst_2026-03-16_32871"
-
-    spark = SparkSession.builder.getOrCreate()
-    spark.conf.set("spark.sql.parquet.enableVectorizedReader", "false")
     globs = globals()
-    globs["spark"] = spark
-    globs["df"] = spark.read.option("mergeSchema", "true").format("parquet").load(data_path)
-
-    spark_unit_tests(globs, load_rubin_df=False)
+    spark_unit_tests(globs, load_rubin_df=True)
