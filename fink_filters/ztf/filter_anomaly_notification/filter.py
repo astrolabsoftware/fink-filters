@@ -162,6 +162,8 @@ def anomaly_notification_(
     # Filtering by coordinates
     if cut_coords:
         df_proc = df_proc.filter("dec <= 20 AND (ra >= 160 AND ra <= 240)")
+        # We need to know the total number of objects per night which satisfy the condition on coordinates
+        cut_count = df_proc.count()
     if custom_filter:
         df_proc = df_proc.filter(custom_filter)
     df_proc = df_proc.filter(f"not isnull(anomaly_score{model})")
