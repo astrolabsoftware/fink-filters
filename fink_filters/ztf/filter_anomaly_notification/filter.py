@@ -137,9 +137,6 @@ def anomaly_notification_(
     ...         'candidate.dec', 'candidate.rb',
     ...         f'anomaly_score{model}', 'timestamp', 'candid')
     ...     df_out = anomaly_notification_(df_proc, send_to_tg=False,
-    ...     send_to_slack=False, send_to_anomaly_base=True, model=model)
-    ...         f'anomaly_score{model}', 'timestamp', 'candid')
-    ...     df_out = anomaly_notification_(df_proc, send_to_tg=False,
     ...     send_to_slack=False, send_to_anomaly_base=True, model=model, custom_filter="objectId LIKE '%ZTF21%'")
 
     # Disable communication
