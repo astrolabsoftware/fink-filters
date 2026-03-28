@@ -146,7 +146,7 @@ def anomaly_notification_(
     ...         'anomaly_score', 'timestamp', 'candid')
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=True, channel_id='@fink_test',
-    ...     send_to_slack=False, channel_name=None)
+    ...     send_to_slack=False, channel_name=None, custom_filter="objectId LIKE '%ZTF21%'")
 
     # Check cut_coords
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
