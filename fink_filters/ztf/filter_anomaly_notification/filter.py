@@ -37,7 +37,7 @@ def anomaly_notification_(
     timeout=25,
     model="",
     curve_last_days=None,
-    custom_filter='',
+    custom_filter=None,
 ):
     """Create event notifications with a high `anomaly_score` value
 
