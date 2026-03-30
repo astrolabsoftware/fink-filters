@@ -18,27 +18,32 @@ import pandas as pd
 DESCRIPTION = "Select 1% of all live alerts in a uniformly random way"
 
 def uniform_sample(diaSourceId: pd.Series) -> pd.Series:
-    """
+    """Select 1% of all live alerts in a uniformly random way.
+    Alerts are filtered by `diaSourceId % 113==0`.
+
+    Parameters
+    ----------
+    diaSourceId: pd.Series
+        The diaSourceId for the alert assigned by the Rubin/LSST Pipeline
+
+    Returns
+    -------
+    random_alerts: pd.Series
+        pd.Series of random diaSourceIds
 
     Examples
     ---------
-    >>> import numpy as np
-    >>> import os
     >>> from fink_utils.spark.utils import apply_user_defined_filter
-    >>> # df = pd.read_parquet('dataset/rubin_test_data_10_0.parquet')
-    >>> # df = spark.read.format('parquet').load('dataset/rubin_test_data_10_0.parquet')
     >>> totalcount = df.count()
-    >>> f = 'fink_filters.rubin.livestream.filter_uniform_sample.uniform_sample'
-    >>> df = apply_user_defined_filter(df, f)
-    >>> ratio = df.count() / totalcount
-    >>> (0.005 <= ratio < 0.02) # check we are between 0.5% and 2%
+    >>> f = 'fink_filters.rubin.livestream.filter_uniform_sample.filter.uniform_sample'
+    >>> rand_df = apply_user_defined_filter(df, f)
+    >>> ratio = rand_df.count() / totalcount
+    >>> (0.005 <= ratio < 0.04) # check we are between 0.5% and 4%
     True
     """
-    # diaSourceId % 113 == 0
-    random_alert = diaSourceId.apply(lambda x: x % 113 == 0)
-    return random_alert
+    return diaSourceId % 113 == 0
 
 if __name__ == "__main__":
     from fink_filters.tester import spark_unit_tests
     globs = globals()
-    spark_unit_tests(globs, load_rubin_df=True)	
+    spark_unit_tests(globs, load_rubin_df=True)
