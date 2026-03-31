@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Select 1% of all live alerts in a uniformly random way"""
+
 import pandas as pd
 
 DESCRIPTION = "Select 1% of all live alerts in a uniformly random way"
+
 
 def uniform_sample(diaSourceId: pd.Series) -> pd.Series:
     """Select 1% of all live alerts in a uniformly random way.
@@ -32,7 +34,7 @@ def uniform_sample(diaSourceId: pd.Series) -> pd.Series:
         pd.Series of random diaSourceIds
 
     Examples
-    ---------
+    --------
     >>> from fink_utils.spark.utils import apply_user_defined_filter
     >>> totalcount = df.count()
     >>> f = 'fink_filters.rubin.livestream.filter_uniform_sample.filter.uniform_sample'
@@ -43,7 +45,9 @@ def uniform_sample(diaSourceId: pd.Series) -> pd.Series:
     """
     return diaSourceId % 113 == 0
 
+
 if __name__ == "__main__":
     from fink_filters.tester import spark_unit_tests
+
     globs = globals()
     spark_unit_tests(globs, load_rubin_df=True)
