@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 
-APIURL = 'https://api.ztf.fink-portal.org'
+APIURL = "https://api.ztf.fink-portal.org"
 
 data = {"name": [], "ra": [], "dec": []}
 
@@ -29,7 +29,7 @@ for name in tns_names:
 
 # Gezari TDEs
 pdf = pd.read_csv("TDElist_Gezari2021.tsv", sep="\t", header=None)
-names = pdf[0].values
+names = pdf[0].to_numpy()
 
 for name in names:
     if "/" in name:
