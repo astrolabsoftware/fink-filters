@@ -21,6 +21,9 @@ DESCRIPTION = "Select 1% of all live alerts in a uniformly random way"
 
 def uniform_sample(diaSourceId: pd.Series) -> pd.Series:
     """Select 1% of all live alerts in a uniformly random way.
+
+    Notes
+    -----
     Alerts are filtered by `diaSourceId % 113==0`.
 
     Parameters
