@@ -29,13 +29,13 @@ setuptools.setup(
     url="https://fink-broker.readthedocs.io/en/latest/",
     packages=setuptools.find_packages(),
     package_data={
-        'fink_filters': [
-            'data/mangrove_filtered.csv',
-            'data/list_dwarfs_AGN_RADEC.parquet',
-            'data/symbiotic_and_cataclysmic.parquet',
-            'data/tde.parquet',
-            'data/magnetic_cataclysmic_variables.csv',
-            'ztf/filter_early_tde_candidates/data/*.ubj'
+        "fink_filters": [
+            "data/mangrove_filtered.csv",
+            "data/list_dwarfs_AGN_RADEC.parquet",
+            "data/symbiotic_and_cataclysmic.parquet",
+            "data/tde.parquet",
+            "data/magnetic_cataclysmic_variables.csv",
+            "ztf/filter_early_tde_candidates/data/*.ubj",
         ],
     },
     classifiers=[
@@ -47,7 +47,7 @@ setuptools.setup(
         "Intended Audience :: Science/Research",
     ],
     project_urls={
-        'Documentation': "https://fink-broker.readthedocs.io/en/latest/",
-        'Source': 'https://github.com/astrolabsoftware/fink-filters'
+        "Documentation": "https://fink-broker.readthedocs.io/en/latest/",
+        "Source": "https://github.com/astrolabsoftware/fink-filters",
     },
 )

@@ -144,7 +144,10 @@ def perform_classification(
             # query limit.
             try:
                 table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
-            except (requests.exceptions.ReadTimeout, requests.exceptions.HTTPError) as e:
+            except (
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.HTTPError,
+            ) as e:
                 log.warning("Error with SDSS server: {}".format(e))
                 table = None
 
