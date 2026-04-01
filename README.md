@@ -1,6 +1,5 @@
 [![pypi](https://img.shields.io/pypi/v/fink-filters.svg)](https://pypi.python.org/pypi/fink-filters)
-[![Sentinel ZTF](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_ztf.yml/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_ztf.yml)
-[![Sentinel Rubin](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_rubin.yml/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test_rubin.yml)
+[![Sentinel](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test.yml/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions/workflows/run_test.yml)
 [![PEP8](https://github.com/astrolabsoftware/fink-filters/workflows/PEP8/badge.svg)](https://github.com/astrolabsoftware/fink-filters/actions?query=workflow%3APEP8)
 [![codecov](https://codecov.io/gh/astrolabsoftware/fink-filters/branch/master/graph/badge.svg)](https://codecov.io/gh/astrolabsoftware/fink-filters)
 
