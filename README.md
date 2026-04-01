@@ -6,7 +6,10 @@
 
 # Fink filters
 
-This repository contains filters used to flag particular parts of the full stream to be distributed to Fink users. More information about available topics and how to create your filter at [https://doc.ztf.fink-broker.org/en/latest/broker/filters/](https://doc.ztf.fink-broker.org/en/latest/broker/filters/).
+This repository contains filters used to flag particular parts of the full stream to be distributed to Fink users. More information about available topics and how to create your filter at 
+
+- ZTF: [https://doc.ztf.fink-broker.org/en/latest/broker/filters/](https://doc.ztf.fink-broker.org/en/latest/broker/filters/)
+- LSST: [https://doc.lsst.fink-broker.org/science/filters/](https://doc.lsst.fink-broker.org/science/filters/)
 
 ## Installation
 
@@ -19,11 +22,3 @@ pip install fink_filters --upgrade
 ## Taxonomy
 
 There are two types of filters: filters that run on the live stream, and filters that are applied after the observing night (e.g. because they need to aggregate data before, or compute statistics). For each survey, the first kind can be found in the folder `livestream`.
-
-## Rubin
-
-For Rubin, 1 filter = 1 class = 1 HBase table (query). The name of the filter is also the same name for the class, and the same name for the Kafka topic.
-
-### Test data
-
-Testing the filters & blocks require science data. Fire a Fink container, process data inside, and transfer it here (`datatest` folder).
