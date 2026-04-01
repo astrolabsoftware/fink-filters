@@ -75,6 +75,34 @@ def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
     return pd.Series(mask_away_from_galactic_plane)
 
 
+def b_outside_galactic_plane_5_deg(ra: pd.Series, dec: pd.Series) -> pd.Series:
+    """Return alerts outside the galactic plane (+/- |5| deg)
+
+    Parameters
+    ----------
+    ra: pd.Series of float
+        RA in degree
+    dec: pd.Series of float
+        DEC in degree
+
+    Returns
+    -------
+    out: pd.Series of booleans
+        True if outside the plane. False otherwise
+
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane_5_deg")
+    >>> df2.count()
+    27
+    """
+    coords = SkyCoord(ra.astype(float), dec.astype(float), unit="deg")
+    b = coords.galactic.b.deg
+    mask_away_from_galactic_plane = np.abs(b) > 5
+    return pd.Series(mask_away_from_galactic_plane)
+
+
 def b_xmatched_simbad_galaxy(simbad_otype: pd.Series) -> pd.Series:
     """Return alerts xmatched to a galaxy with SIMBAD.
 
