@@ -37,6 +37,7 @@ def anomaly_notification_(
     timeout=25,
     model="",
     curve_last_days=None,
+    custom_filter=None,
 ):
     """Create event notifications with a high `anomaly_score` value
 
@@ -89,6 +90,8 @@ def anomaly_notification_(
         account. Only works for model != ‘’
     curve_last_days: int, optional
         The number of recent days for which the light curve is displayed
+    custom_filter: str, optional
+        Alert filtering condition
 
 
 
@@ -134,7 +137,7 @@ def anomaly_notification_(
     ...         'candidate.dec', 'candidate.rb',
     ...         f'anomaly_score{model}', 'timestamp', 'candid')
     ...     df_out = anomaly_notification_(df_proc, send_to_tg=False,
-    ...     send_to_slack=False, send_to_anomaly_base=True, model=model)
+    ...     send_to_slack=False, send_to_anomaly_base=True, model=model, custom_filter="objectId LIKE '%ZTF21%'")
 
     # Disable communication
     >>> df_proc = df.select(
@@ -143,7 +146,7 @@ def anomaly_notification_(
     ...         'anomaly_score', 'timestamp', 'candid')
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
     ...     send_to_tg=True, channel_id='@fink_test',
-    ...     send_to_slack=False, channel_name=None)
+    ...     send_to_slack=False, channel_name=None, custom_filter="objectId LIKE '%ZTF21%'")
 
     # Check cut_coords
     >>> pdf_anomalies = anomaly_notification_(df_proc, threshold=10,
@@ -158,8 +161,8 @@ def anomaly_notification_(
         df_proc = df_proc.filter("dec <= 20 AND (ra >= 160 AND ra <= 240)")
         # We need to know the total number of objects per night which satisfy the condition on coordinates
         cut_count = df_proc.count()
-        if cut_count == 0:
-            return pd.DataFrame()
+    if custom_filter:
+        df_proc = df_proc.filter(custom_filter)
     df_proc = df_proc.filter(f"not isnull(anomaly_score{model})")
     if df_proc.rdd.isEmpty():
         return pd.DataFrame()
