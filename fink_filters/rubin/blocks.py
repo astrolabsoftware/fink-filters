@@ -47,7 +47,7 @@ def b_is_solar_system(is_sso: pd.Series) -> pd.Series:
     return is_sso
 
 
-def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
+def b_outside_galactic_plane_20_deg(ra: pd.Series, dec: pd.Series) -> pd.Series:
     """Return alerts outside the galactic plane (+/- |20| deg)
 
     Parameters
@@ -65,7 +65,7 @@ def b_outside_galactic_plane(ra: pd.Series, dec: pd.Series) -> pd.Series:
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane")
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane_20_deg")
     >>> df2.count()
     27
     """
@@ -487,7 +487,7 @@ def extragalactic_base(
     mask_unknown_simbad = b_xmatched_simbad_unknown(simbad_otype)
 
     # Outside galactic plane
-    mask_outside_galactic_plane = b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+    mask_outside_galactic_plane = b_outside_galactic_plane_20_deg(diaSource.ra, diaSource.dec)
 
     # Not a roid
     mask_roid = b_is_solar_system(is_sso)
