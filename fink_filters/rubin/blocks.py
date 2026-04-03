@@ -67,7 +67,9 @@ def b_outside_galactic_plane(diaSource: pd.DataFrame) -> pd.Series:
     >>> df2.count()
     27
     """
-    coords = SkyCoord(diaSource.ra.astype(float), diaSource.dec.astype(float), unit="deg")
+    coords = SkyCoord(
+        diaSource.ra.astype(float), diaSource.dec.astype(float), unit="deg"
+    )
     b = coords.galactic.b.deg
     mask_away_from_galactic_plane = np.abs(b) > 20
     return pd.Series(mask_away_from_galactic_plane)
@@ -457,7 +459,7 @@ def extragalactic_base(
     mask_unknown_simbad = b_xmatched_simbad_unknown(simbad_otype)
 
     # Outside galactic plane
-    mask_outside_galactic_plane = b_outside_galactic_plane(diaSource.ra, diaSource.dec)
+    mask_outside_galactic_plane = b_outside_galactic_plane(diaSource)
 
     # Not a roid
     mask_roid = b_is_solar_system(is_sso)
