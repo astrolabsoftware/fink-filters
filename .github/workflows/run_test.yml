@@ -46,5 +46,8 @@ jobs:
       run: |
         pip install py4j
         rm -f /tmp/forest_*.onnx
+        #Temporary
+        pip uninstall -y fink-utils
+        pip install git+https://github.com/astrolabsoftware/fink-utils@39b13673c0b512e65de0ed70c3745736cf125b52
         ./run_tests.sh -s ${{ matrix.survey }}
         curl -s https://codecov.io/bash | bash
