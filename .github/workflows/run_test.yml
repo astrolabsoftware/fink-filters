@@ -48,6 +48,6 @@ jobs:
         rm -f /tmp/forest_*.onnx
         #Temporary
         pip uninstall -y fink-utils
-        pip install git+https://github.com/astrolabsoftware/fink-utils@39b13673c0b512e65de0ed70c3745736cf125b52
+        pip install git+https://github.com/astrolabsoftware/fink-utils@0196091fd384c1483b22fb25bb73e990f72700d6
         ./run_tests.sh -s ${{ matrix.survey }}
         curl -s https://codecov.io/bash | bash
