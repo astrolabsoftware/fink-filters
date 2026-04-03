@@ -18,7 +18,7 @@ jobs:
       image: "gitlab-registry.in2p3.fr/astrolabsoftware/fink/fink-deps-sentinel-${{ matrix.survey }}:latest"
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up env [1/2]
       run: |
@@ -46,5 +46,8 @@ jobs:
       run: |
         pip install py4j
         rm -f /tmp/forest_*.onnx
+        # uncomment temporarily for local tests
+        # pip uninstall -y fink-utils
+        # pip install git+https://github.com/astrolabsoftware/fink-utils@0196091fd384c1483b22fb25bb73e990f72700d6
         ./run_tests.sh -s ${{ matrix.survey }}
         curl -s https://codecov.io/bash | bash

@@ -15,7 +15,7 @@ jobs:
         python-version: [3.9, "3.13"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -24,19 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install ruff --upgrade
-    - name: utilities
+    - name: lint
       run: |
-        ruff check --preview --statistics fink_filters/*.py
-        ruff format --preview --check fink_filters/*.py
-    - name: classification
-      run: |
-        ruff check --preview --statistics fink_filters/*/*.py
-        ruff format --preview --check fink_filters/*/*.py
-    - name: After the night filters
-      run: |
-        ruff check --preview --statistics fink_filters/*/filter_*/*.py
-        ruff format --preview --check fink_filters/*/filter_*/*.py
-    - name: Livestream filters
-      run: |
-        ruff check --preview --statistics fink_filters/*/livestream/*/*.py
-        ruff format --preview --check fink_filters/*/livestream/*/*.py
+        ruff check --preview --statistics .
+        ruff format --preview --check .
