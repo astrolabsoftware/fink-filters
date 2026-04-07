@@ -75,15 +75,13 @@ def b_outside_galactic_plane_20_deg(diaSource: pd.DataFrame) -> pd.Series:
     return pd.Series(mask_away_from_galactic_plane)
 
 
-def b_outside_galactic_plane_5_deg(ra: pd.Series, dec: pd.Series) -> pd.Series:
+def b_outside_galactic_plane_5_deg(diaSource: pd.DataFrame) -> pd.Series:
     """Return alerts outside the galactic plane (+/- |5| deg)
 
     Parameters
     ----------
-    ra: pd.Series of float
-        RA in degree
-    dec: pd.Series of float
-        DEC in degree
+    diaSource: pd.DataFrame
+        Field containing `ra` and `dec` in degree
 
     Returns
     -------
@@ -97,7 +95,9 @@ def b_outside_galactic_plane_5_deg(ra: pd.Series, dec: pd.Series) -> pd.Series:
     >>> df2.count()
     27
     """
-    coords = SkyCoord(ra.astype(float), dec.astype(float), unit="deg")
+    coords = SkyCoord(
+        diaSource.ra.astype(float), diaSource.dec.astype(float), unit="deg"
+    )
     b = coords.galactic.b.deg
     mask_away_from_galactic_plane = np.abs(b) > 5
     return pd.Series(mask_away_from_galactic_plane)
