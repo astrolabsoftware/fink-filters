@@ -59,7 +59,7 @@ def hostless_candidate(
     f_hostless = (
         f_good_quality
         & (elephant_kstest_template < 0.95)
-        & f_outside_galactic_plant
+        & f_outside_galactic_plane
         & f_bright
     )
 
