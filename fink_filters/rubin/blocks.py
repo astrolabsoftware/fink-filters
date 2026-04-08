@@ -47,7 +47,7 @@ def b_is_solar_system(is_sso: pd.Series) -> pd.Series:
     return is_sso
 
 
-def b_outside_galactic_plane(diaSource: pd.DataFrame) -> pd.Series:
+def b_outside_galactic_plane_20_deg(diaSource: pd.DataFrame) -> pd.Series:
     """Return alerts outside the galactic plane (+/- |20| deg)
 
     Parameters
@@ -63,7 +63,7 @@ def b_outside_galactic_plane(diaSource: pd.DataFrame) -> pd.Series:
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane")
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane_20_deg")
     >>> df2.count()
     27
     """
@@ -72,6 +72,34 @@ def b_outside_galactic_plane(diaSource: pd.DataFrame) -> pd.Series:
     )
     b = coords.galactic.b.deg
     mask_away_from_galactic_plane = np.abs(b) > 20
+    return pd.Series(mask_away_from_galactic_plane)
+
+
+def b_outside_galactic_plane_5_deg(diaSource: pd.DataFrame) -> pd.Series:
+    """Return alerts outside the galactic plane (+/- |5| deg)
+
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Field containing `ra` and `dec` in degree
+
+    Returns
+    -------
+    out: pd.Series of booleans
+        True if outside the plane. False otherwise
+
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_outside_galactic_plane_5_deg")
+    >>> df2.count()
+    27
+    """
+    coords = SkyCoord(
+        diaSource.ra.astype(float), diaSource.dec.astype(float), unit="deg"
+    )
+    b = coords.galactic.b.deg
+    mask_away_from_galactic_plane = np.abs(b) > 5
     return pd.Series(mask_away_from_galactic_plane)
 
 
@@ -459,7 +487,7 @@ def extragalactic_base(
     mask_unknown_simbad = b_xmatched_simbad_unknown(simbad_otype)
 
     # Outside galactic plane
-    mask_outside_galactic_plane = b_outside_galactic_plane(diaSource)
+    mask_outside_galactic_plane = b_outside_galactic_plane_20_deg(diaSource)
 
     # Not a roid
     mask_roid = b_is_solar_system(is_sso)

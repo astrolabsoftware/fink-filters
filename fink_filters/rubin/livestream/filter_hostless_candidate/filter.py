@@ -54,12 +54,12 @@ def hostless_candidate(
     """
     # Good quality
     f_good_quality = fb.b_good_quality(diaSource)
-    f_outside_galactic_plant = fb.b_outside_galactic_plane(diaSource)
+    f_outside_galactic_plane = fb.b_outside_galactic_plane_20_deg(diaSource)
     f_bright = fu.flux_to_apparent_mag(diaSource.psfFlux) <= 21.5
     f_hostless = (
         f_good_quality
         & (elephant_kstest_template < 0.95)
-        & f_outside_galactic_plant
+        & f_outside_galactic_plane
         & f_bright
     )
 
