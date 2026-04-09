@@ -43,22 +43,81 @@ def high_state_filter(instantness_high, robustness_high) -> pd.Series:
     Examples
     --------
     >>> import pyspark.sql.functions as F
+    >>> import os
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from fink_utils.spark.utils import concat_col
+    >>> from fink_science.ztf.standardized_flux.processor import standardized_flux
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
-    # Test
-    >>> df = spark.read.parquet(ztf_alert_sample)
-    >>> df = df.withColumn(
+    >>> parDF = spark.read.parquet(ztf_alert_sample)
+    >>> parDF = parDF.drop("blazar_stats")
+
+    # Required alert columns
+    >>> what = [
+    ...     "distnr",
+    ...     "magpsf",
+    ...     "sigmapsf",
+    ...     "magnr",
+    ...     "sigmagnr",
+    ...     "isdiffpos",
+    ...     "fid",
+    ...     "jd",
+    ...     "ra",
+    ...     "dec",
+    ... ]
+
+    # Concatenation
+    >>> prefix = "c"
+    >>> for key in what:
+    ...     parDF = concat_col(parDF, colname=key, prefix=prefix)
+
+    # Preliminary module run
+    >>> args = [
+    ...     "candid",
+    ...     "objectId",
+    ...     "cdistnr",
+    ...     "cmagpsf",
+    ...     "csigmapsf",
+    ...     "cmagnr",
+    ...     "csigmagnr",
+    ...     "cisdiffpos",
+    ...     "cfid",
+    ...     "cjd",
+    ... ]
+    >>> parDF = parDF.withColumn(
+    ...     "container",
+    ...     standardized_flux(*args)
+    ... )
+    >>> parDF = parDF.withColumn(
+    ...     "cstd_flux",
+    ...     parDF["container"].getItem("flux")
+    ... )
+    >>> parDF = parDF.withColumn(
+    ...     "csigma_std_flux",
+    ...     parDF["container"].getItem("sigma")
+    ... )
+
+    # Drop temporary columns
+    >>> what_prefix = [prefix + key for key in what]
+    >>> parDF = parDF.drop("container")
+
+    # Test the module
+    >>> args = ["candid", "objectId", "cstd_flux", "cjd", "cra", "cdec"]
+    >>> parDF = parDF.withColumn("blazar_stats", extreme_state(*args))
+
+    >>> parDF = parDF.withColumn(
     ...     "instantness_high",
     ...     F.col("blazar_stats").getItem("instantness_high").alias("instantness_high")
     ... )
-    >>> print(df.select("instantness_high").toPandas())
-    >>> df = df.withColumn(
+    >>> print(parDF.select("instantness_high").toPandas())
+    >>> parDF = parDF.withColumn(
     ...     "robustness_high",
     ...     F.col("blazar_stats").getItem("robustness_high").alias("robustness_high")
     ... )
     >>> f = "fink_filters.ztf.filter_blazar_high_state.filter.high_state_filter"
-    >>> df = apply_user_defined_filter(df, f)
-    >>> print(df.count())
+    >>> parDF = apply_user_defined_filter(parDF, f)
+    >>> print(parDF.count())
     12
     """
     f1 = (instantness_high < 1) & (instantness_high >= 0)
