@@ -51,6 +51,7 @@ def high_state_filter(instantness_high, robustness_high) -> pd.Series:
     ...     "instantness_high",
     ...     F.col("blazar_stats").getItem("instantness_high").alias("instantness_high")
     ... )
+    >>> print(df.select("instantness_high").toPandas())
     >>> df = df.withColumn(
     ...     "robustness_high",
     ...     F.col("blazar_stats").getItem("robustness_high").alias("robustness_high")
