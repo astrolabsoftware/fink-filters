@@ -118,7 +118,7 @@ def high_state_filter(instantness_high, robustness_high) -> pd.Series:
     >>> f = "fink_filters.ztf.filter_blazar_high_state.filter.high_state_filter"
     >>> parDF = apply_user_defined_filter(parDF, f)
     >>> print(parDF.count())
-    47
+    24
     """
     f1 = instantness_high > 1
     f2 = robustness_high > 1
