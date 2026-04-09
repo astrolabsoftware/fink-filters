@@ -48,6 +48,7 @@ def high_state_filter(instantness_high, robustness_high) -> pd.Series:
     >>> import pandas as pd
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_science.ztf.standardized_flux.processor import standardized_flux
+    >>> from fink_science.ztf.blazar_extreme_state.processor import extreme_state
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
     >>> parDF = spark.read.parquet(ztf_alert_sample)
