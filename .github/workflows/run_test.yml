@@ -46,12 +46,8 @@ jobs:
       run: |
         pip install py4j
         rm -f /tmp/forest_*.onnx
-<<<<<<< Updated upstream
         # uncomment temporarily for local tests
         # pip uninstall -y fink-utils
         # pip install git+https://github.com/astrolabsoftware/fink-utils@0196091fd384c1483b22fb25bb73e990f72700d6
-        ./run_tests.sh -s ${{ matrix.survey }}
-=======
         ./run_tests.sh -s ${{ matrix.survey }} --single_module "fink_filters/ztf/filter_blazar_high_state/filter.py"
->>>>>>> Stashed changes
         curl -s https://codecov.io/bash | bash
