@@ -147,6 +147,7 @@ def perform_classification(
             except (
                 requests.exceptions.ReadTimeout,
                 requests.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
             ) as e:
                 log.warning("Error with SDSS server: {}".format(e))
                 table = None
