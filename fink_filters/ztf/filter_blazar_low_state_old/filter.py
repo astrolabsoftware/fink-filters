@@ -53,6 +53,78 @@ def low_state_filter(m1, m2) -> pd.Series:
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     12
+
+    Examples
+    --------
+    >>> import pyspark.sql.functions as F
+    >>> import os
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from fink_utils.spark.utils import concat_col
+    >>> from fink_science.ztf.standardized_flux.processor import standardized_flux
+    >>> from fink_science.ztf.blazar_low_state.processor import quiescent_state
+    >>> from fink_utils.spark.utils import apply_user_defined_filter
+
+    >>> parDF = spark.read.parquet(ztf_alert_sample)
+    >>> parDF = parDF.drop("blazar_stats")
+
+    # Required alert columns
+    >>> what = [
+    ...     'distnr',
+    ...     'magpsf',
+    ...     'sigmapsf',
+    ...     'magnr',
+    ...     'sigmagnr',
+    ...     'isdiffpos',
+    ...     'fid',
+    ...     'jd'
+    ... ]
+
+    # Concatenation
+    >>> prefix = 'c'
+    >>> for key in what:
+    ...     parDF = concat_col(parDF, colname=key, prefix=prefix)
+
+    # Preliminary module run
+    >>> args = [
+    ...     'candid',
+    ...     'objectId',
+    ...     'cdistnr',
+    ...     'cmagpsf',
+    ...     'csigmapsf',
+    ...     'cmagnr',
+    ...     'csigmagnr',
+    ...     'cisdiffpos',
+    ...     'cfid',
+    ...     'cjd'
+    ... ]
+    >>> parDF = parDF.withColumn(
+    ...     'container',
+    ...     standardized_flux(*args)
+    ... )
+    >>> parDF = parDF.withColumn(
+    ...     'cstd_flux',
+    ...     parDF['container'].getItem('flux')
+    ... )
+    >>> parDF = parDF.withColumn(
+    ...     'csigma_std_flux',
+    ...     parDF['container'].getItem('sigma')
+    ... )
+
+    # Drop temporary columns
+    >>> what_prefix = [prefix + key for key in what]
+    >>> parDF = parDF.drop('container')
+
+    # Test the module
+    >>> args = ['candid', 'objectId', 'cstd_flux', 'cjd']
+    >>> parDF = parDF.withColumn('blazar_stats', quiescent_state(*args))
+
+    >>> df = df.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
+    >>> df = df.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
+    >>> f = 'fink_filters.ztf.filter_blazar_low_state_old.filter.low_state_filter'
+    >>> df = apply_user_defined_filter(df, f)
+    >>> print(df.count())
+    12
     """
     f1 = (m1 < 1) & (m1 >= 0)
     f2 = (m2 < 1) & (m2 >= 0)
