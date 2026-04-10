@@ -33,6 +33,8 @@ from scipy.optimize import curve_fit
 
 from fink_filters.tester import spark_unit_tests
 
+log = logging.Logger("Kilonova filter")
+
 
 def perform_classification(
     objectId,
@@ -174,7 +176,15 @@ def perform_classification(
             )
             # for a test on "many" objects, you may wait 1s to stay under the
             # query limit.
-            table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
+            try:
+                table = SDSS.query_region(pos, fields=["type"], radius=5 * u.arcsec)
+            except (
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
+            ) as e:
+                log.warning("Error with SDSS server: {}".format(e))
+                table = None
             type_close_objects = []
             if table is not None:
                 type_close_objects = table["type"]
