@@ -120,8 +120,7 @@ def high_state_filter(instantness_high, robustness_high) -> pd.Series:
     >>> print(parDF.count())
     24
     """
-    f1 = instantness_high > 1
-    f2 = robustness_high > 1
+    f1, f2 = instantness_high > 1, robustness_high > 1
     return pd.Series(f1 & f2)
 
 
