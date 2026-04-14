@@ -119,12 +119,12 @@ def low_state_filter(m1, m2) -> pd.Series:
     >>> args = ['candid', 'objectId', 'cstd_flux', 'cjd']
     >>> parDF = parDF.withColumn('blazar_stats', quiescent_state(*args))
 
-    >>> df = df.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
-    >>> df = df.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
+    >>> parDF = parDF.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
+    >>> parDF = parDF.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
     >>> f = 'fink_filters.ztf.filter_blazar_low_state_old.filter.low_state_filter'
-    >>> df = apply_user_defined_filter(df, f)
-    >>> print(df.count())
-    12
+    >>> parDF = apply_user_defined_filter(parDF, f)
+    >>> print(parDF.count())
+    8
     """
     f1, f2 = (m1 < 1) & (m1 >= 0), (m2 < 1) & (m2 >= 0)
     return pd.Series(f1 & f2)
