@@ -92,7 +92,7 @@ def extragalactic_new_candidate(
 
     Notes
     -----
-    Based on a good quality block, an extragalactic block, time cut, sampling cut, and rate cut.
+    Based on an extragalactic block, time cut, sampling cut, and rate cut.
     Rising alerts must have rate < -0.2 mag/day and last less than 3 days.
     Fading alerts must have rate < 0.2 mag/day in r/i bands, or > 0.5 mag/day in g/u bands.
 
@@ -150,12 +150,9 @@ def extragalactic_new_candidate(
         legacydr8_zphot,
     )
 
-    f_good_quality = fb.b_good_quality(diaSource=diaSource)
-
     # 5 days maximum
     f_new = (diaSource.midpointMjdTai - firstDiaSourceMjdTaiFink) < 5.0
 
-    # Keep only bright alerts (mag < 24, i.e. brighter than magnitude 24)
     f_bright = fu.flux_to_apparent_mag(diaSource.psfFlux) < 24
 
     # Minimum 2 points
@@ -175,25 +172,19 @@ def extragalactic_new_candidate(
         prev_flux
     )
     delta_time = diaSource.midpointMjdTai - prev_time
-
-    # Check that the rising is less then 3 days
     delta_time_rising = diaSource.midpointMjdTai - firstDiaSourceMjdTaiFink
 
     rate = delta_mag / delta_time
 
     f_rising = (rate < -0.2) & (delta_time_rising < 3)
 
-    f_fading_ri = ((diaSource.band == "r") | (diaSource.band == "i")) & (rate < 0.2)
+    f_fading_ri = ((diaSource.band == "r") | (diaSource.band == "i")) & (rate > 0.2)
     f_fading_gu = ((diaSource.band == "g") | (diaSource.band == "u")) & (rate > 0.5)
+
     f_rate = f_rising | f_fading_ri | f_fading_gu
 
     f_extragalactic_new = (
-        f_good_quality
-        & f_extragalactic_near_galaxy
-        & f_new
-        & f_sampling
-        & f_bright
-        & f_rate
+        f_extragalactic_near_galaxy & f_new & f_sampling & f_bright & f_rate
     )
 
     return f_extragalactic_new
