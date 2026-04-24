@@ -12,14 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Select LSST alerts new (< 5 days first apparition with a minimum of 2 points) and potentially extragalactic"""
+"""Select LSST alerts new (< 5days first apparition), bright (mag < 24), potentially extragalactic with a fading or rising rate passing the cuts"""
 
 import pandas as pd
 
 import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
-DESCRIPTION = "Select LSST alerts new (< 5days first apparition with a minimum of 2 points) and potentially extragalactic"
+DESCRIPTION = "Select LSST alerts new (< 5days first apparition), bright (mag < 24), potentially extragalactic with a fading or rising rate passing the cuts"
 
 
 def has_two_points_same_band(
@@ -88,13 +88,13 @@ def extragalactic_new_candidate(
     legacydr8_zphot: pd.Series,
     firstDiaSourceMjdTaiFink: pd.Series,
 ) -> pd.Series:
-    """Select LSST alerts new (< 5 days first apparition with a minimum of 2 points) and potentially extragalactic
+    """Select LSST alerts new (< 5days first apparition), bright (mag < 24), potentially extragalactic with a fading or rising rate passing the cuts
 
     Notes
     -----
     Based on an extragalactic block, time cut, sampling cut, and rate cut.
     Rising alerts must have rate < -0.2 mag/day and last less than 3 days.
-    Fading alerts must have rate < 0.2 mag/day in r/i bands, or > 0.5 mag/day in g/u bands.
+    Fading alerts must have rate > 0.2 mag/day in r/i bands, or > 0.5 mag/day in g/u bands.
 
     Parameters
     ----------
