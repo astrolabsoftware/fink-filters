@@ -1,4 +1,4 @@
-# Copyright 2026 AstroLab Software
+# Copyright 2025 AstroLab Software
 # Author: Julian Hamo
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,21 +24,21 @@ from fink_filters.tester import spark_unit_tests
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 @profile
-def low_state_filter(instantness_low, robustness_low) -> pd.Series:
-    """Returns True if the alert is considered a low state, False otherwise.
+def low_state_filter(m1, m2) -> pd.Series:
+    """Returns True the alert is considered a quiescent state, False otherwise.
 
     Parameters
     ----------
-    instantness_low: Spark DataFrame Column
-        `instantness_low` feature computed in the blazar_extreme_state module.
-    robustness_low: Spark DataFrame Column
-        `robustness_low` feature computed in the blazar_extreme_state module.
+    m1: Spark DataFrame Column
+        `m1` feature computed in the blazar_low_state module
+    m2: Spark DataFrame Column
+        `m2` feature computed in the blazar_low_state module
 
     Returns
     -------
     check: pd.Series
         Mask that returns True if the alert is a low state,
-        False else.
+        False else
 
     Examples
     --------
@@ -48,7 +48,7 @@ def low_state_filter(instantness_low, robustness_low) -> pd.Series:
     >>> import pandas as pd
     >>> from fink_utils.spark.utils import concat_col
     >>> from fink_science.ztf.standardized_flux.processor import standardized_flux
-    >>> from fink_science.ztf.blazar_extreme_state.processor import extreme_state
+    >>> from fink_science.ztf.blazar_low_state.processor import quiescent_state
     >>> from fink_utils.spark.utils import apply_user_defined_filter
 
     >>> parDF = spark.read.parquet(ztf_alert_sample)
@@ -56,72 +56,63 @@ def low_state_filter(instantness_low, robustness_low) -> pd.Series:
 
     # Required alert columns
     >>> what = [
-    ...     "distnr",
-    ...     "magpsf",
-    ...     "sigmapsf",
-    ...     "magnr",
-    ...     "sigmagnr",
-    ...     "isdiffpos",
-    ...     "fid",
-    ...     "jd",
-    ...     "ra",
-    ...     "dec",
+    ...     'distnr',
+    ...     'magpsf',
+    ...     'sigmapsf',
+    ...     'magnr',
+    ...     'sigmagnr',
+    ...     'isdiffpos',
+    ...     'fid',
+    ...     'jd'
     ... ]
 
     # Concatenation
-    >>> prefix = "c"
+    >>> prefix = 'c'
     >>> for key in what:
     ...     parDF = concat_col(parDF, colname=key, prefix=prefix)
 
     # Preliminary module run
     >>> args = [
-    ...     "candid",
-    ...     "objectId",
-    ...     "cdistnr",
-    ...     "cmagpsf",
-    ...     "csigmapsf",
-    ...     "cmagnr",
-    ...     "csigmagnr",
-    ...     "cisdiffpos",
-    ...     "cfid",
-    ...     "cjd",
+    ...     'candid',
+    ...     'objectId',
+    ...     'cdistnr',
+    ...     'cmagpsf',
+    ...     'csigmapsf',
+    ...     'cmagnr',
+    ...     'csigmagnr',
+    ...     'cisdiffpos',
+    ...     'cfid',
+    ...     'cjd'
     ... ]
     >>> parDF = parDF.withColumn(
-    ...     "container",
+    ...     'container',
     ...     standardized_flux(*args)
     ... )
     >>> parDF = parDF.withColumn(
-    ...     "cstd_flux",
-    ...     parDF["container"].getItem("flux")
+    ...     'cstd_flux',
+    ...     parDF['container'].getItem('flux')
     ... )
     >>> parDF = parDF.withColumn(
-    ...     "csigma_std_flux",
-    ...     parDF["container"].getItem("sigma")
+    ...     'csigma_std_flux',
+    ...     parDF['container'].getItem('sigma')
     ... )
 
     # Drop temporary columns
     >>> what_prefix = [prefix + key for key in what]
-    >>> parDF = parDF.drop("container")
+    >>> parDF = parDF.drop('container')
 
     # Test the module
-    >>> args = ["candid", "objectId", "cstd_flux", "cjd", "cra", "cdec"]
-    >>> parDF = parDF.withColumn("blazar_stats", extreme_state(*args))
+    >>> args = ['candid', 'objectId', 'cstd_flux', 'cjd']
+    >>> parDF = parDF.withColumn('blazar_stats', quiescent_state(*args))
 
-    >>> parDF = parDF.withColumn(
-    ...     "instantness_low",
-    ...     F.col("blazar_stats").getItem("instantness_low").alias("instantness_low")
-    ... )
-    >>> parDF = parDF.withColumn(
-    ...     "robustness_low",
-    ...     F.col("blazar_stats").getItem("robustness_low").alias("robustness_low")
-    ... )
-    >>> f = "fink_filters.ztf.filter_blazar_low_state.filter.low_state_filter"
+    >>> parDF = parDF.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
+    >>> parDF = parDF.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
+    >>> f = 'fink_filters.ztf.filter_blazar_low_state_old.filter.low_state_filter'
     >>> parDF = apply_user_defined_filter(parDF, f)
     >>> print(parDF.count())
-    8
+    12
     """
-    f1 = (instantness_low < 1) & (instantness_low >= 0)
-    f2 = (robustness_low < 1) & (robustness_low >= 0)
+    f1, f2 = (m1 < 1) & (m1 >= 0), (m2 < 1) & (m2 >= 0)
     return pd.Series(f1 & f2)
 
 
