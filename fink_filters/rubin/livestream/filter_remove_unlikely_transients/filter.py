@@ -21,7 +21,7 @@ DESCRIPTION = (
 )
 
 
-def remove_unlikely_transients(diaSource: pd.DataFrame) -> pd.Series:
+def remove_unlikely_transients(diaSource: pd.DataFrame, is_sso: pd.Series) -> pd.Series:
     """Filter alerts unlikely to be transients of interest to the DESC community.
 
     Notes
@@ -48,13 +48,13 @@ def remove_unlikely_transients(diaSource: pd.DataFrame) -> pd.Series:
     """
 
     # take only objects without a solar system id
-    f_ss_objs = diaSource.ssObjectId == 0
+    # f_ss_objs = diaSource.ssObjectId == 0
 
     # set an SNR limit
     f_snr = diaSource.snr > 5
 
     # filter out all the above and negative and dipole alerts
-    f_good_alerts = f_ss_objs & f_snr & ~diaSource.isNegative & ~diaSource.isDipole
+    f_good_alerts = ~is_sso & f_snr & ~diaSource.isNegative & ~diaSource.isDipole
 
     return f_good_alerts
 
