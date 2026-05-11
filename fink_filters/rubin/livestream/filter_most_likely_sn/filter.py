@@ -24,7 +24,7 @@ def most_likely_sn(
     cats_score: pd.Series,
     snnSnVsOthers_score: pd.Series,
     diaSource: pd.DataFrame,
-    diaObject: pd.DataFrame,
+    nDiaSources: pd.Series,
     is_sso: pd.Series,
 ) -> pd.Series:
     """Selects alerts that are likely to be SNIa.
@@ -44,8 +44,8 @@ def most_likely_sn(
         Score for the SN binary classifier using SuperNNova.
     diaSource : pd.DataFrame
         Full diaSource section of an alert (dictionary exploded)
-    diaObject : pd.DataFrame
-        Full diaObject section of an alert (dictionary exploded)
+    nDiaSources : pd.Series
+        Series containing the number of diaSources for this object
     is_sso : pd.Series
         Series containing booleans from solar system object classification
 
@@ -66,7 +66,7 @@ def most_likely_sn(
     f_snr = diaSource.snr > 10
 
     # set a minimum of at least one previous source (not counting this one)
-    f_nsources = diaObject.nDiaSources > 2
+    f_nsources = nDiaSources > 2
 
     # filter out specific flags that indicate errors in observation
     f_flags = (
