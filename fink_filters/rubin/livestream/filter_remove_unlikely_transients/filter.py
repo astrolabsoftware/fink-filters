@@ -12,27 +12,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Filter out alerts unlikely to be transients of interest to the DESC community."""
+"""Filters out alerts unlikely to be transients of interest to the DESC community."""
 
 import pandas as pd
 
 DESCRIPTION = (
-    "Filter alerts unlikely to be transients of interest to the DESC community."
+    "Filters out alerts unlikely to be transients of interest to the DESC community."
 )
 
 
-def remove_unlikely_transients(diaSource: pd.DataFrame, is_sso: pd.Series) -> pd.Series:
-    """Filter alerts unlikely to be transients of interest to the DESC community.
+def remove_unlikely_transients(
+    diaSource: pd.DataFrame, diaObject: pd.DataFrame, is_sso: pd.Series
+) -> pd.Series:
+    """Filters out alerts unlikely to be transients of interest to the DESC community.
 
     Notes
     -----
-    This removes any alerts with an ssObjecdId (solar system objects), anything
-    with negative flux or that is a dipole, and cuts SNR <= 5.
+    This removes any solar system objects, anything with a subset of error flags,
+    anything with negative flux or that is a dipole, anything without at least one
+    previous source, and cuts SNR <= 10.
 
     Parameters
     ----------
     diaSource : pd.DataFrame
         Full diaSource section of an alert (dictionary exploded)
+    diaObject : pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
+    is_sso : pd.Series
+        Series containing booleans from solar system object classification
 
     Returns
     -------
@@ -47,14 +54,29 @@ def remove_unlikely_transients(diaSource: pd.DataFrame, is_sso: pd.Series) -> pd
     0
     """
 
-    # take only objects without a solar system id
-    # f_ss_objs = diaSource.ssObjectId == 0
-
     # set an SNR limit
-    f_snr = diaSource.snr > 5
+    f_snr = diaSource.snr > 10
 
-    # filter out all the above and negative and dipole alerts
-    f_good_alerts = ~is_sso & f_snr & ~diaSource.isNegative & ~diaSource.isDipole
+    # set a minimum of at least one previous source (not counting this one)
+    f_nsources = diaObject.nDiaSources > 2
+
+    # filter out specific flags that indicate errors in observation
+    f_flags = (
+        diaSource.isNegative
+        | diaSource.isDipole
+        | diaSource.psfFlux_flag
+        | diaSource.pixelFlags
+        | diaSource.pixelFlags_bad
+        | diaSource.pixelFlags_cr
+        | diaSource.pixelFlags_nodata
+        | diaSource.pixelFlags_streak
+        | diaSource.pixelFlags_interpolated
+        | diaSource.pixelFlags_edge
+        | diaSource.shape_flag
+    )
+
+    # filter out solar system objects, any alerts with the above flags, any alerts with only one source, or SNR <=10
+    f_good_alerts = ~is_sso & f_snr & ~f_flags & f_nsources
 
     return f_good_alerts
 

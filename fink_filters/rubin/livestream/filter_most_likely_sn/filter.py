@@ -12,24 +12,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Filter for alerts that are likely to be SNIa."""
+"""Selects alerts that are likely to be SNIa."""
 
 import pandas as pd
 
-DESCRIPTION = "Filter alerts that are likely to be SNIa."
+DESCRIPTION = "Selects alerts that are likely to be SNIa."
 
 
 def most_likely_sn(
     cats_class: pd.Series,
     cats_score: pd.Series,
-    earlySNIa_score: pd.Series,
     snnSnVsOthers_score: pd.Series,
+    diaSource: pd.DataFrame,
+    diaObject: pd.DataFrame,
+    is_sso: pd.Series,
 ) -> pd.Series:
-    """Filter alerts that are likely to be SNIa.
+    """Selects alerts that are likely to be SNIa.
 
     Notes
     -----
-    Based on the Fink classifiers. Cuts on the classifier scores.
+    Based on the Fink classifiers. Cuts on the classifier scores, as well as
+    a number of 'quality' filters (SNR, isn't a solar system object, etc).
 
     Parameters
     ----------
@@ -37,10 +40,14 @@ def most_likely_sn(
         CATS classifier broad class prediction with the highest probability.
     cats_score : pd.Series
         CATS classifier highest probability.
-    earlySNIa_score : pd.Series
-        Score for the early SN Ia classifier.
     snnSnVsOthers_score : pd.Series
-        Score for teh SN binary classifier using SuperNNova.
+        Score for the SN binary classifier using SuperNNova.
+    diaSource : pd.DataFrame
+        Full diaSource section of an alert (dictionary exploded)
+    diaObject : pd.DataFrame
+        Full diaObject section of an alert (dictionary exploded)
+    is_sso : pd.Series
+        Series containing booleans from solar system object classification
 
     Returns
     -------
@@ -55,15 +62,34 @@ def most_likely_sn(
     0
     """
 
-    # high probability of early SNIa
-    f_earlySN = earlySNIa_score >= 0.5
-    # high probability of SN using SNNova
-    f_snnSN = snnSnVsOthers_score >= 0.8
+    # set an SNR limit
+    f_snr = diaSource.snr > 10
+
+    # set a minimum of at least one previous source (not counting this one)
+    f_nsources = diaObject.nDiaSources > 2
+
+    # filter out specific flags that indicate errors in observation
+    f_flags = (
+        diaSource.isNegative
+        | diaSource.isDipole
+        | diaSource.psfFlux_flag
+        | diaSource.pixelFlags
+        | diaSource.pixelFlags_bad
+        | diaSource.pixelFlags_cr
+        | diaSource.pixelFlags_nodata
+        | diaSource.pixelFlags_streak
+        | diaSource.pixelFlags_interpolated
+        | diaSource.pixelFlags_edge
+        | diaSource.shape_flag
+    )
+
+    # high probability of SN using SuperNNova
+    f_snnSN = snnSnVsOthers_score >= 0.7
     # high probability of SN using CATS
     f_SNlike = (cats_class == 11) & (cats_score >= 0.9)
 
-    # one of the above must be true
-    f_likely_sn = f_earlySN | f_snnSN | f_SNlike
+    # both of the above must be true as well as the above quality flags
+    f_likely_sn = f_snnSN & f_SNlike & ~is_sso & f_snr & ~f_flags & f_nsources
 
     return f_likely_sn
 
