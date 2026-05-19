@@ -245,12 +245,15 @@ def get_data_permalink_slack(
             ]
         )
         time.sleep(3)
-    except SlackApiError as e:
+    except (SlackApiError, AttributeError) as e:
         if e.response["ok"] is False:
             send_post_request_with_retry(
                 session=session,
                 url=f"https://api.telegram.org/bot{os.environ[tg_token_env]}/sendMessage",
-                data={"chat_id": "@fink_test", "text": e.response["error"]},
+                data={
+                    "chat_id": "@fink_test",
+                    "text": "{}: {}".format(ztf_id, e.response["error"]),
+                },
                 timeout=60,
                 source="slack_api_error",
             )
