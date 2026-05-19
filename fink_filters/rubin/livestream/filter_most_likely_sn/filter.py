@@ -27,7 +27,7 @@ def most_likely_sn(
     nDiaSources: pd.Series,
     is_sso: pd.Series,
 ) -> pd.Series:
-    """Selects alerts that are likely to be SNIa.
+    """Selects alerts that are likely to be SNIa, based on SuperNNova and CATS classifiers.
 
     Notes
     -----
