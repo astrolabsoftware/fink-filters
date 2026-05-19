@@ -396,17 +396,16 @@ def b_good_quality(diaSource) -> pd.Series:
     mask_flagged = (
         diaSource.isDipole
         | diaSource.shape_flag
-        | diaSource.forced_PsfFlux_flag
-        | diaSource.psfFlux_flag
-        | diaSource.centroid_flag
-        | diaSource.apFlux_flag
-        | diaSource.pixelFlags_interpolated
-        | diaSource.pixelFlags_cr
-        | diaSource.forced_PsfFlux_flag_edge
         | diaSource.pixelFlags_bad
         | diaSource.pixelFlags_saturated
         | diaSource.pixelFlags_streakCenter
-        | diaSource.pixelFlags_streakCenter
+        | diaSource.pixelFlags_interpolated
+        | diaSource.pixelFlags_cr
+        | diaSource.psfFlux_flag
+        | diaSource.apFlux_flag
+        | diaSource.forced_PsfFlux_flag
+        | diaSource.forced_PsfFlux_flag_edge
+        | diaSource.centroid_flag
         | (diaSource.psfFlux < 0)
         | (diaSource.psfFlux / diaSource.psfFluxErr < 6)
     )
