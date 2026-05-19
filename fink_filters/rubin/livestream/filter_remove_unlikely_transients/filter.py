@@ -15,6 +15,7 @@
 """Filters out alerts unlikely to be transients of interest to the DESC community."""
 
 import pandas as pd
+from fink_filters.rubin.blocks import b_good_quality
 
 DESCRIPTION = (
     "Filters out alerts unlikely to be transients of interest to the DESC community."
@@ -58,25 +59,13 @@ def remove_unlikely_transients(
     f_snr = diaSource.snr > 10
 
     # set a minimum of at least one previous source (not counting this one)
-    f_nsources = nDiaSources > 2
+    f_nsources = nDiaSources >= 2
 
-    # filter out specific flags that indicate errors in observation
-    f_flags = (
-        diaSource.isNegative
-        | diaSource.isDipole
-        | diaSource.psfFlux_flag
-        | diaSource.pixelFlags
-        | diaSource.pixelFlags_bad
-        | diaSource.pixelFlags_cr
-        | diaSource.pixelFlags_nodata
-        | diaSource.pixelFlags_streak
-        | diaSource.pixelFlags_interpolated
-        | diaSource.pixelFlags_edge
-        | diaSource.shape_flag
-    )
+    # filter out specific flags to get only good quality alerts
+    f_good_quality = b_good_quality(diaSource) & ~diaSource.isNegative
 
     # filter out solar system objects, any alerts with the above flags, any alerts with only one source, or SNR <=10
-    f_good_alerts = ~is_sso & f_snr & ~f_flags & f_nsources
+    f_good_alerts = ~is_sso & f_snr & ~f_good_quality & f_nsources
 
     return f_good_alerts
 

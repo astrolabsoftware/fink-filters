@@ -12,11 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Selects alerts that are likely to be SNIa."""
+"""Selects alerts that are likely to be SN, based on SuperNNova and CATS classifiers."""
 
 import pandas as pd
+from fink_filters.rubin.blocks import b_good_quality
 
-DESCRIPTION = "Selects alerts that are likely to be SNIa, based on SuperNNova and CATS classifiers."
+DESCRIPTION = (
+    "Selects alerts that are likely to be SN, based on SuperNNova and CATS classifiers."
+)
 
 
 def most_likely_sn(
@@ -27,7 +30,7 @@ def most_likely_sn(
     nDiaSources: pd.Series,
     is_sso: pd.Series,
 ) -> pd.Series:
-    """Selects alerts that are likely to be SNIa, based on SuperNNova and CATS classifiers.
+    """Selects alerts that are likely to be SN, based on SuperNNova and CATS classifiers.
 
     Notes
     -----
@@ -52,7 +55,7 @@ def most_likely_sn(
     Returns
     -------
     out: pd.Series
-        Booleans: True for possible SNIa, False otherwise.
+        Booleans: True for possible SN, False otherwise.
 
     Examples
     --------
@@ -66,22 +69,10 @@ def most_likely_sn(
     f_snr = diaSource.snr > 10
 
     # set a minimum of at least one previous source (not counting this one)
-    f_nsources = nDiaSources > 2
+    f_nsources = nDiaSources >= 2
 
-    # filter out specific flags that indicate errors in observation
-    f_flags = (
-        diaSource.isNegative
-        | diaSource.isDipole
-        | diaSource.psfFlux_flag
-        | diaSource.pixelFlags
-        | diaSource.pixelFlags_bad
-        | diaSource.pixelFlags_cr
-        | diaSource.pixelFlags_nodata
-        | diaSource.pixelFlags_streak
-        | diaSource.pixelFlags_interpolated
-        | diaSource.pixelFlags_edge
-        | diaSource.shape_flag
-    )
+    # filter out specific flags to get only good quality alerts
+    f_good_quality = b_good_quality(diaSource) & ~diaSource.isNegative
 
     # high probability of SN using SuperNNova
     f_snnSN = snnSnVsOthers_score >= 0.7
@@ -89,7 +80,7 @@ def most_likely_sn(
     f_SNlike = (cats_class == 11) & (cats_score >= 0.9)
 
     # both of the above must be true as well as the above quality flags
-    f_likely_sn = f_snnSN & f_SNlike & ~is_sso & f_snr & ~f_flags & f_nsources
+    f_likely_sn = f_snnSN & f_SNlike & ~is_sso & f_snr & ~f_good_quality & f_nsources
 
     return f_likely_sn
 
