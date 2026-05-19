@@ -577,7 +577,7 @@ def get_cutout(ztf_id):
         "https://api.ztf.fink-portal.org/api/v1/cutouts",
         json={"objectId": ztf_id, "kind": "Science", "output-format": "array"},
     )
-    if not status_check(r, "get cutouts ({})".format(ztf_id)):
+    if not status_check(r, "Anomaly: get cutouts ({})".format(ztf_id)):
         return io.BytesIO()
     data = np.log(np.array(r.json()["b:cutoutScience_stampData"], dtype=float))
     plt.axis("off")
@@ -608,8 +608,8 @@ def get_curve(ztf_id, last_days=None):
         "https://api.ztf.fink-portal.org/api/v1/objects",
         json={"objectId": ztf_id, "withupperlim": "True"},
     )
-    if not status_check(r, "getting curve ({})".format(ztf_id)):
-        return None
+    if not status_check(r, "Anomaly: get curve ({})".format(ztf_id)):
+        return io.BytesIO()
 
     # Format output in a DataFrame
     pdf = pd.read_json(io.BytesIO(r.content))
