@@ -16,7 +16,7 @@
 
 import pandas as pd
 
-DESCRIPTION = "Selects alerts that are likely to be SNIa."
+DESCRIPTION = "Selects alerts that are likely to be SNIa, based on SuperNNova and CATS classifiers."
 
 
 def most_likely_sn(
