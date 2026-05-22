@@ -54,7 +54,6 @@ def remove_unlikely_transients(
     >>> df2.count()
     0
     """
-
     # set an SNR limit
     f_snr = diaSource.snr > 10
 
