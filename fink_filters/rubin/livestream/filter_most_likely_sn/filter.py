@@ -20,6 +20,7 @@ from fink_filters.rubin.blocks import b_good_quality
 DESCRIPTION = (
     "Selects alerts that are likely to be SN, based on SuperNNova and CATS classifiers."
 )
+HBASE_SUPPORT = True
 
 
 def most_likely_sn(

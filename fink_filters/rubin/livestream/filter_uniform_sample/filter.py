@@ -17,6 +17,7 @@
 import pandas as pd
 
 DESCRIPTION = "Select 1% of all live alerts in a uniformly random way"
+HBASE_SUPPORT = False
 
 
 def uniform_sample(diaSourceId: pd.Series) -> pd.Series:
