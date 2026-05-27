@@ -36,11 +36,13 @@ def extragalactic_new_candidate(
     firstDiaSourceMjdTaiFink: pd.Series,
 ) -> pd.Series:
     """Select LSST alerts new (< 5days first apparition), bright (mag < 24), potentially extragalactic
+
     Notes
     -----
     Based on an extragalactic block, time cut, sampling cut, and rate cut.
     Rising alerts must have rate < -0.2 mag/day and last less than 3 days.
     Fading alerts must have rate > 0.2 mag/day in r/i bands, or > 0.5 mag/day in g/u bands.
+
     Parameters
     ----------
     diaSource: pd.DataFrame
@@ -68,11 +70,13 @@ def extragalactic_new_candidate(
     firstDiaSourceMjdTaiFink: pd.Series
         First time the object emitted an alert. This is currently not set
         by the Rubin project, and we use instead the oldest date in the history.
+
     Returns
     -------
     out: pd.Series
         Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
