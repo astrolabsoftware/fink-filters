@@ -20,6 +20,7 @@ import fink_filters.rubin.utils as fu
 
 
 DESCRIPTION = "Select LSST alerts that are hostless according to ELEPHANT. See https://arxiv.org/abs/2404.18165."
+HBASE_SUPPORT = True
 
 
 def hostless_candidate(

@@ -20,6 +20,7 @@ from fink_filters.rubin.blocks import b_good_quality
 DESCRIPTION = (
     "Filters out alerts unlikely to be transients of interest to the DESC community."
 )
+HBASE_SUPPORT = False
 
 
 def remove_unlikely_transients(

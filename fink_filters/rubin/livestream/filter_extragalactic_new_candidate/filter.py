@@ -20,6 +20,7 @@ import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
 DESCRIPTION = "Select LSST alerts new (< 5days first apparition), bright (mag < 24), potentially extragalactic with a fading or rising rate passing the cuts"
+HBASE_SUPPORT = True
 
 
 def has_two_points_same_band(

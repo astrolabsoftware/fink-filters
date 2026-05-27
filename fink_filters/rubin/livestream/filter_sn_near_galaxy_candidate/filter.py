@@ -22,6 +22,7 @@ import fink_filters.rubin.utils as fu
 DESCRIPTION = (
     "Select alerts matching in catalogs to a galaxy and properties consistent with SNe"
 )
+HBASE_SUPPORT = True
 
 
 def sn_near_galaxy_candidate(
