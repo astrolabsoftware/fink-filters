@@ -23,7 +23,7 @@ DESCRIPTION = "Select LSST alerts new (< 5days first apparition), bright (mag < 
 HBASE_SUPPORT = True
 
 
-def extragalactic_new_candidate(
+def extragalactic_svom(
     diaSource: pd.DataFrame,
     simbad_otype: pd.Series,
     mangrove_lum_dist: pd.Series,
