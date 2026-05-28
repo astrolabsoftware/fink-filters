@@ -40,8 +40,7 @@ def extragalactic_svom(
     Notes
     -----
     Based on an extragalactic block, time cut, sampling cut, and rate cut.
-    Rising alerts must have rate < -0.2 mag/day and last less than 3 days.
-    Fading alerts must have rate > 0.2 mag/day in r/i bands, or > 0.5 mag/day in g/u bands.
+
 
     Parameters
     ----------
