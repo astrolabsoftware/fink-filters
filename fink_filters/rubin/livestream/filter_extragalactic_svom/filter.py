@@ -71,6 +71,7 @@ def extragalactic_svom(
         First time the object emitted an alert. This is currently not set
         by the Rubin project, and we use instead the oldest date in the history.
 
+
     Returns
     -------
     out: pd.Series
