@@ -80,7 +80,7 @@ def extragalactic_svom(
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
-    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_new_candidate.filter.extragalactic_new_candidate")
+    >>> df2 = apply_block(df, "fink_filters.rubin.livestream.filter_extragalactic_svom.filter.extragalactic_svom")
     >>> df2.count()
     0
     """
