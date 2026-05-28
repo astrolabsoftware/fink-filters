@@ -78,6 +78,7 @@ def extragalactic_svom(
         Booleans: True for good quality alerts extragalactic candidates,
         False otherwise.
 
+
     Examples
     --------
     >>> from fink_filters.rubin.utils import apply_block
