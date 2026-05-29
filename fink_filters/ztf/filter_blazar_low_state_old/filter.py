@@ -12,9 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from line_profiler import profile
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import BooleanType
 
 import pandas as pd
@@ -22,9 +21,8 @@ import pandas as pd
 from fink_filters.tester import spark_unit_tests
 
 
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-@profile
-def low_state_filter(m1, m2) -> pd.Series:
+@pandas_udf(BooleanType())
+def blazar_low_state_old(m1: pd.Series, m2: pd.Series) -> pd.Series:
     """Returns True the alert is considered a quiescent state, False otherwise.
 
     Parameters
@@ -107,7 +105,7 @@ def low_state_filter(m1, m2) -> pd.Series:
 
     >>> parDF = parDF.withColumn("m1", F.col('blazar_stats').getItem('m1').alias("m1"))
     >>> parDF = parDF.withColumn("m2", F.col('blazar_stats').getItem('m2').alias("m2"))
-    >>> f = 'fink_filters.ztf.filter_blazar_low_state_old.filter.low_state_filter'
+    >>> f = 'fink_filters.ztf.filter_blazar_low_state_old.filter.blazar_low_state_old'
     >>> parDF = apply_user_defined_filter(parDF, f)
     >>> print(parDF.count())
     12

@@ -12,9 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from line_profiler import profile
 
-from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import BooleanType
 
 import pandas as pd
@@ -22,9 +21,10 @@ import pandas as pd
 from fink_filters.tester import spark_unit_tests
 
 
-@pandas_udf(BooleanType(), PandasUDFType.SCALAR)
-@profile
-def high_state_filter(instantness_high, robustness_high) -> pd.Series:
+@pandas_udf(BooleanType())
+def blazar_high_state(
+    instantness_high: pd.Series, robustness_high: pd.Series
+) -> pd.Series:
     """Returns True if the alert is considered a high state, False otherwise.
 
     Parameters
@@ -115,7 +115,7 @@ def high_state_filter(instantness_high, robustness_high) -> pd.Series:
     ...     "robustness_high",
     ...     F.col("blazar_stats").getItem("robustness_high").alias("robustness_high")
     ... )
-    >>> f = "fink_filters.ztf.filter_blazar_high_state.filter.high_state_filter"
+    >>> f = "fink_filters.ztf.filter_blazar_high_state.filter.blazar_high_state"
     >>> parDF = apply_user_defined_filter(parDF, f)
     >>> print(parDF.count())
     24
