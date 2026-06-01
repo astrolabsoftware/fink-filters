@@ -20,7 +20,7 @@ import fink_filters.rubin.blocks as fb
 import fink_filters.rubin.utils as fu
 
 DESCRIPTION = "Select LSST alerts new (< 5days first apparition), bright (mag < 24), potentially extragalactic"
-HBASE_SUPPORT = True
+HBASE_SUPPORT = False
 
 
 def extragalactic_svom(
