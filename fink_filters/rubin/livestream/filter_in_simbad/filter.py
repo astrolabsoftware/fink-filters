@@ -21,7 +21,7 @@ DESCRIPTION = (
     "Select alerts with a known counterpart in SIMBAD at the time of emission by Rubin"
 )
 HBASE_SUPPORT = True
-COLUMNS = "diaObject.diaObjectId,xm"
+COLUMNS = "diaObject.diaObjectId,xm.simbad_otype"
 
 
 def in_simbad(simbad_otype: pd.Series) -> pd.Series:
