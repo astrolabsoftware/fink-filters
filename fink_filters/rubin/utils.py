@@ -411,12 +411,10 @@ def compute_mc_sampling_flux_rate(
                 return [src["midpointMjdTai"], src["psfFlux"], src["psfFluxErr"]]
         return [np.nan, np.nan, np.nan]
 
-    prv_array = np.array(
-        [
-            get_last_same_band(sub_dict, cb)
-            for sub_dict, cb in zip(prvDiaSources, current_band)
-        ]
-    )
+    prv_array = np.array([
+        get_last_same_band(sub_dict, cb)
+        for sub_dict, cb in zip(prvDiaSources, current_band)
+    ])
 
     mask = ~np.isnan(prv_array).any(axis=1)
     len_mask = mask.sum()
