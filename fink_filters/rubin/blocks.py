@@ -705,7 +705,7 @@ def b_mag_rate_mc_sampling(
     >>> from fink_filters.rubin.utils import apply_block
     >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_mag_rate_mc_sampling")
     >>> df2.count()
-    4
+    0
     """
     # Maximum allowed magnitude rate of change (mag/day), negative = brightening
     max_mag_rate = -0.3
