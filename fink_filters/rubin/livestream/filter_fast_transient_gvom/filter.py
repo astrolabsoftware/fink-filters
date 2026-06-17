@@ -87,7 +87,6 @@ def fast_transient_gvom(
     # >>> df2.count()
     # 0
     """
-
     print("toto")
 
     len_data = len(diaSource)

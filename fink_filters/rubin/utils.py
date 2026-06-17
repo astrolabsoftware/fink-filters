@@ -19,7 +19,6 @@ from pyspark.sql.types import BooleanType
 import pandas as pd
 import numpy as np
 from astropy.cosmology import FlatLambdaCDM
-from scipy import stats
 
 from fink_utils.spark.utils import (
     expand_function_from_string,
@@ -397,7 +396,6 @@ def compute_mc_sampling_flux_rate(
         95th percentile of flux rate distribution. NaN where no same-band
         previous detection exists.
     """
-
     rng = np.random.default_rng(seed)
 
     current_time = diaSource.midpointMjdTai.to_numpy()
