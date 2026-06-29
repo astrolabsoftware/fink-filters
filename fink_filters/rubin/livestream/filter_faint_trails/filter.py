@@ -15,6 +15,7 @@
 
 import pandas as pd
 import fink_filters.rubin.utils as fu
+from fink_filters.rubin.blocks import b_good_quality
 
 DESCRIPTION = "Select faint trails measuring more than 2 arcsec (mag between 18-21)"
 
@@ -44,12 +45,17 @@ def faint_trails(diaSource: pd.DataFrame) -> pd.Series:
     >>> sorted(ids)
     [170046085932777529, 170046093991084072]
     """
-    mag = fu.flux_to_apparent_mag(diaSource.psfFlux)
+    mag = fu.flux_to_apparent_mag(diaSource["psfFlux"])
     f_faint = (mag > 18) & (mag < 21)
-    f_long_trail = diaSource.trailLength > 2
-    f_not_cosmic_ray = ~diaSource.pixelFlags_cr
+    f_long_trail = diaSource["trailLength"] > 2
+    f_not_cosmic_ray = ~diaSource["pixelFlags_cr"]
+    f_good_quality = b_good_quality(diaSource)
+
+    # Positive flux constraints
+    f_flux_pos = diaSource["psfFlux"] > 0
+    f_trailflux_pos = diaSource["trailFlux"] > 0
     
-    return f_long_trail & f_faint & f_not_cosmic_ray
+    return f_long_trail & f_faint & f_not_cosmic_ray & f_good_quality & f_flux_pos & f_trailflux_pos
 
 if __name__ == "__main__":
     from fink_filters.tester import spark_unit_tests
