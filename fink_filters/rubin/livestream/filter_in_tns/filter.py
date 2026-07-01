@@ -17,6 +17,7 @@
 import pandas as pd
 
 DESCRIPTION = "Select alerts with a known counterpart in TNS (AT or confirmed) at the time of emission by Rubin"
+HBASE_SUPPORT = True
 
 
 def in_tns(tns_fullname: pd.Series) -> pd.Series:

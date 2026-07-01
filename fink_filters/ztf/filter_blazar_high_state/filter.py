@@ -1,4 +1,4 @@
-# Copyright 2026 AstroLab Software
+# Copyright 2025 AstroLab Software
 # Author: Julian Hamo
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,22 +22,22 @@ from fink_filters.tester import spark_unit_tests
 
 
 @pandas_udf(BooleanType())
-def blazar_low_state(
-    instantness_low: pd.Series, robustness_low: pd.Series
+def blazar_high_state(
+    instantness_high: pd.Series, robustness_high: pd.Series
 ) -> pd.Series:
-    """Returns True if the alert is considered a low state, False otherwise.
+    """Returns True if the alert is considered a high state, False otherwise.
 
     Parameters
     ----------
-    instantness_low: Spark DataFrame Column
-        `instantness_low` feature computed in the blazar_extreme_state module.
-    robustness_low: Spark DataFrame Column
-        `robustness_low` feature computed in the blazar_extreme_state module.
+    instantness_high: Spark DataFrame Column
+        `instantness_high` feature computed in the blazar_extreme_state module.
+    robustness_high: Spark DataFrame Column
+        `robustness_high` feature computed in the blazar_extreme_state module.
 
     Returns
     -------
     check: pd.Series
-        Mask that returns True if the alert is a low state,
+        Mask that returns True if the alert is a high state,
         False else.
 
     Examples
@@ -108,20 +108,19 @@ def blazar_low_state(
     >>> parDF = parDF.withColumn("blazar_stats", extreme_state(*args))
 
     >>> parDF = parDF.withColumn(
-    ...     "instantness_low",
-    ...     F.col("blazar_stats").getItem("instantness_low").alias("instantness_low")
+    ...     "instantness_high",
+    ...     F.col("blazar_stats").getItem("instantness_high").alias("instantness_high")
     ... )
     >>> parDF = parDF.withColumn(
-    ...     "robustness_low",
-    ...     F.col("blazar_stats").getItem("robustness_low").alias("robustness_low")
+    ...     "robustness_high",
+    ...     F.col("blazar_stats").getItem("robustness_high").alias("robustness_high")
     ... )
-    >>> f = "fink_filters.ztf.filter_blazar_low_state.filter.blazar_low_state"
+    >>> f = "fink_filters.ztf.filter_blazar_high_state.filter.blazar_high_state"
     >>> parDF = apply_user_defined_filter(parDF, f)
     >>> print(parDF.count())
-    8
+    24
     """
-    f1 = (instantness_low < 1) & (instantness_low >= 0)
-    f2 = (robustness_low < 1) & (robustness_low >= 0)
+    f1, f2 = instantness_high > 1, robustness_high > 1
     return pd.Series(f1 & f2)
 
 

@@ -22,6 +22,7 @@ import fink_filters.rubin.utils as fu
 DESCRIPTION = (
     "Select alerts that are rising, bright (mag < 20), and extragalactic candidates"
 )
+HBASE_SUPPORT = True
 
 
 def extragalactic_lt20mag_candidate(
