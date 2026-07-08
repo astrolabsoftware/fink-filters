@@ -1,9 +1,8 @@
 import numpy as np
 
+
 def compute_elongation_from_image(data):
-    """
-    Robust elongation using thresholded significant pixels.
-    """
+    """Robust elongation using thresholded significant pixels."""
     try:
         data = np.nan_to_num(data).astype(float)
 
@@ -37,8 +36,7 @@ def compute_elongation_from_image(data):
         iyy = np.sum(weights * dy * dy) / total
         ixy = np.sum(weights * dx * dy) / total
 
-        M = np.array([[ixx, ixy],
-                      [ixy, iyy]])
+        M = np.array([[ixx, ixy], [ixy, iyy]])
 
         eigvals = np.linalg.eigvals(M)
 
@@ -51,5 +49,5 @@ def compute_elongation_from_image(data):
 
         return float(elongation)
 
-    except Exception as e:
+    except Exception:
         return np.nan

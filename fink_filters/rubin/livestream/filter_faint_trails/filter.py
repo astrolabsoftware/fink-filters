@@ -16,7 +16,9 @@
 import pandas as pd
 import fink_filters.rubin.utils as fu
 from fink_filters.rubin.blocks import b_good_quality
-from fink_filters.rubin.livestream.filter_faint_trails.utils import compute_elongation_from_image
+from fink_filters.rubin.livestream.filter_faint_trails.utils import (
+    compute_elongation_from_image,
+)
 from astropy.io import fits
 import io
 
@@ -65,19 +67,29 @@ def faint_trails(diaSource: pd.DataFrame, cutoutScience: pd.Series) -> pd.Series
     f_flux_pos = diaSource["psfFlux"] > 0
     f_trailflux_pos = diaSource["trailFlux"] > 0
 
-    f_intermediate = f_long_trail & f_faint & f_not_cosmic_ray & f_good_quality & f_flux_pos & f_trailflux_pos
+    f_intermediate = (
+        f_long_trail
+        & f_faint
+        & f_not_cosmic_ray
+        & f_good_quality
+        & f_flux_pos
+        & f_trailflux_pos
+    )
 
     # Decode FITS image and compute elongation only for alerts which passed the intermediate filter
     f_elong = pd.Series(False, index=cutoutScience.index)
     subset_idx = f_intermediate[f_intermediate].index
     if len(subset_idx) > 0:
-      subset_images = cutoutScience.loc[subset_idx].apply(
-          lambda x: fits.getdata(io.BytesIO(x)) if isinstance(x, (bytes, bytearray)) else x
-      )
-      elong_values = subset_images.apply(compute_elongation_from_image)
-      f_elong.loc[subset_idx] = (elong_values > 2.0).fillna(False)
+        subset_images = cutoutScience.loc[subset_idx].apply(
+            lambda x: (
+                fits.getdata(io.BytesIO(x)) if isinstance(x, (bytes, bytearray)) else x
+            )
+        )
+        elong_values = subset_images.apply(compute_elongation_from_image)
+        f_elong.loc[subset_idx] = (elong_values > 2.0).fillna(False)
 
     return f_intermediate & f_elong
+
 
 if __name__ == "__main__":
     from fink_filters.tester import spark_unit_tests
