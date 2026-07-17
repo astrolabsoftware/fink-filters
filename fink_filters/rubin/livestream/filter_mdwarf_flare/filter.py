@@ -26,24 +26,16 @@ DESCRIPTION = (
 )
 HBASE_SUPPORT = False
 
-def isolated_source(current_mjd: float, 
-                    prv_sources: list, 
-                    lo_hours: float = 4.0, 
-                    hi_hours: float = 48.0) -> bool:
-    """True if no prior diaSource for this object falls within [lo, hi] hours of the trigger."""
-    if not prv_sources:
+def isolated_source(current_mjd, prv_sources, lo_hours=4.0, hi_hours=48.0):
+    if prv_sources is None or len(prv_sources) == 0:
         return True
     prev_mjds = np.array([s["midpointMjdTai"] for s in prv_sources])
     dt_hours = (current_mjd - prev_mjds) * 24.0
     return not np.any((dt_hours >= lo_hours) & (dt_hours <= hi_hours))
 
 def quiescent_colors(prv_sources, mag_fn, bands=('r', 'i', 'z')):
-    """Median template-image magnitude per band from an object's diaSource history.
-
-    Returns NaN for a band with no prior detection to draw a template flux from.
-    """
     out = {b: np.nan for b in bands}
-    if not prv_sources:
+    if prv_sources is None or len(prv_sources) == 0:
         return out
     for b in bands:
         fluxes = [s["templateFlux"] for s in prv_sources if s.get("band") == b]
@@ -122,7 +114,7 @@ def mdwarf_flare(diaSource: pd.DataFrame,
     """
 
     # Require xmatch to Gaia DR3 star if no previous diaSource
-    f_new = fb.is_new(diaSource.midpointMjdTai, firstDiaSourceMjdTaiFink)
+    f_new = fb.b_is_new(diaSource.midpointMjdTai, firstDiaSourceMjdTaiFink)
     f_gaia_star = fb.b_xmatched_gaia_star(
         gaiadr3_DR3Name,
         gaiadr3_Plx,
