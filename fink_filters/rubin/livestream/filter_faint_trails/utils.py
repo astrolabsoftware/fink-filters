@@ -2,7 +2,6 @@ import numpy as np
 
 def compute_elongation_from_image(data):
     """Robust elongation using thresholded significant pixels."""
-
     if data is None:
         return np.nan
 
@@ -10,7 +9,7 @@ def compute_elongation_from_image(data):
         data = np.nan_to_num(data).astype(float)
     except (TypeError, ValueError):
         return np.nan
-    
+
     if data.ndim != 2:
         return np.nan
 
