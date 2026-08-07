@@ -21,6 +21,7 @@ import os
 import numpy as np
 import pandas as pd
 import requests
+import astropy
 from astropy import units as u
 from astropy.coordinates import Angle, SkyCoord
 from astropy.time import Time
@@ -148,6 +149,7 @@ def perform_classification(
                 requests.exceptions.ReadTimeout,
                 requests.exceptions.HTTPError,
                 requests.exceptions.ConnectionError,
+                astropy.io.ascii.core.InconsistentTableError,
             ) as e:
                 log.warning("Error with SDSS server: {}".format(e))
                 table = None
