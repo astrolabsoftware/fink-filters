@@ -154,7 +154,7 @@ def perform_classification(
 
             type_close_objects = []
             if table is not None:
-                type_close_objects = table["type"]
+                type_close_objects = table.get("type", 0)
             # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
             # 5: SKY, 6: STAR_LATE, 7: GAL_EM
             to_remove_types = [1, 3, 4, 6]
