@@ -153,7 +153,7 @@ def perform_classification(
                 table = None
 
             type_close_objects = []
-            if table is not None:
+            if (table is not None) and (table.colnames != ["<html><head>"]):
                 type_close_objects = table["type"]
             # types: 0: UNKNOWN, 1: STAR, 2: GALAXY, 3: QSO, 4: HIZ_QSO,
             # 5: SKY, 6: STAR_LATE, 7: GAL_EM
