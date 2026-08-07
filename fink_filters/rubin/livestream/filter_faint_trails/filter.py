@@ -26,6 +26,7 @@ import io
 DESCRIPTION = "Select faint trails measuring more than 2 arcsec (mag between 18-21)"
 HBASE_SUPPORT = True
 
+
 def faint_trails(diaSource: pd.DataFrame, cutoutScience: pd.Series) -> pd.Series:
     """Select faint trails measuring more than 2 arcsec (mag between 18-21)
 

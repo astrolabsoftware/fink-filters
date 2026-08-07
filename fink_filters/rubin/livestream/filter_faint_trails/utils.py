@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def compute_elongation_from_image(data):
     """Robust elongation using thresholded significant pixels."""
     if data is None:
