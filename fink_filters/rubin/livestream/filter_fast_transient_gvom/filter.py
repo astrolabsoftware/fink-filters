@@ -87,12 +87,6 @@ def fast_transient_gvom(
     # >>> df2.count()
     # 0
     """
-    print("toto")
-
-    len_data = len(diaSource)
-
-    print(f"nb alerts: {len_data}")
-
     # Extragalactic loose candidate (no known star, SSO, or galactic contaminant)
     f_extra_gal = fb.b_extragalactic_loose_candidate(
         diaSource,
