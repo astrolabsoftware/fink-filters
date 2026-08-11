@@ -7,7 +7,7 @@
 
 This repository contains filters used to flag particular parts of the full stream to be distributed to Fink users. More information about available topics and how to create your filter at 
 
-- ZTF: [https://doc.ztf.fink-broker.org/en/latest/broker/filters/](https://doc.ztf.fink-broker.org/en/latest/broker/filters/)
+- ZTF: [https://doc.ztf.fink-broker.org/broker/filters/](https://doc.ztf.fink-broker.org/broker/filters/)
 - LSST: [https://doc.lsst.fink-broker.org/science/filters/](https://doc.lsst.fink-broker.org/science/filters/)
 
 ## Installation

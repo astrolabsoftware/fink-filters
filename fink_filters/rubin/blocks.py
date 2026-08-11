@@ -24,6 +24,9 @@ from fink_utils.xmatch.vsx import return_list_of_stellar, return_list_of_nonstel
 from fink_filters.rubin.utils import (
     compute_diff_flux_from_mean,
     extract_flux_information_static,
+    compute_mc_sampling_flux_rate,
+    flux_to_mag,
+    mag_rate_to_flux_rate,
 )
 
 BAD_VALUES = ["Unknown", "Fail", "Fail 504", None, np.nan]
@@ -666,6 +669,71 @@ def b_extragalactic_loose_candidate(
     )
 
     return f_extragalactic
+
+
+def b_mag_rate_mc_sampling(
+    diaSource: pd.DataFrame, prvDiaSources: pd.Series
+) -> pd.Series:
+    """Flag for alerts with a fast-evolving flux rate via Monte Carlo sampling
+
+    Notes
+    -----
+    The flux rate is estimated via Monte Carlo sampling to propagate flux
+    uncertainties. A source is flagged as fast-evolving if its mean flux rate
+    exceeds a threshold derived from a maximum magnitude rate of 0.3 mag/day,
+    and if the flux rate is statistically significant (SNR > 3). Sources with
+    no valid previous detection in the same band are flagged as False.
+
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Current alert sources. Must contain columns midpointMjdTai,
+        psfFlux, psfFluxErr, and band.
+    prvDiaSources: pd.Series
+        Previous detections indexed by alert. Each entry is either None
+        (no previous detection) or a list of diaSource-like dicts, each
+        containing midpointMjdTai, psfFlux, psfFluxErr and band fields.
+
+    Returns
+    -------
+    out: pd.Series
+        Booleans: True for sources with a fast-evolving flux rate,
+        False otherwise.
+
+    Examples
+    --------
+    >>> from fink_filters.rubin.utils import apply_block
+    >>> df2 = apply_block(df, "fink_filters.rubin.blocks.b_mag_rate_mc_sampling")
+    >>> df2.count()
+    0
+    """
+    # Maximum allowed magnitude rate of change (mag/day), negative = brightening
+    max_mag_rate = -0.3
+
+    # Convert magnitude rate threshold to flux rate threshold
+    max_flux_rate = mag_rate_to_flux_rate(
+        np.ones(len(diaSource)) * max_mag_rate, flux_to_mag(diaSource.psfFlux)
+    )
+
+    # Estimate flux rate and its uncertainty via Monte Carlo sampling
+    flux_mean, flux_std, _, _ = compute_mc_sampling_flux_rate(
+        diaSource, prvDiaSources, 1_000
+    )
+
+    # Mean flux rate exceeds the threshold
+    f_mean_fast = flux_mean > max_flux_rate
+
+    # Flux rate is statistically significant (SNR > 3)
+    snr_rate = np.abs(flux_mean) / (flux_std + 1e-10)
+    f_significant = snr_rate > 3.0
+
+    # Mask sources with no valid previous detection (NaN flux rate)
+    f_no_previous = np.isnan(flux_mean)
+
+    # Flag sources that are fast-evolving, significant, and have a previous detection
+    f_fast_evolving_transient = f_mean_fast & f_significant & ~f_no_previous
+
+    return f_fast_evolving_transient
 
 
 if __name__ == "__main__":
