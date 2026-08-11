@@ -26,9 +26,7 @@ HBASE_SUPPORT = True
 
 
 def isolated_source(current_mjd, prv_sources, lo_hours=4.0, hi_hours=48.0):
-    """
-    Check if a source is isolated in time, i.e. no other sources for the same object
-    between lo_hours and hi_hours of the current source.
+    """Check if a source is isolated in time, i.e. no other sources for the same object between lo_hours and hi_hours of the current source.
 
     Parameters
     ----------
@@ -54,8 +52,7 @@ def isolated_source(current_mjd, prv_sources, lo_hours=4.0, hi_hours=48.0):
 
 
 def quiescent_colors(prv_sources, mag_fn, bands=("r", "i", "z")):
-    """
-    Calculate the quiescent colors of a source from its previous sources.
+    """Calculate the quiescent colors of a source from its previous sources.
 
     Parameters
     ----------
@@ -88,9 +85,7 @@ def quiescent_colors(prv_sources, mag_fn, bands=("r", "i", "z")):
 def coord_to_airmass(
     ra: np.ndarray, dec: np.ndarray, midpointTai: np.ndarray
 ) -> np.ndarray:
-    """
-    Calculate the airmass for an object given its RA,
-    DEC, and observation time.
+    """Calculate the airmass for an object given its RA, DEC, and observation time.
 
     Parameters
     ----------
@@ -121,23 +116,18 @@ def coord_to_airmass(
 
 def mdwarf_flare(
     diaSource: pd.DataFrame,
-    diaObject: pd.DataFrame,
     prvDiaSources: pd.Series,
     firstDiaSourceMjdTaiFink: pd.Series,
     gaiadr3_DR3Name: pd.Series,
     gaiadr3_Plx: pd.Series,
     gaiadr3_e_Plx: pd.Series,
 ) -> pd.Series:
-    """
-    Returns true for alerts that are likely to be M dwarf flares,
-        in bluer bands, and high airmass for DCR-based temperature inference.
+    """Returns true for alerts that are likely to be M dwarf flares, in bluer bands, and high airmass for DCR-based temperature inference.
 
     Parameters
     ----------
     diaSource: pd.DataFrame
         Full diaSource section of an alert (dictionary exploded)
-    diaObject: pd.DataFrame
-        Full diaObject section of an alert (dictionary exploded)
     prvDiaSources: pd.Series
         Series containing previous diaSources for the same object
     firstDiaSourceMjdTaiFink: pd.Series
