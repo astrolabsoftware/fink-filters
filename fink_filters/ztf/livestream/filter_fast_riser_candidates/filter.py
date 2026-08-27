@@ -159,6 +159,8 @@ def fast_riser_candidates_(
     8
 
     >>> assert 'ZTF21acobels' in pdf[classification]['objectId'].to_numpy()
+
+    >>> assert 'ZTF21acoshvy' in pdf[classification]['objectId'].to_numpy()
     """
     # 1. not a known variable star, and not a Solar System object
     keep_cds = return_list_of_eg_host()
