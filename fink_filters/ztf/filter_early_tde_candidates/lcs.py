@@ -38,6 +38,9 @@ COLORS_ZTF = {1: "#15284F", 2: "#F5622E"}
 
 API_ENDPOINT = "https://api.ztf.fink-portal.org/api/v1/objects"
 
+# https://github.com/IQSS/dataverse.harvard.edu/issues/479
+requests.utils.default_user_agent = lambda: "Mozilla/5.0"
+
 # Filters ZTF
 filt_conv = {
     1: "g",

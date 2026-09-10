@@ -338,6 +338,14 @@ def early_tde_candidates(
     -------
     out: Pandas DataFrame
         Pandas DataFrame with scores and parameters for the selected candidates
+
+    Examples
+    --------
+    >>> df = spark.read.format("parquet").load("datatest/regular")
+    >>> candidates = early_tde_candidates(df)  # doctest:+ELLIPSIS
+    Downloading SFD data file to /tmp/sfd/SFD_dust_4096_ngp.fits
+    ...
+    Downloading https://dataverse.harvard.edu/api/access/datafile/2902695 ...
     """
     if prefiltered is None:
         # Apply preliminary filtering

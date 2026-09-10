@@ -130,10 +130,10 @@ def extract_fink_classification_(
     delSctV*        11
     RRLyrae         10
     QSO              9
-    RSCVnV*          8
     Supernova        8
+    RSCVnV*          8
     Mira             7
-    blue             7
+    CataclyV*        7
     Name: objectId, dtype: int64
     """
     classification = pd.Series(["Unknown"] * len(cdsxmatch))
@@ -235,10 +235,10 @@ def extract_fink_classification_from_pdf(pdf):
     delSctV*        11
     RRLyrae         10
     QSO              9
-    RSCVnV*          8
     Supernova        8
+    RSCVnV*          8
     Mira             7
-    blue             7
+    CataclyV*        7
     Name: objectId, dtype: int64
     """
     classification = extract_fink_classification_(

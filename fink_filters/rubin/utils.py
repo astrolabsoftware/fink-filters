@@ -30,6 +30,62 @@ from fink_utils.spark.utils import (
 ZP_NJY = 31.4
 
 
+def flux_to_mag(flux: float) -> float:
+    """Convert flux in nJy to AB magnitude.
+
+    Parameters
+    ----------
+    flux: float
+        Flux in nJy.
+
+    Returns
+    -------
+    out: float
+        AB magnitude.
+    """
+    return ZP_NJY - 2.5 * np.log10(flux)
+
+
+def mag_to_flux(mag: float) -> float:
+    """Convert AB magnitude to flux in nJy.
+
+    Parameters
+    ----------
+    mag: float
+        AB magnitude.
+
+    Returns
+    -------
+    out: float
+        Flux in nJy.
+    """
+    return 10 ** ((ZP_NJY - mag) / 2.5)
+
+
+def mag_rate_to_flux_rate(mag_rate: float, mag: float) -> float:
+    """Convert a magnitude rate of change to a flux rate of change.
+
+    Notes
+    -----
+    Derived from the analytical derivative of the magnitude-flux relation:
+    dF/dt = -(ln(10) / 2.5) * F * (dm/dt)
+
+    Parameters
+    ----------
+    mag_rate: float
+        Rate of change in magnitude (mag/day).
+    mag: float
+        Reference magnitude at which the conversion is evaluated.
+
+    Returns
+    -------
+    out: float
+        Rate of change in flux (nJy/day).
+    """
+    flux = mag_to_flux(mag)
+    return -(np.log(10) / 2.5) * flux * mag_rate
+
+
 def safe_diaobject_extract(container: dict, key: str):
     """Extract value from dictionary, returning nan if the key does not exist
 
@@ -289,3 +345,101 @@ def compute_peak_absolute_magnitude(
     absolute_mag = obs_to_abs_mag(apparent_mag, legacydr8_zphot.values, H0=H0, Om0=Om0)
 
     return pd.Series(absolute_mag, name="estimated_absoluteMagnitude")
+
+
+def compute_mc_sampling_flux_rate(
+    diaSource: pd.DataFrame, prvDiaSources: pd.Series, N: int, seed: int = None
+):
+    """
+    Compute Monte Carlo sampling of flux rate of change per band
+
+    For each entry in prvDiaSources, finds the last previous detection
+    matching the current observation's band, then estimates the flux rate
+    (flux/day) via Monte Carlo sampling to propagate flux uncertainties.
+
+    Notes
+    -----
+    Only same-band pairs are used. Entries with no previous detection in
+    the same band return NaN. Flux uncertainties are propagated independently
+    for both current and previous flux using standard normal sampling.
+    Output arrays are aligned with diaSource and prvDiaSources, which share
+    the same ordering (i-th entry of mag_rate corresponds to the i-th row of
+    diaSource and the i-th entry of prvDiaSources).
+
+    Parameters
+    ----------
+    diaSource: pd.DataFrame
+        Current alert sources. Must contain columns midpointMjdTai,
+        psfFlux, psfFluxErr, and band.
+    prvDiaSources: pd.Series
+        Previous detections indexed by alert. Each entry is either None
+        (no previous detection) or a list of diaSource-like dicts, each
+        containing midpointMjdTai, psfFlux, psfFluxErr and band fields.
+        The list is traversed in reverse to find the last same-band detection.
+    N: int
+        Number of Monte Carlo samples.
+    seed: int, optional
+        Random seed for reproducibility (default: None).
+
+    Returns
+    -------
+    mag_rate: np.ndarray, shape (len(prvDiaSources),)
+        Mean flux rate of change (flux/day). NaN where no same-band
+        previous detection exists.
+    mag_std: np.ndarray, shape (len(prvDiaSources),)
+        Standard deviation of flux rate across samples (ddof=1). NaN
+        where no same-band previous detection exists.
+    lower_rate: np.ndarray, shape (len(prvDiaSources),)
+        5th percentile of flux rate distribution. NaN where no same-band
+        previous detection exists.
+    upper_rate: np.ndarray, shape (len(prvDiaSources),)
+        95th percentile of flux rate distribution. NaN where no same-band
+        previous detection exists.
+    """
+    rng = np.random.default_rng(seed)
+
+    current_time = diaSource.midpointMjdTai.to_numpy()
+    current_flux = diaSource.psfFlux.to_numpy()
+    current_flux_err = diaSource.psfFluxErr.to_numpy()
+    current_band = diaSource.band
+
+    def get_last_same_band(sub_dict, band):
+        if sub_dict is None:
+            return [np.nan, np.nan, np.nan]
+        for src in reversed(sub_dict):
+            if src["band"] == band:
+                return [src["midpointMjdTai"], src["psfFlux"], src["psfFluxErr"]]
+        return [np.nan, np.nan, np.nan]
+
+    prv_array = np.array([
+        get_last_same_band(sub_dict, cb)
+        for sub_dict, cb in zip(prvDiaSources, current_band)
+    ])
+
+    mask = ~np.isnan(prv_array).any(axis=1)
+    len_mask = mask.sum()
+
+    dt = current_time[mask] - prv_array[mask, 0]  # (len_mask,)
+
+    prv_flux = prv_array[mask, 1]  # (len_mask,)
+    prv_flux_err = prv_array[mask, 2]  # (len_mask,)
+    cur_flux = current_flux[mask]  # (len_mask,)
+    cur_flux_err = current_flux_err[mask]  # (len_mask,)
+
+    samples = rng.normal(0.0, 1.0, (N, len_mask, 2))  # (N, len_mask, 2)
+    current_flux_sample = cur_flux + samples[..., 0] * cur_flux_err
+    last_flux_sample = prv_flux + samples[..., 1] * prv_flux_err
+
+    sample_rate = (current_flux_sample - last_flux_sample) / dt  # (N, len_mask)
+
+    mag_rate = np.full(len(prvDiaSources), np.nan)
+    mag_std = np.full(len(prvDiaSources), np.nan)
+    lower_rate = np.full(len(prvDiaSources), np.nan)
+    upper_rate = np.full(len(prvDiaSources), np.nan)
+
+    mag_rate[mask] = np.mean(sample_rate, axis=0)
+    mag_std[mask] = np.std(sample_rate, axis=0, ddof=1)
+    lower_rate[mask] = np.percentile(sample_rate, 5.0, axis=0)
+    upper_rate[mask] = np.percentile(sample_rate, 95.0, axis=0)
+
+    return mag_rate, mag_std, lower_rate, upper_rate
