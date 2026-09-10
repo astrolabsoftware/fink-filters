@@ -20,7 +20,7 @@ import pandas as pd
 DESCRIPTION = (
     "Select alerts with a known counterpart in SIMBAD at the time of emission by Rubin"
 )
-HBASE_SUPPORT = True
+HBASE_SUPPORT = False
 COLUMNS = "diaObject.diaObjectId,xm.simbad_otype"
 
 
