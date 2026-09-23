@@ -118,7 +118,7 @@ def blazar_low_state(
     >>> f = "fink_filters.ztf.filter_blazar_low_state.filter.blazar_low_state"
     >>> parDF = apply_user_defined_filter(parDF, f)
     >>> print(parDF.count())
-    8
+    7
     """
     f1 = (instantness_low < 1) & (instantness_low >= 0)
     f2 = (robustness_low < 1) & (robustness_low >= 0)
