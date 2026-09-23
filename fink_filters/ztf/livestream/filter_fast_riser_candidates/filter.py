@@ -33,7 +33,7 @@ MIN_DT_DAYS = 0.02
 MAX_RISE_RATE = 6.0
 
 
-def compute_rise_rate(cjd, cmagpsf, cfid) -> float:
+def compute_rise_rate(cjdc, cmagpsfc, cfidc) -> float:
     """Return the fastest brightening rate of a light curve, in mag/day.
 
     Brightening means the magnitude decreases, so the rate is positive when the
@@ -42,11 +42,11 @@ def compute_rise_rate(cjd, cmagpsf, cfid) -> float:
 
     Parameters
     ----------
-    cjd: list
+    cjdc: list
         Concatenated Julian dates (history + current measurement)
-    cmagpsf: list
+    cmagpsfc: list
         Concatenated magnitudes from PSF-fit photometry. Non-detections are NaN.
-    cfid: list
+    cfidc: list
         Concatenated filter IDs
 
     Returns
@@ -65,9 +65,9 @@ def compute_rise_rate(cjd, cmagpsf, cfid) -> float:
     >>> compute_rise_rate([0.0, 1.0], [np.nan, 18.0], [1, 1])
     0.0
     """
-    jd = np.array(cjd, dtype=float)
-    mag = np.array(cmagpsf, dtype=float)
-    fid = np.array(cfid, dtype=float)
+    jd = np.array(cjdc, dtype=float)
+    mag = np.array(cmagpsfc, dtype=float)
+    fid = np.array(cfidc, dtype=float)
 
     mask = ~np.isnan(mag) & ~np.isnan(jd)
     jd, mag, fid = jd[mask], mag[mask], fid[mask]
@@ -93,7 +93,7 @@ def compute_rise_rate(cjd, cmagpsf, cfid) -> float:
 
 
 def fast_riser_candidates_(
-    cdsxmatch, roid, drb, jd, jdstarthist, cjd, cmagpsf, cfid
+    cdsxmatch, roid, drb, jd, jdstarthist, cjdc, cmagpsfc, cfidc
 ) -> pd.Series:
     """Return alerts considered as young and fast-rising transient candidates
 
@@ -121,11 +121,11 @@ def fast_riser_candidates_(
         Column containing the Julian date of the current measurement
     jdstarthist: Pandas series
         Column containing the earliest Julian date of the variability
-    cjd: Pandas series
+    cjdc: Pandas series
         Column containing the concatenated Julian dates
-    cmagpsf: Pandas series
+    cmagpsfc: Pandas series
         Column containing the concatenated magnitudes from PSF-fit photometry
-    cfid: Pandas series
+    cfidc: Pandas series
         Column containing the concatenated filter IDs
 
     Returns
@@ -146,15 +146,19 @@ def fast_riser_candidates_(
     >>> for colname in what:
     ...    df = concat_col(df, colname, prefix=prefix)
 
+    # Fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in what:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
     >>> pdf = df.select(
-    ...     'objectId', 'cdsxmatch', 'roid', 'cjd', 'cmagpsf', 'cfid',
+    ...     'objectId', 'cdsxmatch', 'roid', 'cjdc', 'cmagpsfc', 'cfidc',
     ...     F.col('candidate.drb').alias('drb'),
     ...     F.col('candidate.jd').alias('jd'),
     ...     F.col('candidate.jdstarthist').alias('jdstarthist')).toPandas()
 
     >>> classification = fast_riser_candidates_(
     ...     pdf['cdsxmatch'], pdf['roid'], pdf['drb'], pdf['jd'],
-    ...     pdf['jdstarthist'], pdf['cjd'], pdf['cmagpsf'], pdf['cfid'])
+    ...     pdf['jdstarthist'], pdf['cjdc'], pdf['cmagpsfc'], pdf['cfidc'])
     >>> print(len(pdf[classification]['objectId'].to_numpy()))
     8
 
@@ -175,9 +179,9 @@ def fast_riser_candidates_(
     rise_rate = pd.Series(
         [
             compute_rise_rate(jd_, mag_, fid_)
-            for jd_, mag_, fid_ in zip(cjd, cmagpsf, cfid)
+            for jd_, mag_, fid_ in zip(cjdc, cmagpsfc, cfidc)
         ],
-        index=cjd.index,
+        index=cjdc.index,
     )
     fast = rise_rate >= MIN_RISE_RATE
 
@@ -186,7 +190,7 @@ def fast_riser_candidates_(
 
 @pandas_udf(BooleanType(), PandasUDFType.SCALAR)
 def fast_riser_candidates(
-    cdsxmatch, roid, drb, jd, jdstarthist, cjd, cmagpsf, cfid
+    cdsxmatch, roid, drb, jd, jdstarthist, cjdc, cmagpsfc, cfidc
 ) -> pd.Series:
     """Pandas UDF for fast_riser_candidates_
 
@@ -202,11 +206,11 @@ def fast_riser_candidates(
         Column containing the Julian date of the current measurement
     jdstarthist: Spark DataFrame Column
         Column containing the earliest Julian date of the variability
-    cjd: Spark DataFrame Column
+    cjdc: Spark DataFrame Column
         Column containing the concatenated Julian dates
-    cmagpsf: Spark DataFrame Column
+    cmagpsfc: Spark DataFrame Column
         Column containing the concatenated magnitudes from PSF-fit photometry
-    cfid: Spark DataFrame Column
+    cfidc: Spark DataFrame Column
         Column containing the concatenated filter IDs
 
     Returns
@@ -227,13 +231,17 @@ def fast_riser_candidates(
     >>> for colname in what:
     ...    df = concat_col(df, colname, prefix=prefix)
 
+    # Fix for https://github.com/astrolabsoftware/fink-broker/issues/457
+    >>> for colname in what:
+    ...    df = df.withColumnRenamed('c' + colname, 'c' + colname + 'c')
+
     >>> f = 'fink_filters.ztf.livestream.filter_fast_riser_candidates.filter.fast_riser_candidates'
     >>> df = apply_user_defined_filter(df, f)
     >>> print(df.count())
     8
     """
     series = fast_riser_candidates_(
-        cdsxmatch, roid, drb, jd, jdstarthist, cjd, cmagpsf, cfid
+        cdsxmatch, roid, drb, jd, jdstarthist, cjdc, cmagpsfc, cfidc
     )
 
     return series
