@@ -65,7 +65,7 @@ def remove_unlikely_transients(
     f_good_quality = b_good_quality(diaSource) & ~diaSource.isNegative
 
     # filter out solar system objects, any alerts with the above flags, any alerts with only one source, or SNR <=10
-    f_good_alerts = ~is_sso & f_snr & ~f_good_quality & f_nsources
+    f_good_alerts = ~is_sso & f_snr & f_good_quality & f_nsources
 
     return f_good_alerts
 
