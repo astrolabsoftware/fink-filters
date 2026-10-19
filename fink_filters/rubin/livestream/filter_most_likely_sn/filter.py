@@ -80,7 +80,7 @@ def most_likely_sn(
     f_SNlike = (cats_class == 11) & (cats_score >= 0.9)
 
     # both of the above must be true as well as the above quality flags
-    f_likely_sn = f_snnSN & f_SNlike & ~is_sso & f_snr & ~f_good_quality & f_nsources
+    f_likely_sn = f_snnSN & f_SNlike & ~is_sso & f_snr & f_good_quality & f_nsources
 
     return f_likely_sn
 
