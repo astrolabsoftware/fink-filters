@@ -25,13 +25,13 @@ def snia_in_tns(tns_type: pd.Series) -> pd.Series:
 
     Parameters
     ----------
-    tns_fullname: pd.Series
-        Name according to TNS (string or null).
+    tns_type: pd.Series
+        Classification according to TNS (string or null).
 
     Returns
     -------
     out: pd.Series of booleans
-        True if in TNS. False otherwise
+        True if classified as SNIa in TNS. False otherwise
 
     Examples
     --------
