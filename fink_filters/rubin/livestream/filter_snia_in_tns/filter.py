@@ -16,7 +16,9 @@
 
 import pandas as pd
 
-DESCRIPTION = "Select alerts which have been spectroscopically confirmed as SN Ia in TNS."
+DESCRIPTION = (
+    "Select alerts which have been spectroscopically confirmed as SN Ia in TNS."
+)
 HBASE_SUPPORT = True
 
 
@@ -46,9 +48,9 @@ def snia_in_tns(tns_type: pd.Series) -> pd.Series:
     >>> df2.count()
     0
     """
-    snia_list = ['SN Ia', 'SN Ia-91T-like', 'SN Ia-CSM', 'SN Ia-pec']
+    snia_list = ["SN Ia", "SN Ia-91T-like", "SN Ia-CSM", "SN Ia-pec"]
     snia_in_tns = tns_type.apply(lambda x: x in snia_list)
-    
+
     return snia_in_tns
 
 
