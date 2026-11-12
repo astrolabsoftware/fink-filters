@@ -221,10 +221,12 @@ def request_lc_snad(ra, dec, sr_arcsec=1.5):
 
 def get_lc(row, prefix="i:"):
     # Extract light curve from the data row
-    pdf = pd.DataFrame({
-        "i:" + _: row[prefix + _]
-        for _ in ["fid", "jd", "magpsf", "sigmapsf", "isdiffpos"]
-    })
+    pdf = pd.DataFrame(
+        {
+            "i:" + _: row[prefix + _]
+            for _ in ["fid", "jd", "magpsf", "sigmapsf", "isdiffpos"]
+        }
+    )
 
     pdf["FLUXCAL"], pdf["FLUXCALERR"] = mag2fluxcal(
         pdf["i:magpsf"], pdf["i:sigmapsf"], pdf["i:isdiffpos"]
