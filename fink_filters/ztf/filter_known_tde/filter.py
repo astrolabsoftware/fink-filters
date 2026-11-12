@@ -67,11 +67,13 @@ def known_tde_(ra, dec, radius_arcsec=None) -> pd.Series:
         dec=np.array(tdes.dec, dtype=float) * u.degree,
     )
 
-    pdf = pd.DataFrame({
-        "ra": ra,
-        "dec": dec,
-        "candid": range(len(ra)),
-    })
+    pdf = pd.DataFrame(
+        {
+            "ra": ra,
+            "dec": dec,
+            "candid": range(len(ra)),
+        }
+    )
 
     catalog_ztf = SkyCoord(
         ra=np.array(ra.to_numpy(), dtype=float) * u.degree,

@@ -113,35 +113,39 @@ def orphan_grb(jd, jdstarthist, cjdc, cfidc, cssnamenrc, cmagpsfc):
     at_least_3_det = cmagpsfc.apply(lambda lc: len(lc[~np.isnan(lc)]) == 3)
 
     valid_times = lambda mag, time: time[~np.isnan(mag)]
-    tmp1 = np.array([
-        False
-        if not at_least_3_det.to_numpy()[n]
-        else (valid_times(i, j)[2] - valid_times(i, j)[0]) < 10.0
-        for n, i, j in zip(
-            range(len(at_least_3_det)), cmagpsfc.to_numpy(), cjdc.to_numpy()
-        )
-    ])
+    tmp1 = np.array(
+        [
+            False
+            if not at_least_3_det.to_numpy()[n]
+            else (valid_times(i, j)[2] - valid_times(i, j)[0]) < 10.0
+            for n, i, j in zip(
+                range(len(at_least_3_det)), cmagpsfc.to_numpy(), cjdc.to_numpy()
+            )
+        ]
+    )
 
     # 4 - The last measurement must be lower (increase in mag) than
     # the previous one. /!\ no band info currently
-    tmp2 = np.array([
-        False if not at_least_3_det.to_numpy()[n] else get_valid_rate(i, j)
-        for n, i, j in zip(
-            range(len(at_least_3_det)), cmagpsfc.to_numpy(), cfidc.to_numpy()
-        )
-    ])
+    tmp2 = np.array(
+        [
+            False if not at_least_3_det.to_numpy()[n] else get_valid_rate(i, j)
+            for n, i, j in zip(
+                range(len(at_least_3_det)), cmagpsfc.to_numpy(), cfidc.to_numpy()
+            )
+        ]
+    )
 
     # 5 - The difference between the g-band and
     # r-band must be almost constant and positive
     condg = lambda mag, filt: mag[~np.isnan(mag) & (filt.astype(int) == 1)]
     condr = lambda mag, filt: mag[~np.isnan(mag) & (filt.astype(int) == 2)]
 
-    meang = np.array([
-        np.mean(condg(i, j)) for i, j in zip(cmagpsfc.to_numpy(), cfidc.to_numpy())
-    ])
-    meanr = np.array([
-        np.mean(condr(i, j)) for i, j in zip(cmagpsfc.to_numpy(), cfidc.to_numpy())
-    ])
+    meang = np.array(
+        [np.mean(condg(i, j)) for i, j in zip(cmagpsfc.to_numpy(), cfidc.to_numpy())]
+    )
+    meanr = np.array(
+        [np.mean(condr(i, j)) for i, j in zip(cmagpsfc.to_numpy(), cfidc.to_numpy())]
+    )
     tmp3 = (meang - meanr) >= 0
 
     # 6 - The alert should not be an identified Solar System Objects
