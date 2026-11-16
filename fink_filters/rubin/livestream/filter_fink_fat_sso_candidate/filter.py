@@ -18,7 +18,7 @@ import pandas as pd
 import fink_filters.rubin.blocks as fb
 
 DESCRIPTION = "Select alerts that are potential unknown solar system moving object for the Fink Asteroid Tracker (Fink-FAT)"
-HBASE_SUPPORT = True
+HBASE_SUPPORT = False
 
 
 def fink_fat_sso_candidate(
