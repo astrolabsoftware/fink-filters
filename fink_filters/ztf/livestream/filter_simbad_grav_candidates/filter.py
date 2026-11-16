@@ -49,17 +49,19 @@ def simbad_grav_candidates_(cdsxmatch) -> pd.Series:
     LensedImage    1
     Name: objectId, dtype: int64
     """
-    f_simbad = cdsxmatch.isin([
-        "Gravitation",
-        "LensingEv",
-        "GravLensSystem",
-        "GravLens",
-        "LensedImage",
-        "LensedG",
-        "LensedQ",
-        "BlackHole",
-        "GravWaveEvent",
-    ])
+    f_simbad = cdsxmatch.isin(
+        [
+            "Gravitation",
+            "LensingEv",
+            "GravLensSystem",
+            "GravLens",
+            "LensedImage",
+            "LensedG",
+            "LensedQ",
+            "BlackHole",
+            "GravWaveEvent",
+        ]
+    )
 
     return f_simbad
 

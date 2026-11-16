@@ -174,8 +174,7 @@ def anomaly_notification_(
     # Extract anomalous objects
 
     pdf_anomalies_ext = (
-        df_proc
-        .sort([f"anomaly_score{model}"], ascending=True)
+        df_proc.sort([f"anomaly_score{model}"], ascending=True)
         .limit(trick_par * threshold)
         .toPandas()
     )
@@ -219,16 +218,18 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
         cutout_perml = f"<{cutout_perml}|{' '}>"
         curve_perml = f"<{curve_perml}|{' '}>"
         if model == "":
-            tg_data.append((
-                f"""{t1a}
+            tg_data.append(
+                (
+                    f"""{t1a}
 {t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
 {t5_}""",
-                cutout,
-                curve,
-            ))
+                    cutout,
+                    curve,
+                )
+            )
             slack_data.append(f"""==========================
 {t1b}
 {t_oid_1b}
@@ -237,18 +238,20 @@ Detected as top-{threshold} in the last {history_period} days: {history_objects[
 {t4_}
 {t5_}
 {cutout_perml}{curve_perml}""")
-        base_data.append((
-            row.objectId,
-            f"""{t1a}
+        base_data.append(
+            (
+                row.objectId,
+                f"""{t1a}
 {t_oid_1a}
 {t2_}
 {t3_}
 {t4_}
 {t5_}""".replace("\n", "  \n"),
-            cutout,
-            curve,
-            row.candid,
-        ))
+                cutout,
+                curve,
+                row.candid,
+            )
+        )
 
     init_msg = f"Median anomaly score overnight: {med}."
     if cut_coords and model == "":

@@ -53,24 +53,27 @@ def spark_unit_tests(
     confdic = {"spark.python.daemon.module": "coverage_daemon"}
 
     if spark.version.startswith("2"):
-        confdic.update({
-            "spark.jars.packages": "org.apache.spark:spark-avro_2.11:{}".format(
-                spark.version
-            )
-        })
+        confdic.update(
+            {
+                "spark.jars.packages": "org.apache.spark:spark-avro_2.11:{}".format(
+                    spark.version
+                )
+            }
+        )
     elif spark.version.startswith("3"):
-        confdic.update({
-            "spark.jars.packages": "org.apache.spark:spark-avro_2.12:{}".format(
-                spark.version
-            )
-        })
+        confdic.update(
+            {
+                "spark.jars.packages": "org.apache.spark:spark-avro_2.12:{}".format(
+                    spark.version
+                )
+            }
+        )
     conf.setMaster("local[2]")
     conf.setAppName("fink_filters_test")
     for k, v in confdic.items():
         conf.set(key=k, value=v)
     spark = (
-        SparkSession.builder
-        .appName("fink_filters_test")
+        SparkSession.builder.appName("fink_filters_test")
         .config(conf=conf)
         .getOrCreate()
     )
