@@ -52,7 +52,7 @@ def compute_elongation_from_image(data):
         # Otherwise select the object with the nearest pixel
         y, x = np.where(labels > 0)
 
-        distances = (y - cy)**2 + (x - cx)**2
+        distances = (y - cy) ** 2 + (x - cx) ** 2
         nearest_idx = np.argmin(distances)
 
         nearest_label = labels[y[nearest_idx], x[nearest_idx]]
@@ -104,9 +104,9 @@ def compute_elongation_from_image(data):
     # Compute eigen values and vectors for this matrix
     # i.e. compute the spread on the width direction, and the spread on the length direction of the trail
     try:
-      eigvals, eigvecs = np.linalg.eigh(M)
+        eigvals, eigvecs = np.linalg.eigh(M)
     except np.linalg.LinAlgError:
-      return np.nan, np.nan
+        return np.nan, np.nan
 
     width_spread, length_spread = eigvals[-1], eigvals[0]
 
@@ -146,11 +146,7 @@ def compute_elongation_from_image(data):
     n_bins = min(20, max(3, int(trail_length / 5)))
 
     # Compute the position of the edges of all bins
-    bin_edges = np.linspace(
-        longitudinal.min(),
-        longitudinal.max(),
-        n_bins + 1
-    )
+    bin_edges = np.linspace(longitudinal.min(), longitudinal.max(), n_bins + 1)
 
     # variable to store the width of the trail in each bin
     widths = []
@@ -158,17 +154,11 @@ def compute_elongation_from_image(data):
     # Iterate on the bins
     for i in range(n_bins):
         # Select all pixels located in this bin
-        in_bin = (
-            (longitudinal >= bin_edges[i]) &
-            (longitudinal < bin_edges[i + 1])
-        )
+        in_bin = (longitudinal >= bin_edges[i]) & (longitudinal < bin_edges[i + 1])
 
         # For the last bin, select all pixels in the bin, including those on the edge
         if i == n_bins - 1:
-            in_bin = (
-                (longitudinal >= bin_edges[i]) &
-                (longitudinal <= bin_edges[i + 1])
-            )
+            in_bin = (longitudinal >= bin_edges[i]) & (longitudinal <= bin_edges[i + 1])
 
         # Take the transversal position of the pixels in the pin
         pixels_across = transverse[in_bin]
@@ -178,10 +168,7 @@ def compute_elongation_from_image(data):
             continue
 
         # Compute the width with 90% of the distribution, in order to ignore isolated pixels in extreme positions
-        width = (
-            np.percentile(pixels_across, 95)
-            - np.percentile(pixels_across, 5)
-        )
+        width = np.percentile(pixels_across, 95) - np.percentile(pixels_across, 5)
 
         widths.append(width)
 
