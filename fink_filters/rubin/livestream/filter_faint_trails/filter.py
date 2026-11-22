@@ -23,12 +23,12 @@ from fink_filters.rubin.livestream.filter_faint_trails.utils import (
 from astropy.io import fits
 import io
 
-DESCRIPTION = "Select faint trails measuring more than 2 arcsec (mag between 18-21)"
+DESCRIPTION = "Select faint trails measuring more than 2 arcsec (mag between 18-21) with an elongated and continuous shape"
 HBASE_SUPPORT = True
 
 
-def faint_trails(diaSource: pd.DataFrame, cutoutScience: pd.Series) -> pd.Series:
-    """Select faint trails measuring more than 2 arcsec (mag between 18-21)
+def faint_trails(diaSource: pd.DataFrame, cutoutDifference: pd.Series) -> pd.Series:
+    """Select faint trails measuring more than 2 arcsec (mag between 18-21) with an elongated and continuous shape
 
     Parameters
     ----------
@@ -48,7 +48,8 @@ def faint_trails(diaSource: pd.DataFrame, cutoutScience: pd.Series) -> pd.Series
     # 170595940828184636 => FILTERED OUT because trailLength too short
     # 170587117053804617 => FILTERED OUT because cosmic ray
     # 170591547471429724 => FILTERED OUT because not good quality
-    # 170600291299229879 => FILTERED OUT because not elongated enough
+    # 170587106601599400 => FILTERED OUT because not elongated enough
+    # 170591526775160985 => FILTERED OUT because trail is not continuous
     # MATCHING: 170591526414450946, 170591533447250193
     >>> from fink_filters.rubin.utils import apply_block
     >>> df = spark.read.format("parquet").load("datatest/faint_trails")
@@ -78,19 +79,25 @@ def faint_trails(diaSource: pd.DataFrame, cutoutScience: pd.Series) -> pd.Series
         & f_trailflux_pos
     )
 
-    # Decode FITS image and compute elongation only for alerts which passed the intermediate filter
-    f_elong = pd.Series(False, index=cutoutScience.index)
+    # Decode FITS image and compute elongation and continuity only for alerts which passed the intermediate filter
+    f_elong = pd.Series(False, index=cutoutDifference.index)
+    f_continuity = pd.Series(False, index=cutoutDifference.index)
     subset_idx = f_intermediate[f_intermediate].index
     if len(subset_idx) > 0:
-        subset_images = cutoutScience.loc[subset_idx].apply(
+        subset_images = cutoutDifference.loc[subset_idx].apply(
             lambda x: (
                 fits.getdata(io.BytesIO(x)) if isinstance(x, (bytes, bytearray)) else x
             )
         )
-        elong_values = subset_images.apply(compute_elongation_from_image)
-        f_elong.loc[subset_idx] = (elong_values > 2.0).fillna(False)
 
-    return f_intermediate & f_elong
+        results = subset_images.apply(compute_elongation_from_image)
+        elong_values = results.apply(lambda x: x[0])
+        continuity_values = results.apply(lambda x: x[1])
+
+        f_elong.loc[subset_idx] = (elong_values > 1.5).fillna(False)
+        f_continuity.loc[subset_idx] = (continuity_values < 0.2).fillna(False)
+
+    return f_intermediate & f_elong & f_continuity
 
 
 if __name__ == "__main__":
