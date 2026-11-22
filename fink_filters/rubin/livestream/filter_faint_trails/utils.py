@@ -78,7 +78,7 @@ def compute_elongation_from_image(data: np.ndarray) -> tuple[float, float]:
         nearest_label = labels[y[nearest_idx], x[nearest_idx]]
         mask = labels == nearest_label
 
-    # If too few pixels → skip
+    # If too few pixels: skip
     if np.sum(mask) < 5:
         return np.nan, np.nan
 
