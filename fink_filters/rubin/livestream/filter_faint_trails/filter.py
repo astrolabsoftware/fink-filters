@@ -23,12 +23,12 @@ from fink_filters.rubin.livestream.filter_faint_trails.utils import (
 from astropy.io import fits
 import io
 
-DESCRIPTION = "Select faint trails measuring more than 2 arcsec (mag between 18-21)"
+DESCRIPTION = "Select faint trails measuring more than 2 arcsec (mag between 18-21) with an elongated and continuous shape"
 HBASE_SUPPORT = True
 
 
 def faint_trails(diaSource: pd.DataFrame, cutoutDifference: pd.Series) -> pd.Series:
-    """Select faint trails measuring more than 2 arcsec (mag between 18-21)
+    """Select faint trails measuring more than 2 arcsec (mag between 18-21) with an elongated and continuous shape
 
     Parameters
     ----------
