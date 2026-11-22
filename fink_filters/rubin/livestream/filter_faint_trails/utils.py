@@ -2,8 +2,28 @@ import numpy as np
 from scipy import ndimage
 
 
-def compute_elongation_from_image(data):
-    """Computes: Elongation of the central object - Trail Width Continuity (TWC), between 0 and 1."""
+def compute_elongation_from_image(data: np.ndarray) -> tuple[float, float]:
+    """
+    Calculate image elongation and trail-width continuity.
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        2D grayscale image containing pixel intensity values.
+
+    Returns
+    -------
+    tuple[float, float]
+        (elongation, continuity)
+    - The elongation is a number greater or equal to 1. '1' means round, '2' means twice as long as wide, and so on.
+    - The continuity is a number between 0 and 1. A value close to '0' means good continuity, a value close to '1' means bad continuity (variability of the width).
+
+    Returns np.nan for both values in the following case:
+    - input data is empty, has unexpected type, or has not exactly 2 dimensions.
+    - the trail cannot be found near the center of the input image, or contains less than 5 pixels.
+    - the trail width, length and orientation cannot be determined.
+    - the trail is shorter than 8 pixels, or is not at least 3 pixels wide on 3 portions.
+    """
     # No data: cannot compute elongation
     if data is None:
         return np.nan, np.nan
@@ -114,7 +134,7 @@ def compute_elongation_from_image(data):
         return np.nan, np.nan
 
     # Compute the elongation from the 2 previous values
-    # zero means round, 2 means twice as long as wide, and so on
+    # 1 means round, 2 means twice as long as wide, and so on
     elongation = float(np.sqrt(width_spread / length_spread))
 
     # --------------------------------------------------
@@ -139,7 +159,7 @@ def compute_elongation_from_image(data):
 
     # Under 8 pixel, the trail is too small to compute continuity
     if trail_length < 8:
-        return elongation, np.nan
+        return np.nan, np.nan
 
     # We will divide the tail into several bins
     # Bin count is one fifth of the trail length, minimum 3 and maximum 20
@@ -174,7 +194,7 @@ def compute_elongation_from_image(data):
 
     # Under 3 widths, the continuity calculation is not reliable
     if len(widths) < 3:
-        return elongation, np.nan
+        return np.nan, np.nan
 
     # Convert into a numpy array
     widths = np.asarray(widths)
